@@ -1,0 +1,62 @@
+name: Windows-Build (Barlage PM)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Pakete
+        run: python -m pip install --upgrade pip pyinstaller pillow cryptography
+
+      - name: Tests
+        run: python -m unittest tests/test_server.py tests/test_desktop.py tests/test_barlage.py -v
+
+      - name: Icons
+        run: python build/make_icons.py
+
+      - name: PyInstaller
+        run: |
+          python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/_work build/BarlagePM.spec
+          python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/_work build/BarlagePM-Admin.spec
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup -y --no-progress }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc installer/BarlagePM-Setup.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & $iscc installer/BarlagePM-Admin-Setup.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Smoke-Test exe (Start ohne Konfiguration darf nicht abstürzen)
+        shell: pwsh
+        run: |
+          $p = Start-Process dist/BarlagePM-Admin/BarlagePM-Admin.exe -PassThru
+          Start-Sleep 8
+          if ($p.HasExited -and $p.ExitCode -ne 0) { throw "BarlagePM-Admin.exe beendet mit $($p.ExitCode)" }
+          Stop-Process $p -Force -ErrorAction SilentlyContinue
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: BarlagePM-Installer
+          path: |
+            installer/Output/BarlagePM-Setup.exe
+            installer/Output/BarlagePM-Admin-Setup.exe
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: BarlagePM-Programmordner
+          path: dist/

@@ -1,0 +1,85 @@
+/* R2.6 Paket C2: Projektreiter „Budget“ – Balken je Abteilung (Abteilungsfarben --cat-1..8), Ampel als Chip + Schraffur. */
+.bu { display: grid; gap: 16px; max-width: 1100px; }
+
+/* Ampel-Chip: Farbe nur aus Semantik-Tokens; „Im Plan“ bleibt neutral */
+.bu-ampel { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 9px; border-radius: 999px; font-size: .8rem; font-weight: 650;
+  background: var(--surface-2); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line-strong); white-space: nowrap; }
+.bu-ampel-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-3); flex: none; }
+.bu-ampel.is-gruen { background: var(--ok-bg); color: var(--ok-text); box-shadow: inset 0 0 0 1px var(--ok-line); }
+.bu-ampel.is-gruen .bu-ampel-dot { background: var(--ok); }
+.bu-ampel.is-bernstein { background: var(--warn-bg); color: var(--warn-text); box-shadow: inset 0 0 0 1px var(--warn-line); }
+.bu-ampel.is-bernstein .bu-ampel-dot { background: var(--warn); }
+.bu-ampel.is-rot, .bu-ampel.is-rot-voll { background: var(--danger-bg); color: var(--danger-text); box-shadow: inset 0 0 0 1px var(--danger-line); }
+.bu-ampel.is-rot .bu-ampel-dot, .bu-ampel.is-rot-voll .bu-ampel-dot { background: var(--danger); }
+.bu-ampel.is-rot-voll { background: var(--danger); color: var(--on-danger); }
+.bu-ampel.is-rot-voll .bu-ampel-dot { background: var(--on-danger); }
+.bu-pz .bu-ampel { padding: 2px 5px; margin-left: 6px; }
+
+/* Hinweis-Banner (mittwochs / Stand älter als 7 Tage) */
+.bu-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--radius);
+  background: var(--warn-bg); color: var(--warn-text); box-shadow: inset 0 0 0 1px var(--warn-line); }
+.bu-banner > span { flex: 1 1 200px; font-weight: 600; }
+
+/* Zusammenfassende Kachel (klickbar: Fortschritts-Markierung ein/aus) */
+.bu-kachel { display: grid; gap: 14px; text-align: left; font: inherit; color: var(--text); cursor: pointer; width: 100%;
+  padding: 16px 18px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1);
+  border-left: 5px solid var(--line-strong); }
+.bu-kachel:hover { box-shadow: var(--shadow-2); }
+.bu-kachel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bu-kachel.is-gruen { border-left-color: var(--ok); }
+.bu-kachel.is-bernstein { border-left-color: var(--warn); }
+.bu-kachel.is-rot, .bu-kachel.is-rot-voll { border-left-color: var(--danger); }
+.bu-kachel[aria-pressed="false"] .bu-k-vergleich { opacity: .55; }
+.bu-k-zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+.bu-k-label { font-size: .78rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; font-weight: 650; }
+.bu-k-wert { font-size: 1.5rem; font-weight: 700; font-family: var(--font-num, inherit); font-variant-numeric: tabular-nums; }
+.bu-k-vergleich { display: grid; gap: 6px; }
+.bu-k-zeile { display: grid; grid-template-columns: 90px 1fr 64px; gap: 10px; align-items: center; font-size: .88rem; }
+.bu-k-zeile .num { text-align: right; font-variant-numeric: tabular-nums; }
+.bu-k-bar { height: 10px; border-radius: 5px; background: var(--sunken, var(--surface-2)); overflow: hidden; }
+.bu-k-bar > span { display: block; height: 100%; border-radius: 5px; }
+.bu-k-bar.is-std > span { background: var(--accent); }
+.bu-k-bar.is-fs > span { background: var(--text-3); }
+.bu-k-fuss { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Abteilungsliste */
+.bu-liste { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; }
+.bu-row { display: grid; grid-template-columns: 32px minmax(110px, 190px) 1fr minmax(120px, auto) 92px 36px; gap: 10px; align-items: center;
+  padding: 6px 4px; border-radius: var(--radius-sm); }
+.bu-row:hover { background: var(--list-hover, var(--surface-2)); }
+.bu-sub { font-size: .9rem; color: var(--text-2); }
+.bu-sub .bu-name { padding-left: 18px; }
+.bu-sub .bu-bar { height: 10px; }
+.bu-name { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bu-sub .bu-name { font-weight: 500; }
+.bu-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.bu-zahl, .bu-pz { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; font-size: .88rem; }
+.bu-pz { display: inline-flex; justify-content: flex-end; align-items: center; }
+.bu-auf { width: 32px; height: 32px; }
+.bu-chev { display: inline-block; font-size: 1.2rem; line-height: 1; transition: transform .15s; }
+.bu-chev.is-auf { transform: rotate(90deg); }
+
+/* Balken: Abteilungsfarbe; Überzug schraffiert in Gefahrfarbe; Fortschritt als senkrechte Marke */
+.bu-bar { position: relative; height: 14px; border-radius: 7px; background: var(--sunken, var(--surface-2)); overflow: visible;
+  box-shadow: inset 0 0 0 1px var(--line); display: flex; }
+.bu-fill { display: block; height: 100%; background: var(--c); border-radius: 7px; }
+.bu-bar.is-ueber .bu-fill { border-radius: 7px 0 0 7px; }
+.bu-over { position: absolute; right: 0; top: 0; bottom: 0; border-radius: 0 7px 7px 0;
+  background: repeating-linear-gradient(135deg, var(--danger) 0 4px, transparent 4px 8px); box-shadow: inset 0 0 0 1px var(--danger); }
+.bu-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--text); border-radius: 1px; }
+.bu-row.is-bernstein .bu-fill { background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,.18) 5px 8px); }
+.bu-row.is-rot .bu-fill, .bu-row.is-rot-voll .bu-fill { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(0,0,0,.28) 3px 6px); }
+
+/* Reststunden + Bericht */
+.bu-rest { padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); display: grid; gap: 10px; }
+.bu-rest h3 { margin: 0; font-size: 1rem; }
+.bu-rest-info { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.bu-bericht { flex-wrap: wrap; gap: 8px; align-items: center; }
+
+@media (max-width: 720px) {
+  .bu-row { grid-template-columns: 28px 1fr auto 32px; grid-template-areas: "a n p e" "b b b b" "z z z z"; row-gap: 4px; }
+  .bu-row > :nth-child(1) { grid-area: a; } .bu-row > :nth-child(2) { grid-area: n; } .bu-row > :nth-child(3) { grid-area: b; }
+  .bu-row > :nth-child(4) { grid-area: z; text-align: left; color: var(--text-3); } .bu-row > :nth-child(5) { grid-area: p; } .bu-row > :nth-child(6) { grid-area: e; }
+  .bu-k-zeile { grid-template-columns: 80px 1fr 56px; }
+}
+@media print { .bu-rest, .bu-bericht, .bu-banner button, .bu-row .icon-btn { display: none; } }

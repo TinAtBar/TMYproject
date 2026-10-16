@@ -1,0 +1,59 @@
+/* R26-C1: Fortschritt, Prognose, Verlauf, Meilenstein-Editor – nur vorhandene Tokens */
+
+/* Balken (fortschritt-balken.js) */
+.fb-balken { display: inline-flex; align-items: center; gap: 8px; min-width: 180px; font: inherit; font-size: .82rem; color: var(--text-2);
+  background: none; border: 0; padding: 0; text-align: left; }
+.fb-klick { cursor: pointer; border-radius: 6px; }
+.fb-klick:hover .fb-track { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.fb-klick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fb-name { min-width: 72px; }
+.fb-track { position: relative; flex: 1; min-width: 80px; height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.fb-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--sem-aktiv); }
+.fb-stunden .fb-fill { background: var(--sem-nachtrag); }
+.fb-ueber .fb-fill { background: var(--sem-danger); }
+.fb-wert { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text); }
+.fb-leer .fb-wert { color: var(--text-3); font-weight: 400; }
+
+/* Projektkopf */
+.fs-kopf { margin: -6px 0 12px; }
+.fs-kopf-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.fs-kopf .fb-balken { min-width: 240px; }
+.fs-prog { display: inline-flex; align-items: center; gap: 4px; font-size: .85rem; color: var(--text-2); }
+.fs-prog.fs-spaet { color: var(--warn-text); background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn-line); border-radius: 999px; padding: 1px 8px; }
+.fs-warn { display: flex; gap: 8px; align-items: flex-start; margin-top: 6px; padding: 6px 10px; border-radius: 6px; font-size: .85rem;
+  background: var(--warn-bg); color: var(--warn-text); box-shadow: inset 0 0 0 1px var(--warn-line); }
+.fs-warn .ico { flex: none; margin-top: 2px; }
+
+/* Meilenstein-Editor */
+.fs-tab .fs-name-in { width: 100%; min-width: 160px; min-height: 30px; padding: 2px 6px; font-size: .85rem; font-weight: 600; }
+.fs-tab .fs-gew { width: 64px; text-align: right; }
+.fs-tab .fs-gew-in { width: 58px; min-height: 30px; padding: 2px 4px; text-align: right; font-size: .85rem; }
+.fs-tab .fs-akt { white-space: nowrap; width: 1%; }
+.fs-tab .fs-akt .icon-btn[disabled] { opacity: .35; }
+.fs-ms-knoepfe { gap: 6px; flex-wrap: wrap; }
+
+/* Verlaufsdiagramm */
+.fs-fig { margin: 0; }
+.fs-svg { width: 100%; height: auto; max-height: 260px; display: block; }
+.fs-grid { stroke: var(--line); stroke-width: 1; }
+.fs-grid-100 { stroke: var(--line-strong); }
+.fs-ax { fill: var(--text-3); font-size: 10px; font-variant-numeric: tabular-nums; }
+.fs-l-fs { fill: none; stroke: var(--sem-aktiv); stroke-width: 2.2; stroke-linejoin: round; }
+.fs-l-fs-pt { fill: var(--sem-aktiv); }
+.fs-l-std { fill: none; stroke: var(--sem-nachtrag); stroke-width: 2; stroke-linejoin: round; }
+.fs-l-std-pt { fill: var(--sem-nachtrag); }
+.fs-l-prog { stroke: var(--sem-aktiv); stroke-width: 1.8; stroke-dasharray: 6 5; }
+.fs-l-prog.fs-spaet { stroke: var(--sem-warten); }
+.fs-vertrag { stroke: var(--sem-danger); stroke-width: 1.2; stroke-dasharray: 2 3; }
+.fs-legende { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; color: var(--text-2); }
+.fs-lg::before { content: ''; display: inline-block; width: 18px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid; }
+.fs-lg-fs::before { border-color: var(--sem-aktiv); }
+.fs-lg-std::before { border-color: var(--sem-nachtrag); }
+.fs-lg-prog::before { border-top: 2px dashed var(--sem-aktiv); }
+.fs-lg-vertrag::before { border-top: 2px dotted var(--sem-danger); }
+
+@media (max-width: 760px) {
+  .fs-kopf .fb-balken { min-width: 0; width: 100%; }
+  .fs-tab .fs-name-in { min-width: 120px; }
+}
+@media print { .fs-ms-knoepfe, .fs-tab .fs-akt { display: none; } }

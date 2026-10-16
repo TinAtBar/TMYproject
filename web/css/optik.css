@@ -1,0 +1,123 @@
+/* =====================================================================
+   R26 Paket A – Listen-Optik, Kalender-Wochenzeilen, Animations-Grundlage
+   (wird nach styles.css geladen; nur Ergänzungen/Überschreibungen)
+   ---------------------------------------------------------------------
+   Tokens
+     --sem-ueber      knalliges Rot für überfällige Fristen (fett)
+     --sem-neu        dezentes Dunkelrot für „neu/geändert“ (markierung.js), klar vom Überfällig-Rot getrennt
+     --sem-neu-bg     sehr leichte Zeilentönung für neue Punkte
+     --anim-dauer     Grunddauer für Übergänge (0ms, wenn Animationen aus)
+     --anim-lang      längere Dauer (Balken füllen)
+     --anim-kurve     Easing
+   Animationen sind aus, wenn
+     • Benutzer-Darstellung „Animationen“ aus  → :root[data-anim="aus"] (darstellung.js)
+     • das Gerät prefers-reduced-motion: reduce meldet
+   Utility-Klassen (für Dashboard & Co.)
+     .anim-einblenden       Element blendet beim Einfügen weich ein (opacity + 4px nach oben)
+     .anim-einblenden-verz  wie oben, Verzögerung über --anim-i (Index) gestaffelt: style="--anim-i:3"
+     .anim-uebergang        weiche Übergänge für Farbe/Hintergrund/Rahmen/Transform/Opacity
+     .anim-balken           Fortschrittsbalken-Füllung: Breite per --wert (0–100) setzen,
+                            z. B. <div class="balken"><i class="anim-balken" style="--wert:42"></i></div>;
+                            füllt sich beim Einfügen von 0 auf --wert und animiert Änderungen
+   ===================================================================== */
+
+:root {
+  --anim-dauer: 180ms;
+  --anim-lang: 600ms;
+  --anim-kurve: cubic-bezier(.2, .7, .2, 1);
+  --sem-ueber: #d10000;
+  --sem-neu: #7d2626;
+  --sem-neu-bg: rgba(125, 38, 38, .045);
+  --sem-neu-line: #b46a6a;
+}
+:root[data-scheme="dark"] {
+  --sem-ueber: #ff4a3d;
+  --sem-neu: #e3a4a0;
+  --sem-neu-bg: rgba(227, 164, 160, .06);
+  --sem-neu-line: #9a5a56;
+}
+:root[data-design="werkstatt"][data-scheme="dark"] { --sem-ueber: #ff5247; --sem-neu: #e8aaa5; }
+:root[data-design="werkstatt"][data-scheme="light"] { --sem-ueber: #cc0000; --sem-neu: #74221f; }
+:root[data-design="hell"][data-scheme="light"] { --sem-ueber: #d10000; --sem-neu: #7d2626; }
+
+:root[data-anim="aus"] { --anim-dauer: 0ms; --anim-lang: 0ms; }
+@media (prefers-reduced-motion: reduce) { :root { --anim-dauer: 0ms; --anim-lang: 0ms; } }
+
+/* ---------- 1. Schärfere Symbole ---------- */
+/* Kleine Symbole (≤16px, util.icon setzt .ico-s): Strich in festen Gerätepixeln statt skaliert → kein Verschwimmen */
+.ico.ico-s path { vector-effect: non-scaling-stroke; }
+.ico.ico-s, .chip .ico.ico-s, .chip-sem .ico.ico-s, .status-pick > .ico.ico-s, .frist .d .ico.ico-s, .kpi-chip .ico.ico-s { stroke-width: 1.75px; }
+.ico { shape-rendering: geometricPrecision; }
+/* Symbolfarbe in Chips kräftiger (Kontrast in allen Designs) */
+.chip-sem .ico, .status-pick > .ico { color: color-mix(in srgb, var(--c) 85%, var(--text)); }
+
+/* ---------- 2. Schmale Spalten: Nur Symbol / Symbol + Text ---------- */
+:root[data-symbole="symbol"] td.c-sym .chip-t {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+:root[data-symbole="symbol"] td.c-sym .chip { padding: 4px 6px; gap: 0; }
+:root[data-symbole="symbol"] td.c-sym .chip .ico { width: 16px; height: 16px; }
+:root[data-symbole="symbol"] td.c-sym .status-pick .status-select {
+  min-width: 0; width: 44px; padding: 4px 0 4px 32px; color: transparent !important; text-indent: -999px;
+  background-image: none !important;
+}
+:root[data-symbole="symbol"] td.c-sym .status-pick .status-select option { color: var(--text); text-indent: 0; }
+:root[data-symbole="symbol"] td.c-sym .status-pick > .ico { left: 14px; width: 16px; height: 16px; }
+td.c-sym { text-align: center; }
+:root[data-symbole="text"] td.c-sym { text-align: left; }
+
+/* Spaltenköpfe schmaler Spalten (data-kopf: symbol | text | leer) */
+th.tab-schmal .tab-hico { display: none; color: var(--text-2); }
+:root[data-kopf="symbol"] th.tab-schmal .tab-hico, :root:not([data-kopf]) th.tab-schmal .tab-hico { display: inline-flex; }
+:root[data-kopf="symbol"] th.tab-schmal .tab-lbl, :root:not([data-kopf]) th.tab-schmal .tab-lbl,
+:root[data-kopf="leer"] th.tab-schmal .tab-lbl {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---------- 3. Frist: nur Datum, überfällig = fett & knallrot ---------- */
+.frist.overdue, .frist.overdue .d { color: var(--sem-ueber) !important; font-weight: 800; }
+.frist.overdue .d .ico { color: var(--sem-ueber); }
+.frist.overdue .sub { display: none; }
+.chip.frist-ueber { color: var(--sem-ueber); font-weight: 800; }
+.ev.overdue .t { color: var(--sem-ueber); font-weight: 750; }
+@media print { .frist.overdue, .frist.overdue .d { color: #d10000 !important; } }
+
+/* ---------- 4. Markierung neu/geändert: dezentes Dunkelrot ---------- */
+.chg, .chg .ttl, .chg .who, .chg select, .chg input, .chg textarea, .chg .frist:not(.overdue) .d { color: var(--sem-neu) !important; }
+td.chg { box-shadow: inset 3px 0 0 var(--sem-neu-line); }
+.field.chg > label::after { color: var(--sem-neu); }
+.field.chg input, .field.chg select, .field.chg textarea { border-color: var(--sem-neu-line); }
+tr.is-neu td, tr.is-neu td .ttl, tr.is-neu td .who, tr.is-neu td .pnr { color: var(--sem-neu); }
+tr.is-neu td { background-color: var(--sem-neu-bg); }
+tr.is-neu td.c-sel { box-shadow: inset 3px 0 0 var(--sem-neu-line); }
+tr.is-neu td .frist.overdue, tr.is-neu td .frist.overdue .d { color: var(--sem-ueber) !important; }
+.ocard.is-neu, .ocard.has-chg { border-left-color: var(--sem-neu-line); }
+.ocard.is-neu .ttl { color: var(--sem-neu); }
+.chg-dot { background: var(--sem-neu); }
+
+/* ---------- 5. Kalender: Wochenzeilen ---------- */
+.cal.kal-wz { grid-template-columns: 64px repeat(7, minmax(0, 1fr)); }
+.kal-wz .kal-wz-row { display: contents; }
+.kal-wz .kal-wz-kw { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 8px 4px;
+  background: var(--surface-3); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.kal-wz .kal-wz-kw b { font-size: 1rem; color: var(--heading, var(--text)); }
+.kal-wz .kal-wz-head .kal-wz-kw { font-size: .74rem; font-weight: 700; color: var(--text-3); letter-spacing: .06em; }
+.cal.kal-wz .day { min-height: 92px; }
+.cal.kal-wz .dn { width: auto; min-width: 26px; padding: 0 6px; border-radius: 13px; }
+@media (max-width: 760px) {
+  .cal.kal-wz { grid-template-columns: 40px repeat(7, minmax(0, 1fr)); }
+  .cal.kal-wz .day { min-height: 56px; }
+  .kal-wz .kal-wz-kw span { display: none; }
+}
+
+/* ---------- 6. Animations-Utilities ---------- */
+@keyframes anim-einblenden { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes anim-balken-fuellen { from { width: 0; } }
+.anim-einblenden { animation: anim-einblenden var(--anim-dauer) var(--anim-kurve) both; }
+.anim-einblenden-verz { animation: anim-einblenden var(--anim-dauer) var(--anim-kurve) both; animation-delay: calc(var(--anim-i, 0) * var(--anim-dauer) / 3); }
+.anim-uebergang { transition: color var(--anim-dauer) var(--anim-kurve), background-color var(--anim-dauer) var(--anim-kurve),
+  border-color var(--anim-dauer) var(--anim-kurve), transform var(--anim-dauer) var(--anim-kurve), opacity var(--anim-dauer) var(--anim-kurve); }
+.anim-balken { display: block; height: 100%; width: calc(var(--wert, 0) * 1%); max-width: 100%;
+  animation: anim-balken-fuellen var(--anim-lang) var(--anim-kurve) both; transition: width var(--anim-lang) var(--anim-kurve); }
+:root[data-anim="aus"] .anim-einblenden, :root[data-anim="aus"] .anim-einblenden-verz, :root[data-anim="aus"] .anim-balken { animation: none; }
+@media (prefers-reduced-motion: reduce) { .anim-einblenden, .anim-einblenden-verz, .anim-balken { animation: none; } }

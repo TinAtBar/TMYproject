@@ -1,0 +1,37 @@
+/* R26-H: Einheitlicher Masken-/Ansichtsaufbau (Formular-Bausteine aus js/formular.js) */
+.mk-form { row-gap: 14px; column-gap: 18px; }
+.mk-abschnitt { margin: 18px 0 6px; }
+.mk-abschnitt:first-child { margin-top: 0; }
+.mk-abschnitt-t { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3);
+  margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.mk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 18px; align-items: start; }
+.mk-grid > .full, .mk-grid > .mk-props { grid-column: 1 / -1; }
+.mk-props { margin: 0; }
+.mk-paar { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+.mk-feld label { display: flex; align-items: baseline; gap: 4px; }
+.pflicht-marke { color: var(--sem-warten, #b7791f); font-weight: 700; }
+.mk-fehler { color: var(--sem-danger, #c53030); font-size: .8rem; }
+.mk-hat-fehler input, .mk-hat-fehler select, .mk-hat-fehler textarea { border-color: var(--sem-danger, #c53030); }
+.mk-janein input[type=checkbox] { width: 20px; height: 20px; }
+.mk-aktionen { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.mk-aktionen.links { justify-content: flex-start; margin-top: 4px; }
+.mk-zusatz:empty { display: none; }
+.mk-dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
+.mk-dl dt { color: var(--text-3); }
+.mk-dl dd { margin: 0; }
+.mk-hinweis { display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin: 0 0 16px; border-radius: 10px;
+  background: var(--surface-2, rgba(127,127,127,.08)); color: var(--text-3); }
+.mk-seite { display: grid; gap: 16px; max-width: 760px; }
+.mk-liste { list-style: none; margin: 0; padding: 0; }
+.mk-liste li { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.menu .menu-sec { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); padding: 6px 12px 2px; }
+/* Kalkulations-Import: Inline-Bearbeitung */
+.imp-zelle { padding: 2px 4px !important; }
+.imp-inp { width: 100%; min-height: 30px; padding: 2px 6px; border: 1px solid transparent; background: transparent; border-radius: 6px; font: inherit; color: inherit; }
+.imp-inp.num { text-align: right; max-width: 90px; margin-left: auto; display: block; }
+.imp-inp:hover, .imp-inp:focus { border-color: var(--line-strong); background: var(--bg, transparent); }
+.imp-geaendert { background: color-mix(in srgb, var(--sem-marke, #2b6cb0) 14%, transparent); box-shadow: inset 3px 0 0 var(--sem-marke, #2b6cb0); }
+.imp-geaendert .imp-inp { font-weight: 600; }
+.imp-fehler { border-color: var(--sem-danger, #c53030) !important; }
+.imp-aenderungen { color: var(--sem-marke, #2b6cb0); font-weight: 600; }
+@media (max-width: 760px) { .mk-paar { grid-template-columns: 1fr; } .mk-aktionen { justify-content: stretch; } .mk-aktionen .btn { flex: 1; } }

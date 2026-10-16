@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barlage PM</title>
+<meta name="theme-color" content="#032d6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Barlage PM">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/mobil.css">
+<link rel="stylesheet" href="css/ablage.css">
+<link rel="stylesheet" href="css/fortschritt.css">
+<link rel="stylesheet" href="css/budget.css">
+<link rel="stylesheet" href="css/optik.css">
+<link rel="stylesheet" href="css/masken.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<script>
+  (function () { var d = document.documentElement, p = null;
+    try { p = JSON.parse(localStorage.getItem('opl.darstellung') || 'null'); if (!p) { var t = JSON.parse(localStorage.getItem('opl.theme') || 'null'); if (t) p = { modus: t }; } } catch (e) {}
+    p = p || {}; d.dataset.design = p.design || 'klassik';
+    if (p.modus === 'light' || p.modus === 'dark') d.dataset.theme = p.modus;
+    d.dataset.scheme = d.dataset.theme || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  })();
+</script>
+</head>
+<body>
+<div id="root"><div class="loading"><span class="spinner"></span>Lädt …</div></div>
+<div id="toasts" aria-live="polite"></div>
+<noscript>Bitte JavaScript aktivieren.</noscript>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

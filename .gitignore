@@ -1,0 +1,4 @@
+dist/
+build/_work/
+installer/Output/
+__pycache__/

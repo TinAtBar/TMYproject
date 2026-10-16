@@ -1,0 +1,78 @@
+/* =====================================================================
+   R26 Paket G – Dashboard & Projekt-Kacheln (web/js/projekt-kachel.js, views/start.js)
+   Balken: Fortschritt = --pk-fortschritt (neutrales Schieferblau), Stunden = --pk-stunden (neutrales Grau);
+   Färbung nur nach budget.ampel (Fortschritt 100 % grün; Stunden bernstein/rot/rot_voll/gruen).
+   Kachelgröße: .pk-g1..3 (√-gedämpft nach Soll-Stunden) über grid-column span.
+   Animationen über optik.css (.anim-einblenden-verz, .anim-balken) – respektiert data-anim/reduced-motion.
+   ===================================================================== */
+:root { --pk-fortschritt: var(--sem-offen, #4d6580); --pk-stunden: var(--cat-6, #4a5666); --pk-track: var(--surface-3, rgba(0,0,0,.07)); }
+
+.pk-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); grid-auto-flow: row dense; gap: 14px; }
+.pk { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 14px 16px;
+  border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); color: var(--text); }
+.pk-g2 { grid-column: span 2; }
+.pk-g3 { grid-column: span 2; grid-row: span 2; }
+.pk-g3 .pk-titel { font-size: 1.18rem; }
+.pk-g3 .pk-balken { padding: 5px 0; }
+.pk-g3 .pk-track { height: 12px; }
+@media (max-width: 620px) { .pk-g2, .pk-g3 { grid-column: auto; grid-row: auto; } }
+.pk:hover { border-color: var(--line-strong, var(--line)); }
+.pk.pk-fertig { opacity: .85; }
+
+/* Haupt-Link deckt die Kachel ab; innere Ziele liegen darüber */
+.pk-haupt { position: absolute; inset: 0; border-radius: inherit; z-index: 0; }
+.pk-haupt:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 2px; }
+.pk > :not(.pk-haupt) { position: relative; z-index: 1; pointer-events: none; }
+.pk .pk-ziel { pointer-events: auto; }
+.pk-ziel { color: inherit; text-decoration: none; border-radius: 6px; }
+.pk-ziel:hover { background: var(--hover, rgba(0,0,0,.04)); }
+.pk-ziel:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 1px; }
+
+.pk-kopf { display: flex; align-items: center; gap: 8px; }
+.pk-nr { font-weight: 700; font-size: .84rem; color: var(--text-2, var(--text)); }
+.pk-od { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; color: var(--sem-ueber, var(--sem-danger)); font-weight: 800; font-size: .82rem; }
+.pk-titel { margin: 0; font-size: 1rem; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pk-kunde { margin-top: -4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.pk-balken-gruppe { display: flex; flex-direction: column; gap: 2px; }
+.pk-balken { display: grid; grid-template-columns: 74px 1fr 44px; align-items: center; gap: 8px; padding: 3px 2px; font-size: .8rem; }
+.pk-bl { color: var(--text-3, var(--text)); }
+.pk-bw { text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }
+.pk-track { position: relative; display: block; height: 8px; border-radius: 99px; background: var(--pk-track); overflow: hidden; }
+.pk-fill { border-radius: inherit; }
+.pk-fortschritt .pk-fill { background: var(--pk-fortschritt); }
+.pk-stunden .pk-fill { background: var(--pk-stunden); }
+.pk-leer .pk-bw { color: var(--text-3, var(--text)); font-weight: 400; }
+/* Ampel */
+.pk-fortschritt.pk-gruen .pk-fill, .pk-stunden.pk-amp-gruen .pk-fill { background: var(--sem-erledigt, #2a6b3f); }
+.pk-stunden.pk-amp-bernstein .pk-fill { background: var(--warn, #b07800); }
+.pk-stunden.pk-amp-bernstein .pk-bw { color: var(--warn-text, var(--warn)); }
+.pk-stunden.pk-amp-rot .pk-fill { background: var(--sem-danger, #b3261e); }
+.pk-stunden.pk-amp-rot_voll .pk-fill { background: var(--sem-danger, #b3261e) repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,.22) 5px 8px); }
+.pk-stunden.pk-amp-rot .pk-bw, .pk-stunden.pk-amp-rot_voll .pk-bw { color: var(--sem-danger, #b3261e); font-weight: 800; }
+
+.pk-infos { display: flex; flex-direction: column; gap: 2px; font-size: .84rem; }
+.pk-info { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 3px 2px; }
+.pk-info .ico, .pk-info svg { flex: none; color: var(--text-3, currentColor); }
+.pk-it { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pk-dat { flex: none; font-variant-numeric: tabular-nums; color: var(--text-2, var(--text)); }
+.pk-ueberf { color: var(--sem-ueber, var(--sem-danger)); font-weight: 800; }
+.pk-fuss { margin-top: auto; padding-top: 4px; border-top: 1px dashed var(--line); }
+
+/* ---------- Dashboard-Layout ---------- */
+.db-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+@media (max-width: 1100px) { .db-layout { grid-template-columns: 1fr; } }
+.db-heute { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+@media (max-width: 900px) { .db-heute { grid-template-columns: 1fr; } }
+.db-heute .card { margin: 0; }
+.db-sec { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+.db-sec h2 { margin: 0; }
+.db-kz { display: flex; flex-direction: column; gap: 14px; }
+.db-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 16px; border-radius: var(--radius);
+  background: var(--warn-bg, rgba(176,120,0,.1)); color: var(--warn-text, inherit); box-shadow: inset 3px 0 0 var(--warn, #b07800); }
+.db-banner .sp { flex: 1; }
+.db-zahlen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+.db-zahl { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 8px; background: var(--surface-2, transparent); color: inherit; text-decoration: none; }
+.db-zahl b { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.db-zahl.od b { color: var(--sem-ueber, var(--sem-danger)); }
+.db-zahl:focus-visible { outline: 2px solid var(--focus, var(--accent)); }
