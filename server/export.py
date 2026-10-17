@@ -187,9 +187,9 @@ def api_ablegen(ctx):
     if not data:
         raise ApiError(400, "Leere Datei")
     try:
-        os.makedirs(wurzel, exist_ok=True)
         if not ablage.innerhalb(info["basis"], wurzel):
             raise ApiError(403, "Pfad außerhalb des Projektordners")
+        os.makedirs(wurzel, exist_ok=True)
         gespeichert = ablage.speichern(ctx.db, ctx.user, wurzel, "", name, data)
     except OSError as e:
         raise ApiError(409, f"Projektordner nicht beschreibbar: {e.strerror or e}")

@@ -59,6 +59,7 @@ export function mount(el, r) {
     const vertragEl = h('span', { class: 'muted' }, '…'), progEl = h('span', { class: 'muted' }, '…');
     const bestell = (p.bestellnummer || p.bestelldatum) ? feld('Bestellung', h('span', { class: 'mono' }, p.bestellnummer || ''), p.bestelldatum ? h('span', { class: 'ph-sub' }, (p.bestellnummer ? ' vom ' : '') + fmtDate(p.bestelldatum)) : null) : null;
     const warn = h('div');
+    for (const w of (data.warnungen || [])) warn.append(h('div', { class: 'fs-warn' + (w.stufe === 'hinweis' ? ' is-hinweis' : ''), role: 'status' }, icon(w.stufe === 'hinweis' ? 'info' : 'alert', 16), h('div', null, w.text))); // R27-106: z. B. keine Bestellnummer
     clear(head).append(h('div', { class: 'crumbs' }, h('a', { href: '#/projekte' }, 'Projekte'), ' › ', h('strong', null, p.nummer)),
       h('header', { class: 'card ph' },
         h('div', { class: 'ph-id' },
@@ -70,7 +71,8 @@ export function mount(el, r) {
           feld('Status', status),
           feld('Liefertermin (Vertrag)', vertragEl),
           feld('voraussichtlich fertig', progEl),
-          bestell),
+          bestell,
+          p.fertigungsort ? feld('Fertigungsort', h('span', { title: 'Wird in der Fertigungsbesprechung gepflegt' }, p.fertigungsort)) : null), // R27-103: nur lesend
         h('div', { class: 'ph-act' },
           canEdit ? h('button', { class: 'btn btn-sm', onclick: editProject }, icon('edit', 16), 'Bearbeiten') : null,
           h('span', { class: 'ph-teams' }, projektTeamsKnopf(p, canEdit, () => load())), // R5-F (kompakt: nur Symbol, Text bleibt für Screenreader)

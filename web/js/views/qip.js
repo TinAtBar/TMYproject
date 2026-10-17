@@ -208,7 +208,7 @@ export function mount(el) {
     catch (e) { clear(main).append(errorBox(e, load)); }
   }
   function renderSide() {
-    clear(side).append(h('div', { class: 'tvl-list', role: 'list' }, liste.map(v => h('button', { class: 'tvl-item', 'aria-current': String(cur && v.id === cur.id), onclick: () => { if (dirty && !confirm('Ungespeicherte Änderungen verwerfen?')) return; cur = structuredClone(v); dirty = false; renderSide(); renderMain(); } }, v.name))),
+    clear(side).append(h('div', { class: 'tvl-list', role: 'list' }, liste.map(v => h('button', { class: 'tvl-item', 'aria-current': String(cur && v.id === cur.id), onclick: async () => { if (dirty && !(await confirmDlg('Änderungen verwerfen', 'Ungespeicherte Änderungen verwerfen?', { ok: 'Verwerfen', danger: true }))) return; cur = structuredClone(v); dirty = false; renderSide(); renderMain(); } }, v.name))),
       ro ? null : h('button', { class: 'btn btn-sm', onclick: neu }, icon('plus', 16), 'Neue Vorlage'));
   }
   async function neu() {

@@ -1,6 +1,25 @@
-# Barlage PM – Version 2.6
+# Barlage PM – Version 2.7
 
 Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispielprojekt“ (Beispieldaten).
+
+## Neu in 2.7
+- **Neue Startseite (Dashboard)**: Kennzahlen mit Trend („+3 seit letzter Woche“), Verlauf offen/erledigt je Woche,
+  Status-Ring, Punkte je Person, „Meine offenen Punkte“ mit Auswahl (heute & überfällig, diese Woche, neu …),
+  Spalte „Termine & Meilensteine“, Zeitraum 7/30/90 Tage. Über „Anpassen“ Kacheln ein-/ausblenden, verschieben und in
+  der Größe K/M/G ändern. Eigene Dashboards anlegen und mit Kollegen teilen (nur ansehen); der Admin legt das
+  Start-Layout je Rolle und ein Firmen-Dashboard fest. ⓘ-Symbole erklären jede Kachel.
+- **Projekt-Cockpit**: Die Projektseite zeigt oben kompakt Status, Liefertermin (Vertrag), Prognose, Bestellung und
+  Fertigungsort, darunter vier Kennzahlen, Meilenstein-Zeitstrahl mit Heute-Linie und Prognose, Stunden je Abteilung,
+  Burn-down der offenen Punkte und die Dokument-Kacheln. Weniger Reiter, der Rest unter „Mehr“.
+- **Fertigungsbesprechung**: Den Fertigungsort pflegt nur noch Controlling. Projektleiter stellen **Anträge**
+  (Fertigungsort, Termin, erledigt, neuer Punkt); Controlling übernimmt oder lehnt mit Kommentar ab. Oben steht
+  „n Anträge offen“. **Vertretung** mit Zeitraum (endet automatisch).
+- **Kundenbestellung**: Bestellnummer und Bestelldatum am Projekt und an Nachträgen, optional als Spalte in der
+  Projektliste; Hinweis im Projektkopf, wenn sie fehlt. Neuer Dokumenttyp „Bestellung“.
+- **PDF-Erkennung**: Beim Ablegen einer PDF mit echtem Text schlägt Barlage PM Art, Ordner, Bestellnummer und Datum vor
+  – übernommen wird nur per Klick. Scans werden ganz normal abgelegt.
+- **Einheitliche Exporte**: gleicher Kopf (Titel, Projekt, Stand, erstellt von), Dateinamen nach Firmenmuster,
+  „Auch im Projektordner ablegen“. Stundenzahlen nur für Projektleiter des Projekts und Admin.
 
 ## Neu in 2.6
 - **Rolle Controlling** („C“): sieht die Projektkacheln mit Fortschritts- und Stundenbalken (nur Prozent, keine

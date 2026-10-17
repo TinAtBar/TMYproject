@@ -3,7 +3,7 @@
 ; R4-I: Ist die Konsole schon installiert, fragt das Setup (nicht still): Aktualisieren (Standard) / Deinstallieren.
 
 #define AppName "Barlage PM Admin"
-#define AppVersion "2.6.0"
+#define AppVersion "2.7.0"
 #define AppExe "BarlagePM-Admin.exe"
 #define Dist "..\dist\BarlagePM-Admin"
 ; R4-I: eigene AppId (ohne doppelte Klammer) für den Registry-Schlüssel

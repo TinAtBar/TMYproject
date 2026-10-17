@@ -100,29 +100,32 @@
 
 /* ---------- Zeitstrahl ---------- */
 .ck-zs-wrap { padding: 26px 28px 14px; overflow-x: auto; }
-.ck-zs { position: relative; height: 150px; min-width: 640px; }
-.ck-zs-linie { position: absolute; left: 0; right: 0; top: 74px; height: 4px; border-radius: 2px; background: var(--surface-3); }
+.ck-zs { position: relative; height: 196px; min-width: 640px; }
+.ck-zs-linie { position: absolute; left: 0; right: 0; top: 96px; height: 4px; border-radius: 2px; background: var(--surface-3); }
 .ck-zs-linie.is-done { right: auto; background: var(--sem-offen); }
 .ck-zs-monat { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
 .ck-zs-monat span { position: absolute; top: 0; left: 6px; font-size: .74rem; color: var(--text-2); white-space: nowrap; }
-.ck-zs-pt { position: absolute; top: 76px; width: 14px; height: 14px; margin: -7px 0 0 -7px; transform: rotate(45deg); background: var(--surface); border: 2.5px solid var(--sem-offen); border-radius: 2px; z-index: 2; }
+.ck-zs-pt { position: absolute; top: 98px; width: 14px; height: 14px; margin: -7px 0 0 -7px; transform: rotate(45deg); background: var(--surface); border: 2.5px solid var(--sem-offen); border-radius: 2px; z-index: 2; }
 .ck-zs-pt.is-done { background: var(--sem-offen); }
 .ck-zs-pt.is-od { border-color: var(--danger); }
 .ck-zs-pt.is-prog { border-style: dashed; border-color: var(--text-2); border-radius: 50%; transform: none; width: 12px; height: 12px; margin: -6px 0 0 -6px; }
 .ck-zs-pt.is-prog.is-spaet { border-color: var(--warn); }
-.ck-zs-lbl { z-index: 3; background: var(--surface); border-radius: 3px; position: absolute; transform: translateX(-50%); text-align: center; font-size: .78rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+.ck-zs-lbl { z-index: 3; background: var(--surface); border-radius: 3px; position: absolute; text-align: center; font-size: .78rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
 .ck-zs-lbl b { display: block; font-weight: 650; overflow: hidden; text-overflow: ellipsis; }
 .ck-zs-lbl span { color: var(--text-2); font-size: .72rem; }
-.ck-zs-lbl.oben { top: 22px; }
-.ck-zs-lbl.unten { top: 92px; }
+.ck-zs-lbl.oben2 { top: 18px; }
+.ck-zs-lbl.oben { top: 52px; }
+.ck-zs-lbl.unten { top: 114px; }
+.ck-zs-lbl.unten2 { top: 150px; }
+.ck-zs-lbl.is-vertrag b, .ck-zs-lbl.is-vertrag span { color: var(--accent-text); }
 .ck-zs-lbl.is-od span { color: var(--danger-text); font-weight: 650; }
 .ck-zs-lbl.is-prog b { font-weight: 600; color: var(--text-2); }
-.ck-zs-prog { position: absolute; top: 75px; height: 0; border-top: 2px dashed var(--text-2); }
+.ck-zs-prog { position: absolute; top: 97px; height: 0; border-top: 2px dashed var(--text-2); }
 .ck-zs-prog.is-spaet { border-top-color: var(--warn); }
 .ck-zs-heute { position: absolute; top: 0; bottom: 6px; border-left: 2px solid var(--accent-text); z-index: 1; }
 .ck-zs-heute span { position: absolute; top: -20px; left: 0; transform: translateX(-50%); background: var(--accent-text); color: var(--on-accent, #fff); font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
-.ck-zs-vertrag { position: absolute; top: 20px; bottom: 6px; border-left: 2px dotted var(--accent-text); z-index: 1; }
-.ck-zs-vertrag .ck-raute { position: absolute; top: 49px; left: -8px; }
+.ck-zs-vertrag { position: absolute; top: 0; bottom: 6px; border-left: 2px dotted var(--accent-text); z-index: 1; }
+.ck-zs-vertrag .ck-raute { position: absolute; top: 71px; left: -8px; }
 .ck-zs-vlbl { position: absolute; top: 44px; left: 12px; background: var(--surface); padding: 0 4px; border-radius: 3px; z-index: 3; font-size: .78rem; color: var(--accent-text); white-space: nowrap; line-height: 1.25; }
 .ck-zs-vlbl.links { left: auto; right: 12px; text-align: right; }
 .ck-zs-vlbl b { display: block; }
@@ -189,3 +192,10 @@
 .bu-noist { font-style: italic; }
 .ck-fsv .fs-svg { max-height: 280px; width: 100%; }
 .ck-fsv .fs-fig { margin: 0; }
+
+/* R27 Prüfung: Hinweise im Kopf (z. B. keine Bestellnummer) und lange Werte ohne Umbruch-Chaos */
+.fs-warn.is-hinweis { background: var(--surface-2); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line); }
+.ph-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 18px; align-items: start; }
+.ph-v { white-space: normal; flex-wrap: wrap; row-gap: 0; line-height: 1.3; }
+.ph-v > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .ph-felder { grid-template-columns: 1fr 1fr; } }

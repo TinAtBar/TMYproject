@@ -44,6 +44,7 @@ export function mount(el, r) {
       { key: 'bezeichnung', label: lbl('projekt', 'bezeichnung', 'Bezeichnung', { stern: false }), txt: p => p.bezeichnung || '', flex: true, minW: 220, prio: 1, cls: 'ttl' },
       { key: 'kunde', label: lbl('projekt', 'kunde', 'Kunde', { stern: false }), txt: p => p.kunde || '', width: 170, prio: 2 },
       { key: 'ort', label: lbl('projekt', 'ort', 'Ort', { stern: false }), txt: p => p.ort || '', width: 140, prio: 3, hidden: true },
+      { key: 'bestellnummer', label: lbl('projekt', 'bestellnummer', 'Bestellnr.', { stern: false }), txt: p => p.bestellnummer || '', width: 140, prio: 3, hidden: true, cls: 'mono' }, // R27-106: optionale Spalte
       { key: 'pm', label: 'Projektleiter', txt: p => (p.pms || []).map(x => x.name).join(', '), width: 180, prio: 2 },
       { key: 'offen', label: 'Offen', type: 'num', val: p => p.offen ?? 0, width: 90, prio: 2, cls: 'num' },
       { key: 'ueberfaellig', label: 'Überfällig', type: 'num', val: p => p.ueberfaellig ?? 0, width: 110, prio: 2, cls: 'num', cell: p => p.ueberfaellig ? h('span', { class: 'chip chip-danger' }, p.ueberfaellig) : '0' },

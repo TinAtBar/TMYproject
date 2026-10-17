@@ -161,6 +161,12 @@ Endpunkt-Details: `server/API_NOTES.md` (nach Runden R3-…, R4-…, R5-…, R26
 | mdns.py | mDNS-Responder für opl.local |
 | pairing.py | Gerätekopplung (QR), Geräte-Sitzungen, PIN-Sperrstufen |
 | sync.py | Offline-Abgleich (`/api/sync`, `/api/sync/stand`, `/api/sync/adressen`) |
+| dashboard.py (2.7 erweitert) | Dashboard 2: Kachelkatalog, Layouts je Rolle/Benutzer, eigene/geteilte/Firmen-Dashboards, Kennzahlen mit Trend, Tages-Momentaufnahme |
+| fertigung_antraege.py | 2.7: Fertigungsort (nur Controlling), Änderungsanträge PM → Controlling |
+| vertretung.py | 2.7: Vertretungen mit Zeitraum (Rechte-Erhöhung je Bereich, Protokoll „als Vertretung“) |
+| bestellung.py | 2.7: Bestellnummer/-datum an Projekt und Nachtrag, Warnung „keine Bestellnummer“ |
+| pdf_text.py, dokument_erkennung.py | 2.7: Text aus PDFs (nur Standardbibliothek, ohne OCR, Größen-/Zeitgrenzen) + Stichwort-Erkennung |
+| export.py | 2.7: einheitlicher Export-Kopf, Dateinamen-Muster, „im Projektordner ablegen“, Stundenrechte |
 
 ### web/js/
 | Datei | Zweck |
@@ -238,6 +244,7 @@ Grundschema siehe `SPEC.md`; Erweiterungen per Migration (Spalten in Klammern nu
 | Einstellungen | `firma_einstellungen`, `meta` (rev, schema-Merker, markierung_tage, teams_link_fertigung) |
 | Kontakte/Benachr. | `kontakte`, `benachrichtigungen` |
 | Technik | `activity`, `applied_changes`, `suche` (FTS5) |
+| 2.7 | `dashboards`, `opl_kennzahlen_verlauf`, `fertigung_antraege`, `vertretungen`; Spalten `projekte.fertigungsort/bestellnummer/bestelldatum`, `angebote.bestellnummer/bestelldatum` |
 
 Nummern: Auftrag `JJJJ-NNN-NN` (Hauptauftrag `-00`, Baugruppen `-01…`), Angebot `JJJJ NNNN`, Sonderprojekt `ALLGEMEIN`.
 Seriennummer = Baugruppennummer + Trenner + Zusatz (`.A/.B…`, klein, `01…`); Menge erhöhen ergänzt, nie umnummerieren.

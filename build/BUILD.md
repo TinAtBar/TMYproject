@@ -4,12 +4,20 @@
 > In der Linux-Entwicklungsumgebung wurden Logik und Oberflächen getestet, aber **keine .exe erzeugt**.
 > Zwei Wege: (A) GitHub baut automatisch – kein Windows-Entwicklungs-PC nötig, oder (B) selbst auf einem Windows-PC bauen.
 
-Ergebnis in beiden Fällen (Version 2.6.0):
+Ergebnis in beiden Fällen (Version 2.7.0):
 
 | Datei | Für wen |
 |---|---|
 | `BarlagePM-Setup.exe` | alle PCs (Projektleiter und Mitarbeiter) – gleicher Installer |
 | `BarlagePM-Admin-Setup.exe` | nur der Administrator-PC |
+
+## Neu in 2.7 (für die Verteilung)
+- Version 2.7.0 in App, Admin-Konsole und beiden Installern. Einfach mit dem neuen `BarlagePM-Setup.exe`
+  überinstallieren; die Datenbank wird beim ersten Serverstart automatisch erweitert (neue Tabellen für Dashboards,
+  Kennzahlen-Verlauf, Anträge, Vertretungen; neue Felder Fertigungsort/Bestellnummer/Bestelldatum). Keine Daten gehen verloren.
+- Neue Cache-Version der Web-App (`barlagepm-shell-2.7.0`); Browser und Handys laden die neue Oberfläche automatisch.
+- Admin-Konsole: neue Seiten „Dashboard“ (Start-Layout je Rolle), „Exporte“ (Dateinamen-Muster) und „Vertretung“.
+- PDF-Erkennung braucht keine Zusatzpakete (keine OCR).
 
 ## Neu in 2.6 (für die Verteilung)
 - Version 2.6.0 in App, Admin-Konsole und beiden Installern. Vorhandene Installationen einfach mit dem neuen

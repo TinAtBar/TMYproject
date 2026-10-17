@@ -354,17 +354,18 @@ class SeitenTest(unittest.TestCase):
 
 # ---------------------------------------------------------------------------------------------- Version / Service Worker
 class VersionTest(unittest.TestCase):
-    def test_version_260(self):
+    def test_version_ueberall_gleich(self):
         import barlagepm_core as core
-        self.assertEqual(core.VERSION, "2.6.0")
+        self.assertRegex(core.VERSION, r"^\d+\.\d+\.\d+$")
         for iss in ("BarlagePM-Setup.iss", "BarlagePM-Admin-Setup.iss"):
             b = (ROOT / "installer" / iss).read_bytes()
             self.assertTrue(b.startswith(b"\xef\xbb\xbf"), iss)
-            self.assertIn(b'#define AppVersion "2.6.0"', b, iss)
+            self.assertIn(f'#define AppVersion "{core.VERSION}"'.encode(), b, iss)
 
     def test_sw_precache(self):
+        import barlagepm_core as core
         sw = (ROOT / "web" / "sw.js").read_text(encoding="utf-8")
-        self.assertIn("2.6.0", re.search(r"const VERSION = '([^']+)'", sw).group(1))
+        self.assertIn(core.VERSION, re.search(r"const VERSION = '([^']+)'", sw).group(1))
         shell = re.search(r"const SHELL = \[(.*?)\];", sw, re.S).group(1)
         index = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
         for css in sorted((ROOT / "web" / "css").glob("*.css")):

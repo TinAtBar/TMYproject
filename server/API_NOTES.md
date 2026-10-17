@@ -435,3 +435,21 @@ Web: Reiter „QIP“ und „Kick-Off“ (web/js/views/qip.js, kickoff.js via re
 - GET /api/export/kopf?titel=&projekt_id=&art=&endung= → {kopf, dateiname, darf_ablegen, dokumenttyp} (FREI)
 - POST /api/export/ablegen?projekt_id=&art=&titel=&endung= (multipart „datei“) → {name, dokumenttyp} (Bereich dokumente)
 - Firmeneinstellung `export.dateiname` (Default „{projekt} {titel} {datum}“), Admin-Seite „Exporte“.
+
+## R27 Punkte 92–105 (Dashboard 2, Cockpit, Fertigungsort, Anträge, Vertretung)
+- `GET /api/dashboard/kacheln` (wie 2.6, plus `warnungen` je Projekt), `GET /api/dashboard/layout` → Kachelkatalog,
+  Rollen-Standard (`dashboard.standard.<rolle>` aus der Admin-Konsole) und eigenes Layout. Kacheln ohne Recht fehlen.
+- `GET /api/dashboard/daten?tage=7|30|90` → {kennzahlen{offen,ueberfaellig,woche,erledigt}{wert,trend}, reihen, verlauf_kw,
+  status, personen (nur Admin/PM), meine{…}, termine}. Ohne OPL-Recht nur `termine`. Keine Stundenzahlen.
+  Tägliche Momentaufnahme in `opl_kennzahlen_verlauf` (Timer).
+- `GET/POST /api/me/dashboards`, `PUT/DELETE /api/me/dashboards/<id>` – eigene Dashboards {name, layout, geteilt, firma};
+  geteilte/Firmen-Dashboards nur lesend; `firma` setzen nur Admin; löschen Eigentümer oder Admin. (Bereich dashboard)
+- `PUT /api/fertigung/projekt/<id>/fertigungsort {fertigungsort, base?}` – nur Controlling/Admin (bzw. aktive Vertretung);
+  PUT /api/projekte/<id> mit `fertigungsort` → 403.
+- `GET /api/fertigung/antraege?status=offen|alle&projekt_id=` → {items, ist_leiter, offen}; Leiter sehen alle, sonst eigene.
+  `POST /api/fertigung/antraege {art: fertigungsort|frist|status|text|zustaendig|neu, objekt_id|projekt_id, nachher, begruendung}`
+  (Recht fertigung lesen + Projektzugriff). `POST …/<id>/uebernehmen|ablehnen {kommentar}` (fertigung bearbeiten; Ablehnen
+  mit Pflichtkommentar). Benachrichtigung an den Antragsteller.
+- `GET/POST /api/vertretungen`, `DELETE /api/vertretungen/<id>` – Admin/Controlling legen an (FREI, Prüfung im Endpunkt);
+  aktive Vertretung hebt `rechte.stufe` im Bereich auf die Rolle des Vertretenen, Protokoll mit Zusatz „als Vertretung“.
+  `GET /api/rechte` liefert `vertretungen` (aktive für mich).

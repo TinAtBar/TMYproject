@@ -1,6 +1,6 @@
 # Barlage PM – Punkteliste (alle nummerierten Anforderungen 1–108)
 
-Stand: 17.10.2026, Version 2.6.0. Zeitangaben in Ortszeit (Europe/Berlin).
+Stand: 17.10.2026, Version 2.7.0. Zeitangaben in Ortszeit (Europe/Berlin).
 Der Nutzer nummeriert Wünsche fortlaufend über alle Sammelrunden. Status:
 **erledigt (Version)** · **offen** (gesammelt, noch nicht umgesetzt) · **verworfen** · **vorgemerkt** (später/anderswo).
 
@@ -69,26 +69,26 @@ Der Nutzer nummeriert Wünsche fortlaufend über alle Sammelrunden. Status:
 | 90 | Fertigungsbesprechung verteilen | Excel im bekannten Format, passwortverschlüsselt im eingestellten Ordner, Outlook-Entwurf (.eml) mit Verteiler, Passwort nicht in der Mail | erledigt 2.6 (in echtem Excel ungeprüft) |
 | 91 | Rechte | Fertigungsbesprechung für PM standardmäßig nur „lesen“ | verworfen – Nutzer: „muss nicht extra, schon gut gelöst“ (über Rechte-Matrix einstellbar) |
 
-## Punkte 92–108 (Montags-Sammelliste, gesammelt 16./17.10.2026) – alle **offen**
+## Punkte 92–108 (Montags-Sammelliste, gesammelt 16./17.10.2026) – umgesetzt in 2.7
 | Nr | Thema | Kurzbeschreibung | Status / Hinweis |
 |---|---|---|---|
-| 92 | Dashboard 2 | eine Kachel **„Meine offenen Punkte“** mit Auswahlmenü (Heute & überfällig · Diese Woche · Neu/geändert seit letztem Besuch · Alle meine · Wiedervorlagen) inkl. Anzahl je Eintrag; letzte Auswahl je Benutzer gemerkt; Zahlen-Kachel „Offene Punkte“ wird Kopf (Klick stellt Menü um); „Seit letztem Besuch“ + „Neu/geändert“ zusammen. Getrennt bleiben: Meilensteine 14 Tage, Punkte je Person, Stunden-Ampel, Zuletzt angesehen | offen; Vorschlag „Meine Woche“-Kachel entfallen lassen – vom Nutzer nicht ausdrücklich bestätigt |
-| 93 | Dashboard 2 | Startseite anpassen: Kacheln ein-/ausblenden (Auge), per Ziehen sortieren, „Zurücksetzen“; je Benutzer gespeichert; Admin legt Start-Layout je Rolle fest; Rechte gelten weiter | offen |
-| 94 | Dashboard 2 | ⓘ-Infosymbole mit Erklärtext (Hover/Antippen) aus zentraler Textliste, später auch für Felder/Spalten | offen |
-| 95 | Dashboard 2 | eigene Dashboards (Reiter/Auswahl), Kachelart „Gespeicherte Ansicht“ (Liste/Zahl/kleines Balkendiagramm), Knopf „Als Kachel aufs Dashboard“, Projekt-Kacheln filterbar, Dashboards teilen (lesend), Admin-Firmen-Dashboard | offen |
-| 96 | Dashboard 2 | Kachelgrößen K/M/G je Dashboard und Benutzer; lückenloses Raster; Handy einspaltig; Projekt-Kacheln „nach Budget“ oder „alle gleich“ | offen |
-| 97 | Dashboard 2 | Kennzahl-Kacheln mit Trend („+3 seit letzter Woche“ + Mini-Verlauf) | offen; siehe `docs/entwuerfe/entwurf-dashboard2.png` |
-| 98 | Dashboard 2 | Diagramm-Kacheln: Verlauf offen/erledigt je KW, Status-Ring, Punkte je Person (überfällig rot) | offen |
-| 99 | Dashboard 2 | Spalte „Termine & Meilensteine“ rechts (Liefertermine, Fertigungsbesprechung, Abnahmen) mit Zeitraumwahl | offen |
-| 100 | Dashboard 2 | Zeitraum-Auswahl für das ganze Dashboard (7/30/90 Tage) | offen |
-| 101 | Projekt-Cockpit | statt zugeklappter Übersicht: kompakter Kopf (Status, Liefertermin Vertrag, Prognose), 4 Kennzahlen, Meilenstein-Zeitstrahl mit Heute-Linie/Prognose, Stunden je Abteilung, Burn-down offener Punkte, Dokument-Kacheln | offen; siehe `docs/entwuerfe/entwurf-projekt-cockpit.png` |
-| 102 | Aufräumen | „Dateien“ + „Dokumente“ zu einem Reiter; Projekt-Reiter auf ca. 6 + „Mehr ▾“ (Nachträge, QIP, Kick-Off, Verlauf); PM nicht doppelt im Kopf; Name in OPL nicht doppelt; Filterleiste ohne Umbruch/einzelnes Fähnchen; Frist-Zusatz „heute fällig / in 1 Tag“ entfernen; Budget ohne Ist: Hinweis „Noch keine Ist-Stunden – jetzt eintragen“ statt leerer Balken | offen |
-| 103 | Fertigung | Fertigungsort wird nur in der Fertigungsbesprechung (Controlling) gepflegt, sonst überall nur lesbar | offen |
-| 104 | Fertigung | PM beantragt Änderungen in der Fertigungsbesprechung (Fertigungsort, Termin, erledigt, neuer Punkt); Controlling übernimmt/lehnt ab (mit Kommentar, Vorher/Nachher); PM sieht Status + Benachrichtigung; Leiste „n Anträge offen“ | offen |
-| 105 | Vertretung | Vertretung mit Zeitraum (Admin oder Controlling trägt ein): Vertreter hat Controlling-Rechte in der Besprechung, endet automatisch, Protokoll „als Vertretung“; später auch PM untereinander | offen; Rückfrage „lokal/offline weitermachen?“ unbeantwortet |
-| 106 | Kundenbestellung | Bestellnummer (Kunde) + Bestelldatum am Hauptauftrag (auch in Listen/Kacheln/Export/Bericht), Dokumenttyp „Bestellung“ mit Unterordner, Nachträge ebenfalls mit Bestellnr./Datum, Warnung „in Fertigung ohne Bestellnummer“ | offen |
-| 107 | PDF-Erkennung | **einfach**: nur PDFs mit echtem Text, **ohne OCR, ohne Zusatzpakete**; erkennt Art per Stichwort (Bestellung, Auftragsbestätigung, Lieferschein, Rechnung, Spezifikation, Protokoll), Bestellnummer und Datum; Vorschlag für Ordner/Projektfelder, Bestätigung per Klick; Scans/kein Treffer → normales Ablegen ohne Fehler | offen; braucht 2–3 echte Bestell-PDFs |
-| 108 | Exporte | alle Ausgaben vereinheitlichen: einheitlicher Kopf (Logo, Titel, Projekt, Stand, erstellt von, Seitenzahlen), Dateinamen-Muster (Admin), „Direkt ablegen“ im Projektordner, PDF statt nur Drucken, Rechte (keine Stunden für Controlling/Mitarbeiter), Markierungen auch im Excel | offen; Nutzer geht die Liste E1–E11 (siehe unten) am Montag durch |
+| 92 | Dashboard 2 | eine Kachel **„Meine offenen Punkte“** mit Auswahlmenü (Heute & überfällig · Diese Woche · Neu/geändert seit letztem Besuch · Alle meine · Wiedervorlagen) inkl. Anzahl je Eintrag; letzte Auswahl je Benutzer gemerkt; Zahlen-Kachel „Offene Punkte“ wird Kopf (Klick stellt Menü um); „Seit letztem Besuch“ + „Neu/geändert“ zusammen. Getrennt bleiben: Meilensteine 14 Tage, Punkte je Person, Stunden-Ampel, Zuletzt angesehen | erledigt 2.7 („Meine Woche“ entfallen) |
+| 93 | Dashboard 2 | Startseite anpassen: Kacheln ein-/ausblenden (Auge), per Ziehen sortieren, „Zurücksetzen“; je Benutzer gespeichert; Admin legt Start-Layout je Rolle fest; Rechte gelten weiter | erledigt 2.7 |
+| 94 | Dashboard 2 | ⓘ-Infosymbole mit Erklärtext (Hover/Antippen) aus zentraler Textliste, später auch für Felder/Spalten | erledigt 2.7 |
+| 95 | Dashboard 2 | eigene Dashboards (Reiter/Auswahl), Kachelart „Gespeicherte Ansicht“ (Liste/Zahl/kleines Balkendiagramm), Knopf „Als Kachel aufs Dashboard“, Projekt-Kacheln filterbar, Dashboards teilen (lesend), Admin-Firmen-Dashboard | erledigt 2.7 (Projekt-Kacheln-Filter einfach) |
+| 96 | Dashboard 2 | Kachelgrößen K/M/G je Dashboard und Benutzer; lückenloses Raster; Handy einspaltig; Projekt-Kacheln „nach Budget“ oder „alle gleich“ | erledigt 2.7 |
+| 97 | Dashboard 2 | Kennzahl-Kacheln mit Trend („+3 seit letzter Woche“ + Mini-Verlauf) | erledigt 2.7 |
+| 98 | Dashboard 2 | Diagramm-Kacheln: Verlauf offen/erledigt je KW, Status-Ring, Punkte je Person (überfällig rot) | erledigt 2.7 |
+| 99 | Dashboard 2 | Spalte „Termine & Meilensteine“ rechts (Liefertermine, Fertigungsbesprechung, Abnahmen) mit Zeitraumwahl | erledigt 2.7 |
+| 100 | Dashboard 2 | Zeitraum-Auswahl für das ganze Dashboard (7/30/90 Tage) | erledigt 2.7 |
+| 101 | Projekt-Cockpit | statt zugeklappter Übersicht: kompakter Kopf (Status, Liefertermin Vertrag, Prognose), 4 Kennzahlen, Meilenstein-Zeitstrahl mit Heute-Linie/Prognose, Stunden je Abteilung, Burn-down offener Punkte, Dokument-Kacheln | erledigt 2.7 |
+| 102 | Aufräumen | „Dateien“ + „Dokumente“ zu einem Reiter; Projekt-Reiter auf ca. 6 + „Mehr ▾“ (Nachträge, QIP, Kick-Off, Verlauf); PM nicht doppelt im Kopf; Name in OPL nicht doppelt; Filterleiste ohne Umbruch/einzelnes Fähnchen; Frist-Zusatz „heute fällig / in 1 Tag“ entfernen; Budget ohne Ist: Hinweis „Noch keine Ist-Stunden – jetzt eintragen“ statt leerer Balken | erledigt 2.7 |
+| 103 | Fertigung | Fertigungsort wird nur in der Fertigungsbesprechung (Controlling) gepflegt, sonst überall nur lesbar | erledigt 2.7 |
+| 104 | Fertigung | PM beantragt Änderungen in der Fertigungsbesprechung (Fertigungsort, Termin, erledigt, neuer Punkt); Controlling übernimmt/lehnt ab (mit Kommentar, Vorher/Nachher); PM sieht Status + Benachrichtigung; Leiste „n Anträge offen“ | erledigt 2.7 |
+| 105 | Vertretung | Vertretung mit Zeitraum (Admin oder Controlling trägt ein): Vertreter hat Controlling-Rechte in der Besprechung, endet automatisch, Protokoll „als Vertretung“; später auch PM untereinander | erledigt 2.7 (nur Admin/Controlling legen an; PM untereinander später; Offline-Frage offen) |
+| 106 | Kundenbestellung | Bestellnummer (Kunde) + Bestelldatum am Hauptauftrag (auch in Listen/Kacheln/Export/Bericht), Dokumenttyp „Bestellung“ mit Unterordner, Nachträge ebenfalls mit Bestellnr./Datum, Warnung „in Fertigung ohne Bestellnummer“ | erledigt 2.7 |
+| 107 | PDF-Erkennung | **einfach**: nur PDFs mit echtem Text, **ohne OCR, ohne Zusatzpakete**; erkennt Art per Stichwort (Bestellung, Auftragsbestätigung, Lieferschein, Rechnung, Spezifikation, Protokoll), Bestellnummer und Datum; Vorschlag für Ordner/Projektfelder, Bestätigung per Klick; Scans/kein Treffer → normales Ablegen ohne Fehler | erledigt 2.7 (ohne echte Kunden-PDFs getestet – Stichwörter ggf. nachschärfen) |
+| 108 | Exporte | alle Ausgaben vereinheitlichen: einheitlicher Kopf (Logo, Titel, Projekt, Stand, erstellt von, Seitenzahlen), Dateinamen-Muster (Admin), „Direkt ablegen“ im Projektordner, PDF statt nur Drucken, Rechte (keine Stunden für Controlling/Mitarbeiter), Markierungen auch im Excel | erledigt 2.7 (Kopf, Dateinamen, Ablegen, Stundenrechte; Liste E1–E11 mit Nutzer noch durchgehen) |
 
 Ursprünglich vergebene Nummern 108 („Rolle Vertrieb mit Dokumenten-Werkstatt“) und 109 („E-Mails einlesen“) wurden
 in die getrennte **Vertriebs-App** verschoben; die Nummer 108 wurde danach für „Exporte vereinheitlichen“ neu vergeben.
@@ -198,3 +198,4 @@ sie aus, was soll die App automatisch eintragen?
 | 2.4 | 16.10.2026 | Punkte 39–56: Listenkontrast/Filterleiste/Gruppierung, ein Feld „Zuständig“, Kontakte, Allgemein, Fertigungsbesprechung mit Export, Teams, einheitliches Farb-/Symbolsystem, Sicherheits-Fixes |
 | 2.5 | – | nicht veröffentlicht (mit 2.6 zusammengelegt) |
 | 2.6 | 16.10.2026 | Punkte 57–90: Optik, Kalender-Wochenzeilen, Dashboard neu, Fortschritt/Prognose/Verlauf, Budget je Abteilung, Meilensteine je Projekt, Dokumentenablage, Rolle Controlling + Rechte-Matrix, Fertigungsbesprechung verschlüsselt verteilen, Admin-Konsole neu (Kacheln, Dunkelmodus, Masken-Editor, Firmenstandard-Ansichten, Wartung/KI-Aufträge), Handy-Einrichtung/Abgleich/Anleitung, vollständige Namensbereinigung, CI-Aktionen aktualisiert, Repository neu ohne alten Verlauf |
+| 2.7 | 17.10.2026 | Punkte 92–108: Dashboard 2 (anpassbar, eigene/geteilte Dashboards, Trends, Diagramme, Termine), Projekt-Cockpit, Aufräumen der Projektseite, Fertigungsort nur Controlling, Änderungsanträge, Vertretung, Kundenbestellung, einfache PDF-Erkennung, einheitliche Exporte |

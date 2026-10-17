@@ -1,6 +1,6 @@
 // mobile: Service Worker – App-Shell offline verfügbar (Netz zuerst, Cache als Rückfall).
 // Neue Server-Version → neue Dateien kommen automatisch über das Netz; VERSION erhöhen räumt alte Caches.
-const VERSION = 'barlagepm-shell-2.6.0';
+const VERSION = 'barlagepm-shell-2.7.0';
 const SHELL = ['./', 'index.html', 'css/styles.css', 'css/mobil.css', 'css/ablage.css', 'css/fortschritt.css', 'css/budget.css', 'css/optik.css', 'css/masken.css', 'css/dashboard.css', 'css/cockpit.css', 'css/fertigung-r27.css', 'css/exporte.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/logo.png', 'icons/favicon.ico'];
 
 self.addEventListener('install', e => {

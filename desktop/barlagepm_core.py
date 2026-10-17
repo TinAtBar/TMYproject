@@ -23,7 +23,7 @@ from pathlib import Path
 APP_NAME = "Barlage PM"          # Anzeigename
 APP_DIR = "BarlagePM"            # Ordnername unter %LOCALAPPDATA% (Konfiguration, Protokolle, Browserprofil)
 INSTALLER_NAME = "BarlagePM-Setup.exe"
-VERSION = "2.6.0"
+VERSION = "2.7.0"
 DEFAULT_PORT = 8080
 LOCK_TIMEOUT_S = 30
 ITER = 200_000  # wie server/auth.py
@@ -579,7 +579,7 @@ def version_tuple(v):
 
 def update_pruefen(data_dir, aktuelle_version=VERSION):
     """Gibt Pfad zum neueren Installer zurück oder None. <data>/installation/version.json:
-    {"version": "2.6.0", "installer": "BarlagePM-Setup.exe"}"""
+    {"version": "2.7.0", "installer": "BarlagePM-Setup.exe"}"""
     inst = Path(data_dir) / "installation"
     try:
         d = json.loads((inst / "version.json").read_text(encoding="utf-8-sig"))

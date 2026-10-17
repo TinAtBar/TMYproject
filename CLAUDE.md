@@ -5,7 +5,7 @@
 (ca. 5–7 Nutzer im Firmen-LAN). Ein Python-Server (nur Standardbibliothek + optional `cryptography`) läuft
 abwechselnd auf einem Projektleiter-PC; Daten (SQLite) liegen auf einem Netzlaufwerk. Oberfläche: Vanilla-JS-SPA
 (PWA, offlinefähig), Windows-Desktop-App (tkinter + Edge-App-Fenster), Admin-Konsole (tkinter), Inno-Setup-Installer,
-Windows-Build über GitHub Actions. Aktuelle Version: **2.6.0**. Sprache überall: **Deutsch**.
+Windows-Build über GitHub Actions. Aktuelle Version: **2.7.0**. Sprache überall: **Deutsch**.
 
 Detaildokumente (zuerst lesen, in dieser Reihenfolge):
 1. `docs/UEBERGABE.md` – Architektur, Module, Datenmodell, Kundeninstallation, Release, Risiken
@@ -93,9 +93,9 @@ Artefakte: `BarlagePM-Installer` (beide Setups) und `BarlagePM-Programmordner`. 
 Lokal unter Linux entstehen **keine** .exe-Dateien.
 
 ## Stand und nächste Schritte (Kurzfassung, Details in docs/PUNKTELISTE.md)
-- 2.6.0 ausgeliefert (Punkte 57–90). Gesammelt, **noch nicht umgesetzt**: Punkte **92–108**
-  (Dashboard 2, Projekt-Cockpit, Aufräumen, Fertigungsort/Anträge/Vertretung, Kundenbestellung, einfache
-  PDF-Erkennung, Exporte vereinheitlichen). Der Nutzer will die Vorlagen und Exporte am **Montag** durchgehen –
-  erst danach auf „Leg los“ warten.
+- 2.7.0 umgesetzt (Punkte 92–108: Dashboard 2, Projekt-Cockpit, Aufräumen, Fertigungsort/Anträge/Vertretung,
+  Kundenbestellung, einfache PDF-Erkennung, Exporte vereinheitlichen). Einschränkungen siehe `docs/PUNKTELISTE.md`
+  (PDF-Erkennung ohne echte Kunden-PDFs getestet, Export-Liste E1–E11 noch mit Nutzer durchgehen).
+  Nächste Nummer für neue Wünsche: **109**.
 - Warten auf Unterlagen vom Nutzer: Reststunden-Analyse (Parser vorbereitet), Monats-/Wochenbericht-Vorlage,
   2–3 Kundenbestellungen als Text-PDF u. a. (Vorlagen-Liste in `docs/PUNKTELISTE.md`).

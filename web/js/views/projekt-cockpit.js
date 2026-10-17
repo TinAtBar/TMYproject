@@ -186,24 +186,32 @@ function zeitstrahl(card, ms, prognose, kopf, ctx) {
     const a = x(letzter.datum), b = x(prog);
     bahn.append(h('div', { class: 'ck-zs-prog' + (prognose.spaeter_als_vertrag ? ' is-spaet' : ''), style: { left: a + '%', width: (b - a) + '%' } }),
       h('div', { class: 'ck-zs-pt is-prog' + (prognose.spaeter_als_vertrag ? ' is-spaet' : ''), style: { left: b + '%' }, title: `Prognose fertig ${prognose.kw_text || ''}` }),
-      h('div', { class: 'ck-zs-lbl unten is-prog', style: { left: b + '%' } }, h('b', null, 'Prognose'), h('span', null, kwKurz(prog))));
+    );
   }
   // Heute
   bahn.append(h('div', { class: 'ck-zs-heute', style: { left: heuteX + '%' } }, h('span', null, 'Heute')));
   // Vertrag
-  if (vertrag) bahn.append(h('div', { class: 'ck-zs-vertrag', style: { left: x(vertrag) + '%' } }, h('span', { class: 'ck-raute is-vertrag', 'aria-hidden': 'true' }), h('div', { class: 'ck-zs-vlbl' + (x(vertrag) > 82 ? ' links' : '') }, h('b', null, 'Liefertermin (Vertrag)'), h('span', null, fmtDate(vertrag)))));
-  // Meilensteine mit abwechselnder Beschriftung (Kollisionen grob vermeiden)
-  const breite = card.clientWidth || 1000;
-  const belegt = { oben: -1e9, unten: -1e9 };
+  if (vertrag) bahn.append(h('div', { class: 'ck-zs-vertrag', style: { left: x(vertrag) + '%' } }, h('span', { class: 'ck-raute is-vertrag', 'aria-hidden': 'true' })));
+  // Beschriftungen auf vier Bahnen (oben/unten, je zwei Ebenen) verteilen – keine Überlappung (Prüfung 2.7)
+  const breite = Math.max(640, (card.clientWidth || 1000) - 56);
+  const labels = [];
   for (const m of mitDatum) {
-    const l = x(m.datum);
-    const w = ((Math.max(m.name.length, 6) * 6.6 + 16) / breite) * 100;
     const od = !m.erledigt && parseDate(m.datum) < tag;
-    let seite = belegt.oben <= l - w / 2 ? 'oben' : belegt.unten <= l - w / 2 ? 'unten' : (belegt.oben <= belegt.unten ? 'oben' : 'unten');
-    belegt[seite] = l + w / 2;
     const stat = m.erledigt ? 'erledigt' : od ? 'überfällig' : 'geplant';
-    bahn.append(h('div', { class: 'ck-zs-pt' + (m.erledigt ? ' is-done' : od ? ' is-od' : ''), style: { left: l + '%' }, role: 'listitem', title: `${m.name} · ${fmtDate(m.datum)} · ${stat}`, 'aria-label': `${m.name}, ${fmtDate(m.datum)}, ${stat}` }),
-      h('div', { class: `ck-zs-lbl ${seite}` + (od ? ' is-od' : ''), style: { left: l + '%', maxWidth: Math.max(w, 9) + '%' } }, h('b', null, m.name), h('span', null, kurzDat(m.datum) + (od ? ' · überfällig' : ''))));
+    bahn.append(h('div', { class: 'ck-zs-pt' + (m.erledigt ? ' is-done' : od ? ' is-od' : ''), style: { left: x(m.datum) + '%' }, role: 'listitem', title: `${m.name} · ${fmtDate(m.datum)} · ${stat}`, 'aria-label': `${m.name}, ${fmtDate(m.datum)}, ${stat}` }));
+    labels.push({ l: x(m.datum), name: m.name, sub: kurzDat(m.datum) + (od ? ' · überfällig' : ''), cls: od ? ' is-od' : '' });
+  }
+  if (vertrag) labels.push({ l: x(vertrag), name: 'Liefertermin (Vertrag)', sub: fmtDate(vertrag), cls: ' is-vertrag' });
+  if (prog && parseDate(prog) > parseDate(letzter.datum)) labels.push({ l: x(prog), name: 'Prognose', sub: kwKurz(prog), cls: ' is-prog' });
+  labels.sort((a, b) => a.l - b.l);
+  const BAHNEN = ['oben', 'unten', 'oben2', 'unten2'];
+  const belegt = Object.fromEntries(BAHNEN.map(b => [b, -1e9]));
+  for (const e of labels) {
+    const w = ((Math.max(e.name.length, e.sub.length, 6) * 7 + 14) / breite) * 100;
+    const links = Math.min(Math.max(e.l - w / 2, 0), 100 - w); // am Rand nicht abschneiden
+    const bahnName = BAHNEN.find(b => belegt[b] <= links) || BAHNEN.reduce((a, b) => (belegt[b] < belegt[a] ? b : a));
+    belegt[bahnName] = links + w + 0.6;
+    bahn.append(h('div', { class: `ck-zs-lbl ${bahnName}${e.cls}`, style: { left: links + '%', width: w + '%' } }, h('b', null, e.name), h('span', null, e.sub)));
   }
   card.append(h('div', { class: 'ck-body ck-zs-wrap' }, bahn));
 }

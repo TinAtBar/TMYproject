@@ -14,7 +14,7 @@
 ;   Der Datenordner auf dem NAS wird nie angefasst.
 
 #define AppName "Barlage PM"
-#define AppVersion "2.6.0"
+#define AppVersion "2.7.0"
 #define AppExe "BarlagePM.exe"
 #define Dist "..\dist\BarlagePM"
 ; R4-I: eigene AppId (ohne doppelte Klammer) für den Registry-Schlüssel ...\Uninstall\<AppId>_is1

@@ -1,7 +1,7 @@
 // R26-C1: Meilensteine je Projekt (frei anpassbar), Fortschritt/Prognose im Projektkopf, Verlaufsdiagramm (SVG)
 import { h, icon, clear, fmtDate, fristState, uuid, parseDate, daysBetween } from '../util.js';
 import { get, post, put, del } from '../api.js';
-import { toast, toastErr, dialog, field } from '../ui.js';
+import { toast, toastErr, dialog, field, confirmDlg } from '../ui.js';
 import { balken } from '../fortschritt-balken.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -49,7 +49,7 @@ export function meilensteinEditor({ pid, canEdit, onDone, extraRows = null, tool
     [ids[i], ids[j]] = [ids[j], ids[i]];
     try { await put(`/projekte/${pid}/meilensteine/reihenfolge`, { ids, change_id: uuid() }); fertig(); } catch (e) { toastErr(e); }
   };
-  const loeschen = async m => { if (!confirm(`Meilenstein „${m.name}“ aus diesem Projekt löschen?`)) return; try { await del('/meilensteine/' + m.id); toast(`„${m.name}“ gelöscht.`, 'ok'); fertig(); } catch (e) { toastErr(e); } };
+  const loeschen = async m => { if (!(await confirmDlg('Meilenstein löschen', `Meilenstein „${m.name}“ aus diesem Projekt löschen?`, { ok: 'Löschen', danger: true }))) return; try { await del('/meilensteine/' + m.id); toast(`„${m.name}“ gelöscht.`, 'ok'); fertig(); } catch (e) { toastErr(e); } };
   const standard = async () => { try { const r = await post(`/projekte/${pid}/meilensteine/standard`, { change_id: uuid() }); toast(r.hinzugefuegt ? `${r.hinzugefuegt} Standard-Meilenstein(e) ergänzt.` : 'Alle Standard-Meilensteine sind schon vorhanden.', 'ok'); fertig(); } catch (e) { toastErr(e); } };
   const neu = () => {
     const name = h('input', { maxlength: 120 }); const gew = h('input', { type: 'number', min: 0, step: '0.5', value: 1 }); const dat = h('input', { type: 'date' });
