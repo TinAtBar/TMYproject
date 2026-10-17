@@ -12,7 +12,8 @@ Detaildokumente (zuerst lesen, in dieser Reihenfolge):
 2. `docs/PUNKTELISTE.md` – alle nummerierten Anforderungen 1–108, Status, Entscheidungen, offene Fragen, Vorlagen-Liste
 3. `SPEC.md` (Grundvertrag Server ↔ Oberfläche), `server/API_NOTES.md` (alle Endpunkte je Runde),
    `LIESMICH.md` (Nutzersicht, Farben & Symbole), `build/BUILD.md` (Build/Installer), `docs/admin-seiten/*.md`
-4. `docs/entwuerfe/*.png` – Entwürfe für Dashboard 2 (Punkte 92–100) und Projekt-Cockpit (101), erfundene Daten
+4. `docs/PLANUNG-VERTRIEB-GEMEINSAM.md` – Planung G1–G10 und Vertriebs-App V1–V12 (nicht umgesetzt)
+5. `docs/entwuerfe/*.png` – Entwürfe für Dashboard 2 (Punkte 92–100) und Projekt-Cockpit (101), erfundene Daten
 
 ## Arbeitsweise mit dem Nutzer (verbindlich)
 - Der Nutzer **sammelt** Wünsche in Runden („Sammeln“, „Weiter sammeln …“). Jeder Wunsch bekommt eine **fortlaufende
