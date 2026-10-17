@@ -119,14 +119,14 @@ function renderBudget(el, ctx) {
       hatUp ? h('button', { class: 'icon-btn bu-auf', 'aria-expanded': String(auf), 'aria-label': `${abt.name} Unterpunkte ${auf ? 'zuklappen' : 'aufklappen'}`,
         onclick: () => { auf ? offen.delete(abt.name) : offen.add(abt.name); render(); } }, h('span', { class: 'bu-chev' + (auf ? ' is-auf' : '') }, '›')) : h('span', { class: 'bu-auf' }),
       h('span', { class: 'bu-name' }, h('span', { class: 'bu-dot', style: { background: `var(--cat-${abt.farbe_index})` } }), abt.name),
-      balken(abt.ist, abt.soll, abt.farbe_index, fs),
+      d.hat_ist ? balken(abt.ist, abt.soll, abt.farbe_index, fs) : h('span', { class: 'bu-noist small muted' }, 'noch kein Ist'), // R27-102: keine leeren Balken
       h('span', { class: 'bu-zahl num' }, `${std(abt.ist)} / ${std(abt.soll)}`),
       h('span', { class: 'bu-pz num' }, pct(abt.prozent), amp ? ampelChip(amp, true) : null),
       d.darf_ist_erfassen ? h('button', { class: 'icon-btn', 'aria-label': `Ist-Stunden ${abt.name} erfassen`, title: 'Ist-Stunden erfassen', onclick: () => istDialog(abt) }, icon('edit', 16)) : h('span'));
     const out = [kopf];
     if (auf) for (const u of abt.unterpunkte) {
       out.push(h('div', { class: 'bu-row bu-sub' }, h('span', { class: 'bu-auf' }), h('span', { class: 'bu-name' }, u.name),
-        balken(u.ist, u.soll, abt.farbe_index, fs), h('span', { class: 'bu-zahl num' }, `${std(u.ist)} / ${std(u.soll)}`),
+        d.hat_ist ? balken(u.ist, u.soll, abt.farbe_index, fs) : h('span', { class: 'bu-noist small muted' }, 'noch kein Ist'), h('span', { class: 'bu-zahl num' }, `${std(u.ist)} / ${std(u.soll)}`),
         h('span', { class: 'bu-pz num' }, pct(u.prozent)),
         d.darf_ist_erfassen ? h('button', { class: 'icon-btn', 'aria-label': `Ist-Stunden ${u.name} erfassen`, onclick: () => istDialog(abt, u) }, icon('edit', 16)) : h('span')));
     }
@@ -145,13 +145,19 @@ function renderBudget(el, ctx) {
     const a1 = h('a', { class: 'btn btn-sm', download: '', href: link(false) }, icon('sheet', 16), 'Bericht Projekt');
     const a2 = h('a', { class: 'btn btn-sm btn-ghost', download: '', href: link(true) }, 'alle meine Projekte');
     zr.addEventListener('change', () => { a1.href = link(false); a2.href = link(true); });
-    return h('div', { class: 'row bu-bericht' }, h('span', { class: 'small muted' }, 'Bericht (Excel):'), zr, a1, a2);
+    const ab = h('span', null); // R27-108: Bericht auch im Projektordner ablegen (Dokumenttyp „Berichte“)
+    import('../export.js').then(ex => ab.append(ex.ablegenKnopf({ projektId: ctx.id, art: 'bericht', titel: zr.value === 'monat' ? 'Monatsbericht' : 'Wochenbericht', endung: 'xlsx', cls: 'btn btn-sm btn-ghost', holen: () => ex.blobVon(link(false)) })));
+    return h('div', { class: 'row bu-bericht' }, h('span', { class: 'small muted' }, 'Bericht (Excel):'), zr, a1, a2, ab);
   }
 
   function render() {
     clear(box);
     const abts = d.abteilungen || [];
-    box.append(...[banner(), kachel(),
+    // R27-102: ohne Ist-Stunden klarer Hinweis statt leerer Balken
+    const ohneIst = !d.hat_ist && abts.length ? h('div', { class: 'bu-ohne-ist', role: 'status' }, icon('info', 18),
+      h('span', null, h('strong', null, 'Noch keine Ist-Stunden'), d.darf_ist_erfassen ? ' – jetzt eintragen' : ' – die Projektleitung trägt sie ein.'),
+      d.darf_ist_erfassen ? h('button', { class: 'btn btn-sm btn-primary', onclick: () => istDialog(abts[0]) }, icon('edit', 16), 'Jetzt eintragen') : null) : null;
+    box.append(...[banner(), ohneIst, kachel(),
       abts.length ? h('div', { class: 'bu-liste', role: 'list' }, ...abts.flatMap(zeile))
         : empty('Noch keine Stunden', 'Soll-Stunden kommen aus dem Kalkulations-Import; Ist-Stunden manuell oder aus der Reststunden-Analyse.', null, 'info'),
       rest(), bericht()].filter(Boolean));

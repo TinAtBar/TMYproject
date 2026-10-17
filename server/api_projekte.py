@@ -22,8 +22,8 @@ def projekte_liste(ctx):
     w, a = ["1=1"], []
     q = (ctx.qp("q") or "").strip()
     if q:
-        w.append("(nummer LIKE ? OR bezeichnung LIKE ? OR kunde LIKE ? OR ort LIKE ?)")
-        a += [f"%{q}%"] * 4
+        w.append("(nummer LIKE ? OR bezeichnung LIKE ? OR kunde LIKE ? OR ort LIKE ? OR bestellnummer LIKE ?)")  # R27-106
+        a += [f"%{q}%"] * 5
     st = ctx.qp("status")
     if st in ("aktiv", "abgeschlossen"):
         w.append("status=?")
@@ -48,6 +48,7 @@ def projekte_liste(ctx):
         else:
             p["stunden_prozent"] = None
         p["darf_bearbeiten"] = ctx.r.kann_projekt_bearbeiten(p["id"])
+        p["warnungen"] = __import__("bestellung").warnungen(ctx.db.conn, p)  # R27-106
         res.append(p)
     return res
 
@@ -168,7 +169,8 @@ def projekt_detail(ctx):
             "opl_zaehler": _zaehler(db, pid), "nachtraege": nachtraege,
             "darf_bearbeiten": ctx.r.kann_projekt_bearbeiten(pid), "ist_pm": ctx.r.ist_pm(pid),
             "qip_fortschritt": __import__("qip").fortschritt(db, pid),  # R3-C: Reiter-Zähler „QIP 12/35“
-            "termine_frei": __import__("termine").liste(db, pid)}  # R4-P: freie Termine  # R3-C: Reiter-Zähler „QIP 12/35“
+            "termine_frei": __import__("termine").liste(db, pid),
+            "warnungen": __import__("bestellung").warnungen(db.conn, p)}  # R27-106: Projektkopf-Hinweise  # R4-P: freie Termine  # R3-C: Reiter-Zähler „QIP 12/35“
 
 
 
@@ -178,6 +180,8 @@ def projekt_aendern(ctx):
     ctx.r.need_projekt(pid)
     b = ctx.body
     changes = b.get("changes") or {}
+    if "fertigungsort" in changes:  # R27-103
+        raise ApiError(403, "Der Fertigungsort wird nur in der Fertigungsbesprechung (Controlling) gepflegt")
     if "status" in changes and changes["status"] not in ("aktiv", "abgeschlossen"):
         raise ApiError(400, "Ungültiger Projektstatus")
     if "nummer" in changes:
@@ -186,6 +190,7 @@ def projekt_aendern(ctx):
         nummern.pruefe_auftrag(changes["nummer"], haupt=True)
     if changes.get("teams_link") and not __import__("fertigung").teams_link_ok(changes["teams_link"]):  # R5-F
         raise ApiError(400, "Teams-Link muss mit https://teams.microsoft.com/ oder msteams: beginnen")  # R5-F
+    __import__("bestellung").pruefen(changes)  # R27-106
 
     def fn(c):
         row = c.execute("SELECT * FROM projekte WHERE id=?", (pid,)).fetchone()
@@ -194,7 +199,7 @@ def projekt_aendern(ctx):
         von, am = letzte_aenderung(c, "projekt", pid)
         g = apply_changes(c, "projekte", row, changes, b.get("base"),
                           ("nummer", "bezeichnung", "kunde", "ort", "status", "angebot_ref", "notizen",
-                           "projektingenieur", "av", "teamleiter", "teams_link"), von, am)  # R5-F: Projektkopf  # R3-B: notizen
+                           "projektingenieur", "av", "teamleiter", "teams_link", "bestellnummer", "bestelldatum"), von, am)  # R27-106  # R5-F: Projektkopf  # R3-B: notizen
         if "nummer" in g and c.execute("SELECT 1 FROM projekte WHERE nummer=? AND id<>?", (changes["nummer"], pid)).fetchone():
             raise ApiError(409, "Auftragsnummer bereits vergeben")
         if g:

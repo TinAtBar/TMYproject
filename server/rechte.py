@@ -90,7 +90,15 @@ def stufe(user, bereich, db=None):
     rolle = (user or {}).get("rolle")
     if rolle == "admin":
         return _B
-    return matrix(db).get(rolle, {}).get(bereich, _A)
+    m = matrix(db)
+    s = m.get(rolle, {}).get(bereich, _A)
+    if db is not None and (user or {}).get("id"):  # R27-105: aktive Vertretung → Rechte des Vertretenen im Bereich
+        import vertretung
+        for r in vertretung.rollen_fuer_bereich(db, user, bereich):
+            v = m.get(r, {}).get(bereich, _A)
+            if _RANG[v] > _RANG[s]:
+                s = v
+    return s
 
 
 def darf(user, bereich, st="lesen", db=None):
@@ -128,8 +136,10 @@ FREI = [
     r"/api/admin/.*",                  # nur Admin (Prüfung im Endpunkt)
     r"/api/benutzer(/.*)?",            # nur Admin (Prüfung im Endpunkt)
     r"/api/meilenstein-standard",      # Standardliste lesen (wie Stammdaten)
+    r"/api/vertretungen(/.*)?",        # R27-105: Vertretungen (Prüfung im Endpunkt: Admin/Controlling)
     r"/api/(masken|ansichten/.*)",  # Masken-Definition/Ansichten lesen (alle); Schreiben nur Admin (Endpunkt)
     r"/api/zusatzwerte/[^/]+/[^/]+",   # nur unbekannte Masken (→ 404); opl/projekt/angebot siehe ROUTEN
+    r"/api/export/kopf",               # R27-108: Export-Kopf/Dateiname (nur Nummer/Bezeichnung, wie in der OPL sichtbar)
 ]
 ROUTEN = [
     # Zusatzwerte je Objekt dem Bereich des Objekts zuordnen (Schreibprüfung zusätzlich im Endpunkt)
@@ -138,6 +148,8 @@ ROUTEN = [
     (r".*", r"/api/zusatzwerte/angebot/" + _ID, "angebote", None),
     *[(r".*", p, None, None) for p in FREI],
     (r".*", r"/api/fertigung/opl/" + _ID + r"/klaerung", "opl", None),
+    (r"GET|POST", r"/api/fertigung/antraege", "fertigung", "lesen"),  # R27-104: Antrag stellen = lesen genügt
+    (r"POST", r"/api/fertigung/antraege/" + _ID + r"/(uebernehmen|ablehnen)", "fertigung", "bearbeiten"),
     (r".*", r"/api/fertigung(/.*)?", "fertigung", None),
     (r".*", r"/api/(opl|opl-zustaendig|opl/.*|export/opl\.(csv|xlsx))", "opl", None),
     (r"POST", r"/api/vorlagen/" + _ID + r"/anwenden", "opl", None),
@@ -147,6 +159,7 @@ ROUTEN = [
     (r".*", r"/api/(projekte/" + _ID + r"/termine(/.*)?|termine/.*|meilensteine(/.*)?|projekte/" + _ID + r"/meilensteine(/.*)?)",
      "termine", None),
     (r".*", r"/api/(projekte/" + _ID + r"/(dokumente|ablagen)(/.*)?|ablagen/.*|ablage/.*)", "dokumente", None),  # R26-W: Ablage
+    (r".*", r"/api/export/ablegen", "dokumente", None),  # R27-108: Export im Projektordner ablegen
     (r".*", r"/api/(projekte/" + _ID + r"/(budget|stunden-ist)|reststunden/.*)", "budget_stunden", None),  # R26-W
     (r"GET", r"/api/bericht\.xlsx", "berichte", "lesen"),  # R26-W
     (r".*", r"/api/(projekte/" + _ID + r"/(qip|kickoff)(/.*)?|qip/(opl|schritte/.*)|kickoff/parsen.*)", "dokumente", None),
@@ -183,6 +196,13 @@ def vorab(ctx, method, path):
     """Vor dem Handler: 403 bei fehlendem Recht; ggf. Ersatzantwort (dict) statt Handleraufruf."""
     if not ctx.user:
         return None
+    try:  # R27-105: Protokoll „als Vertretung für …“
+        import vertretung
+        vs = vertretung.aktive(ctx.db, ctx.user.get("id"))
+        if vs:
+            ctx.user["_zusatz"] = {"als_vertretung": vertretung.zusatz_text(vs)}
+    except Exception:  # noqa: BLE001
+        pass
     b, st = bereich_fuer(method, path)
     if not b or ctx.user.get("rolle") == "admin":
         return None
@@ -213,7 +233,9 @@ def stunden_prozent(db, pid):
 @route("GET", "/api/rechte")
 def rechte_lesen(ctx):
     rolle = ctx.user["rolle"]
-    eigene = matrix(ctx.db).get(rolle, {b: _A for b in BEREICHE}) if rolle != "admin" else {b: _B for b in BEREICHE}
-    return {"rolle": rolle, "rolle_anzeige": ROLLEN_ANZEIGE.get(rolle, rolle), "rolle_kurz": ROLLEN_KURZ.get(rolle, ""),
+    eigene = {b: stufe(ctx.user, b, ctx.db) for b in BEREICHE}  # R27-105: inkl. aktiver Vertretungen
+    import vertretung
+    return {"vertretungen": [{k: v.get(k) for k in ("id", "bereich", "bereich_anzeige", "vertretener_anzeige", "von", "bis")}
+                             for v in vertretung.aktive(ctx.db, ctx.user["id"])],"rolle": rolle, "rolle_anzeige": ROLLEN_ANZEIGE.get(rolle, rolle), "rolle_kurz": ROLLEN_KURZ.get(rolle, ""),
             "bereiche": eigene, "stufen": list(STUFEN),
             "matrix": matrix(ctx.db) if rolle == "admin" else None}

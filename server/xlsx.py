@@ -139,12 +139,33 @@ def _colname(i):
     return s
 
 
-def schreiben(header, rows, blattname="OPL", rot=None):
+def _hf(s):
+    """Text für Excel-Kopf-/Fußzeile: & maskieren, XML-escapen, kürzen."""
+    s = re.sub(r"[\x00-\x1f]", " ", str(s or ""))[:80].replace("&", "&&")
+    return escape(s)
+
+
+def kopfzeile(kopf):
+    """R27-108: {links, mitte, rechts} → <headerFooter> mit Kopf und Fuß „Seite x von y“."""
+    k = kopf or {}
+    head = ""
+    if k:
+        head = (f'<oddHeader>&amp;L&amp;B{_hf(k.get("links"))}&amp;B&amp;C{_hf(k.get("mitte"))}'
+                f'&amp;R&amp;8{_hf(k.get("rechts"))}</oddHeader>')
+    return (f'<headerFooter>{head}<oddFooter>&amp;L&amp;8Barlage PM&amp;R&amp;8Seite &amp;P von &amp;N</oddFooter>'
+            '</headerFooter>')
+
+
+def schreiben(header, rows, blattname="OPL", rot=None, fett_rot=None, kopf=None):
     """Erzeugt eine .xlsx (Bytes) mit Inline-Strings; erste Zeile fett.
 
-    R3-B: rot = Menge von (zeile, spalte) (0-basiert, ohne Kopfzeile) → rote Schrift.
+    R3-B: rot = Menge von (zeile, spalte) (0-basiert, ohne Kopfzeile) → dunkelrote Schrift (neu/geändert).
+    R27-108: fett_rot = Menge (zeile, spalte) → rot + fett (überfällig); kopf = {links, mitte, rechts} → einheitlicher
+    Export-Kopf als Druck-Kopfzeile (Tabelle bleibt ab Zeile 1 maschinenlesbar/filterbar), Fußzeile mit Seitenzahlen.
     """
     rot = rot or set()
+    fett_rot = fett_rot or set()
+    off = 0
     def cell(ref, v, style):
         st = f' s="{style}"' if style else ""
         if v is None or v == "":
@@ -158,14 +179,24 @@ def schreiben(header, rows, blattname="OPL", rot=None):
         return f'<c r="{ref}" t="inlineStr"{st}><is><t xml:space="preserve">{txt}</t></is></c>'
 
     lines = []
+
+    def stil(ri, ci):
+        if ri == 0:
+            return 1
+        if (ri - 1, ci) in fett_rot:
+            return 3
+        return 2 if (ri - 1, ci) in rot else 0
     for ri, r in enumerate([header] + list(rows)):
-        cells = "".join(cell(f"{_colname(ci)}{ri + 1}", v, 1 if ri == 0 else (2 if (ri - 1, ci) in rot else 0)) for ci, v in enumerate(r))
-        lines.append(f'<row r="{ri + 1}">{cells}</row>')
+        cells = "".join(cell(f"{_colname(ci)}{ri + 1 + off}", v, stil(ri, ci)) for ci, v in enumerate(r))
+        lines.append(f'<row r="{ri + 1 + off}">{cells}</row>')
     sheet = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
              f'<worksheet xmlns="{NS["m"]}"><sheetViews><sheetView workbookViewId="0">'
-             '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+             f'<pane ySplit="{1 + off}" topLeftCell="A{2 + off}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
              f'<sheetData>{"".join(lines)}</sheetData>'
-             f'<autoFilter ref="A1:{_colname(max(len(header), 1) - 1)}{len(rows) + 1}"/></worksheet>')
+             f'<autoFilter ref="A{1 + off}:{_colname(max(len(header), 1) - 1)}{len(rows) + 1 + off}"/>'
+             '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
+             '<pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/>'
+             f'{kopfzeile(kopf)}</worksheet>')
     files = {
         "[Content_Types].xml": '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -188,11 +219,13 @@ def schreiben(header, rows, blattname="OPL", rot=None):
         '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
         '</Relationships>',
         "xl/styles.xml": '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-        f'<styleSheet xmlns="{NS["m"]}"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font>'
-        '<font><b/><sz val="11"/><name val="Calibri"/></font><font><color rgb="FFC00000"/><sz val="11"/><name val="Calibri"/></font></fonts>'
+        f'<styleSheet xmlns="{NS["m"]}"><fonts count="5"><font><sz val="11"/><name val="Calibri"/></font>'
+        '<font><b/><sz val="11"/><name val="Calibri"/></font><font><color rgb="FFC00000"/><sz val="11"/><name val="Calibri"/></font>'
+        '<font><b/><color rgb="FFFF0000"/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts>'
         '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
         '<borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs>'
-        '<cellXfs count="3"><xf fontId="0"/><xf fontId="1" applyFont="1"/><xf fontId="2" applyFont="1"/></cellXfs></styleSheet>',
+        '<cellXfs count="5"><xf fontId="0"/><xf fontId="1" applyFont="1"/><xf fontId="2" applyFont="1"/>'
+        '<xf fontId="3" applyFont="1"/><xf fontId="4" applyFont="1"/></cellXfs></styleSheet>',
         "xl/worksheets/sheet1.xml": sheet,
     }
     buf = io.BytesIO()
@@ -218,7 +251,8 @@ QUOT = {'"': "&quot;"}
 def mappe_schreiben(blaetter):
     """R5-F: blaetter = [{name, rows:[[zelle]], breiten:[zeichen], }] → .xlsx-Bytes.
 
-    Zelle: Wert oder dict {v, fett, rot, umbruch, datum (ISO → Excel-Datum TT.MM.JJJJ), gross}.
+    Zelle: Wert oder dict {v, fett, rot, dunkelrot, umbruch, datum (ISO → Excel-Datum TT.MM.JJJJ), gross}.
+    R27-108: rot = überfällig/Gefahr (FF0000, meist mit fett), dunkelrot = neu/geändert (C00000).
     Blattnamen werden auf 31 Zeichen gekürzt; verbotene Zeichen \\ / ? * [ ] : entfernt.
     """
     fonts, xfs = [], []
@@ -230,11 +264,12 @@ def mappe_schreiben(blaetter):
         return fonts.index(key)
 
     def style(z):
-        key = (font_id(bool(z.get("fett")), bool(z.get("rot")), bool(z.get("gross"))), bool(z.get("umbruch")), bool(z.get("datum")))
+        farbe = "rot" if z.get("rot") else ("dunkelrot" if z.get("dunkelrot") else None)  # R27-108
+        key = (font_id(bool(z.get("fett")), farbe, bool(z.get("gross"))), bool(z.get("umbruch")), bool(z.get("datum")))
         if key not in xfs:
             xfs.append(key)
         return xfs.index(key)
-    font_id(False, False, False)
+    font_id(False, None, False)
     xfs.append((0, False, False))
 
     def cell(ref, z):
@@ -275,9 +310,11 @@ def mappe_schreiben(blaetter):
         sheets.append('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                       f'<worksheet xmlns="{NS["m"]}">{cols}<sheetData>{"".join(lines)}</sheetData>'
                       '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
-                      '<pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/></worksheet>')
+                      '<pageSetup paperSize="9" orientation="landscape" fitToHeight="0"/>'
+                      f'{kopfzeile(b["kopf"]) if b.get("kopf") else ""}</worksheet>')  # R27-108
     rot_xml, wrap_xml, num_xml = '<color rgb="FFFF0000"/>', ' applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>', ' applyNumberFormat="1"'
-    font_xml = "".join(f'<font>{"<b/>" if f else ""}{rot_xml if r else ""}<sz val="{14 if g else 11}"/><name val="Arial"/></font>'
+    _farbe_xml = {"rot": rot_xml, "dunkelrot": '<color rgb="FFC00000"/>'}  # R27-108
+    font_xml = "".join(f'<font>{"<b/>" if f else ""}{_farbe_xml.get(r, "")}<sz val="{14 if g else 11}"/><name val="Arial"/></font>'
                        for f, r, g in fonts)
     xf_xml = "".join(f'<xf numFmtId="{164 if d else 0}" fontId="{fi}" fillId="0" borderId="0" xfId="0" applyFont="1"'
                      f'{num_xml if d else ""}{wrap_xml if u else "/>"}'

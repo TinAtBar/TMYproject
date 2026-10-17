@@ -4,8 +4,8 @@ Erkannte Benutzer im Text → Verknüpfungstabelle opl_zustaendig(opl_id, user_i
 Gepflegt in common.idx_opl (läuft nach jedem Anlegen/Ändern/Bulk/Import/Vorlage/Duplizieren/QIP/Sync).
 opl.verantwortlich_id bleibt in der DB, wird aber nicht mehr benutzt (Migration überträgt sie in den Text).
 
-Erkannte Schreibweisen (ohne Groß/klein): „Niklas Markus“, „Markus Niklas“, „N. Markus“, „N.Markus“,
-„Markus N.“, „Markus, Niklas“, Login „n.markus“, Nachname allein nur als ganzer Eintrag und nur wenn eindeutig.
+Erkannte Schreibweisen (ohne Groß/klein): „Jonas Brandtner“, „Brandtner Jonas“, „J. Brandtner“, „J.Brandtner“,
+„Brandtner J.“, „Brandtner, Jonas“, Login „j.brandtner“, Nachname allein nur als ganzer Eintrag und nur wenn eindeutig.
 Admin-Konten werden nie erkannt. Mehrdeutig → kein Treffer.
 """
 import re
@@ -105,7 +105,7 @@ def erkennen(text, us):
         treffer = var.get(n)
         if not treffer and len(n.split()) == 1 and n in nach and n not in STOPP:
             treffer = nach[n]
-        if not treffer:  # Variante als Teil des Eintrags („Hr. N. Markus (TB)“) – nur mehrteilige Varianten
+        if not treffer:  # Variante als Teil des Eintrags („Hr. J. Brandtner (TB)“) – nur mehrteilige Varianten
             gef = set()
             for x, uids in var.items():
                 if (" " in x or "." in x) and re.search(r"(?<![\w])" + re.escape(x) + r"(?![\w])", n):

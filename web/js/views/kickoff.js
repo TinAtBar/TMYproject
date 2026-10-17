@@ -271,6 +271,7 @@ function renderKickoff(el, ctx) {
     const { menu } = await import('../ui.js');
     menu(anchor, [
       { label: 'Word (.docx)', icon: 'doc', fn: async () => { if (await vorSpeichern()) download(`/api/projekte/${pid}/kickoff/export.docx`); } },
+      { label: 'Word auch im Projektordner ablegen', icon: 'folder', fn: async () => { if (!await vorSpeichern()) return; const ex = await import('../export.js'); try { await ex.ablegen({ projektId: pid, art: 'kickoff', titel: 'Kick-Off', endung: 'docx', blob: await ex.blobVon(`/api/projekte/${pid}/kickoff/export.docx`) }); } catch (e) { toastErr(e); } } }, // R27-108
       { label: 'E-Mail-Entwurf (.eml)', icon: 'chat', fn: async () => { if (await vorSpeichern()) download(`/api/projekte/${pid}/kickoff/export.eml`); } },
       { label: 'Text kopieren', icon: 'clip', fn: kopieren },
     ]);

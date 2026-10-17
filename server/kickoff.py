@@ -777,7 +777,10 @@ def export_docx(ctx):
     pid, p, d = _export_daten(ctx)
     data = docx(p, d, _bg_namen(ctx.db, pid))
     _version(ctx, pid, "Word", d)
-    return {"_raw": data, "_filename": f"{p['nummer']} KOM.docx", "_inline": False,
+    import export as _ex  # R27-108: einheitlicher Dateiname (Firmenmuster)
+    with ctx.db.lock:
+        fname = _ex.dateiname(ctx.db.conn, "Kick-Off", "docx", p, ctx.user)
+    return {"_raw": data, "_filename": fname, "_inline": False,
             "_mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
 
 

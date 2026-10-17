@@ -296,9 +296,7 @@ Seriennummer = Baugruppennummer + Trenner + Zusatz (`.A/.B…`, klein, `01…`);
 - **Reststunden-Analyse**: Parser wartet auf eine Beispieldatei; bis dahin Ist-Stunden manuell im Budget-Reiter.
   **Monats-/Wochenbericht**: eigenes vorläufiges Format bis die Firmenvorlage kommt.
 - **Prognose** braucht ≥ 3 Messpunkte über ≥ 14 Tage (tägliche Momentaufnahme).
-- **Altlast in Code/Tests**: `server/zustaendig.py`, `server/datenpaket.py`, `server/API_NOTES.md` und
-  `tests/test_r5_zustaendig.py` verwenden als Beispiel für die Namenserkennung einen Personennamen, der einem echten
-  Mitarbeiter der Kundenfirma entspricht. Bei nächster Gelegenheit durch einen erfundenen Namen ersetzen (Tests anpassen).
+- **Beispielnamen** in Code/Tests sind erfunden (2.7: Altlast-Name ersetzt).
 - **Repository-Name** auf GitHub enthält noch den alten Namen; der Nutzer benennt es selbst um (danach `git remote set-url`).
 - Service Worker legt nur die App-Shell vorab in den Cache, nicht jede View-Datei (offline erst nach einmaligem Öffnen).
 - HTTP-Rückfall (Desktop ohne vertraute CA) überträgt im LAN unverschlüsselt.

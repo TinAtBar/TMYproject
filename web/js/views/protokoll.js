@@ -6,6 +6,7 @@ import { loading, errorBox } from '../ui.js';
 import { emptyIcon } from '../extras.js';
 import { FIRMA, APP_NAME } from '../config.js';
 import { mark, isNeu, markOn, legend } from './markierung.js'; // R3-B
+import { kopfLaden, kopfElement, druckLeiste, ablegenKnopf, druckHtml, druckenMitName } from '../export.js'; // R27-108
 
 export function mount(el, r) {
   const f = { status_art: 'offen', ...r.query };
@@ -17,11 +18,12 @@ export function mount(el, r) {
       const p = { ...f, limit: 5000, sort: 'frist' };
       if (!markOn()) p.markierung = '0';
       // R4-T: meine=1 wertet der Server aus
-      const d = await get('/opl' + qs(p));
-      tage = d.markierung_tage ?? 7; render(d.items || []);
+      const pid = /^\d+$/.test(String(f.projekt_id || '')) ? f.projekt_id : null; // R27-108: Kopf/Ablage nur bei genau einem Projekt
+      const [d, k] = await Promise.all([get('/opl' + qs(p)), kopfLaden('Protokoll Baubesprechung', { projektId: pid, art: 'protokoll', endung: 'html' })]);
+      tage = d.markierung_tage ?? 7; render(d.items || [], k, pid);
     } catch (e) { clear(body).append(errorBox(e, load)); }
   }
-  function render(items) {
+  function render(items, k, pid) {
     const groups = new Map();
     for (const it of items) {
       const k = `${it.projekt_nummer} ${it.projekt_bezeichnung || ''}`;
@@ -30,10 +32,10 @@ export function mount(el, r) {
       const g = groups.get(k); if (!g.has(bk)) g.set(bk, []); g.get(bk).push(it);
     }
     clear(body).append(
-      h('div', { class: 'no-print row between', style: { marginBottom: '14px', flexWrap: 'wrap', gap: '10px' } }, h('p', { class: 'muted' }, 'Druckansicht – im Browser drucken oder als PDF speichern.'),
-        h('div', { class: 'row' }, h('button', { class: 'btn btn-ghost', onclick: () => history.back() }, 'Zurück'), h('button', { class: 'btn btn-primary', onclick: () => window.print() }, icon('download', 18), 'Drucken'))),
+      druckLeiste({ drucken: () => druckenMitName(k.dateiname), extra: [pid ? ablegenKnopf({ projektId: pid, art: 'protokoll', titel: 'Protokoll Baubesprechung', endung: 'html', holen: () => druckHtml(body.querySelector('article.protokoll'), k.dateiname) }) : null] }), // R27-108
       h('article', { class: 'protokoll' },
-        h('header', { class: 'pk-head' }, h('div', null, h('h1', null, 'Protokoll Baubesprechung'), h('div', { class: 'small' }, `${FIRMA} · ${APP_NAME} · Stand ${fmtDate(isoDate(today()))} · ${items.length} Punkte`), legend(tage)),
+        kopfElement(k.kopf, { untertitel: `${FIRMA} · ${items.length} Punkte` }), // R27-108: einheitlicher Kopf
+        h('header', { class: 'pk-head' }, h('div', null, legend(tage)),
           h('div', { class: 'pk-meta' }, h('div', null, 'Datum: ______________'), h('div', null, 'Ort: ________________'), h('div', null, 'Teilnehmer: ________________________________'))),
         items.length ? [...groups].map(([pk, bgs]) => h('section', { class: 'pk-sec' }, h('h2', null, pk), [...bgs].map(([bk, list]) => h('div', null, h('h3', null, bk),
           h('table', { class: 'pk-tbl' }, h('thead', null, h('tr', null, h('th', { style: { width: '28px' } }, '✓'), h('th', { style: { width: '44px' } }, 'Nr'), h('th', null, 'Punkt'), h('th', { style: { width: '160px' } }, 'Zuständig') /* R5-Z */, h('th', { style: { width: '84px' } }, 'Frist'), h('th', { style: { width: '84px' } }, 'Status'), h('th', { style: { width: '26%' } }, 'Bemerkung'))),

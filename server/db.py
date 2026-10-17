@@ -163,6 +163,9 @@ CREATE TABLE IF NOT EXISTS kopplungen(token TEXT PRIMARY KEY, user_id INTEGER, e
         import meilensteine, fortschritt; meilensteine.migration(self.conn); fortschritt.migration(self.conn)  # R26-C1: Meilensteine je Projekt, Fortschritt-Verlauf
         import budget, reststunden; budget.migration(self.conn); reststunden.migration(self.conn)  # R26-C2: Ist-Stunden, Reststunden-Abrufe
         import masken; masken.migration(self.conn)  # R26-H: Zusatzfeld-Werte
+        import vertretung, fertigung_antraege; vertretung.migration(self.conn); fertigung_antraege.migration(self.conn)  # R27-103–105
+        import dashboard; dashboard.migration(self.conn)  # R27: Dashboard 2 (Kennzahl-Verlauf, eigene Dashboards)
+        import bestellung; bestellung.migration(self.conn)  # R27-106: Kundenbestellung + Dokumenttyp „Bestellung“
 
     # ---------------------------------------------------------------- Suche-Index
     def _init_fts(self):
@@ -243,6 +246,8 @@ CREATE TABLE IF NOT EXISTS kopplungen(token TEXT PRIMARY KEY, user_id INTEGER, e
 
     @staticmethod
     def activity(conn, user, objekt, objekt_id, projekt_id, aktion, details=None):
+        if user and user.get("_zusatz"):  # R27-104/105: „Antrag #x von …“, „als Vertretung für …“
+            details = {**(details or {}), **user["_zusatz"]}
         conn.execute("INSERT INTO activity(zeit,user_id,objekt,objekt_id,projekt_id,aktion,details) VALUES(?,?,?,?,?,?,?)",
                      (now_iso(), user["id"] if user else None, objekt, objekt_id, projekt_id, aktion,
                       dumps(details or {})))

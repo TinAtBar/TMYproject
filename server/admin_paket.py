@@ -353,9 +353,53 @@ def _anw_ablage_global(conn, op, hash_pw):
                          (e["name"], e["pfad"], e["farbe"], pos, _jetzt()))
 
 
+def _vertr_sauber(conn, op):  # R27-105: Vertretungen (Admin-Konsole)
+    import vertretung
+    from util import ApiError
+    neu, ende = [], []
+    for e in op.get("neu") or []:
+        try:
+            neu.append(vertretung.pruefen(conn, e, None))
+        except ApiError as ex:
+            raise PaketFehler(f"Vertretung: {ex.msg}")
+    for i in op.get("beenden") or []:
+        if not conn.execute("SELECT 1 FROM vertretungen WHERE id=?", (int(i),)).fetchone():
+            raise PaketFehler(f"Vertretung {i} gibt es nicht")
+        ende.append(int(i))
+    return neu, ende
+
+
+def _vertr_name(conn, uid):
+    r = conn.execute("SELECT name FROM users WHERE id=?", (uid,)).fetchone() if uid else None
+    return r[0] if r else "?"
+
+
+def _pruef_vertretungen(conn, op, aus):
+    neu, ende = _vertr_sauber(conn, op)
+    for d in neu:
+        wer = _vertr_name(conn, d["vertretener_user_id"]) if d["vertretener_user_id"] else "Rolle " + d["vertretener_rolle"]
+        aus.append(f"Vertretung: {_vertr_name(conn, d['vertreter_user_id'])} vertritt {wer} ({d['bereich']}) "
+                   f"vom {d['von']} bis {d['bis']}")
+    for i in ende:
+        aus.append(f"Vertretung {i} wird beendet")
+
+
+def _anw_vertretungen(conn, op, hash_pw):
+    import datetime as _dt
+    import vertretung
+    neu, ende = _vertr_sauber(conn, op)
+    heute = _dt.date.today().isoformat()
+    gestern = (_dt.date.today() - _dt.timedelta(days=1)).isoformat()
+    for i in ende:
+        conn.execute("DELETE FROM vertretungen WHERE id=? AND von>?", (i, heute))
+        conn.execute("UPDATE vertretungen SET bis=? WHERE id=? AND bis>=?", (gestern, i, heute))
+    for d in neu:
+        vertretung.einfuegen(conn, d, None)
+
+
 _PRUEF = {"liste": _pruef_liste, "benutzer": _pruef_benutzer, "projekt_pms": _pruef_pms,
           "angebot_eigentuemer": _pruef_eigentuemer, "einstellungen": _pruef_einst, "firma_setzen": _pruef_firma,
-          "ablage_global": _pruef_ablage_global}
+          "ablage_global": _pruef_ablage_global, "vertretungen": _pruef_vertretungen}
 
 
 # ---------------------------------------------------------------- Anwenden
@@ -477,7 +521,7 @@ def _anw_firma(conn, op, hash_pw):  # R26-F
 
 _ANW = {"liste": _anw_liste, "benutzer": _anw_benutzer, "projekt_pms": _anw_pms,
         "angebot_eigentuemer": _anw_eigentuemer, "einstellungen": _anw_einst, "firma_setzen": _anw_firma,
-        "ablage_global": _anw_ablage_global}
+        "ablage_global": _anw_ablage_global, "vertretungen": _anw_vertretungen}
 
 
 # ---------------------------------------------------------------- Wiederherstellen

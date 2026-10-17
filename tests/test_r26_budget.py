@@ -124,8 +124,8 @@ class DbTest(unittest.TestCase):
         self.assertEqual(len(d["projekte"][0]["offene_punkte"]), 1)
         m = xlsx.mappe(bericht.mappe(d))
         self.assertEqual(list(m), ["Übersicht", "Stunden je Abteilung", "Meilensteine", "Offene Punkte"])
-        self.assertTrue(str(m["Übersicht"][0][0]).startswith("Monatsbericht"))
-        self.assertEqual(m["Übersicht"][4][0], "2026-101-00")
+        self.assertIn("Monatsbericht", str(m["Übersicht"][0][0]))  # R27-108: einheitlicher Kopf „Barlage PM · …“
+        self.assertEqual(m["Übersicht"][6][0], "2026-101-00")
         with self.assertRaises(NotImplementedError):
             bericht.vorlage_befuellen(d)
         self.assertEqual(bericht.zeitraum_von_bis("woche", dt.date(2026, 10, 16))[2], "KW 42/2026")

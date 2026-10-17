@@ -7,7 +7,7 @@ from common import apply_changes, letzte_aenderung, idx_angebot, idx_baugruppe
 import nummern
 
 A_FELDER = ("nummer", "art", "projekt_id", "bezeichnung", "kunde", "eigentuemer_id", "status_id", "betrag",
-            "versendet_am", "wiedervorlage")
+            "versendet_am", "wiedervorlage", "bestellnummer", "bestelldatum")  # R27-106: Nachträge mit Kundenbestellung
 
 A_SQL = ("SELECT a.*, s.name status_name, s.farbe status_farbe, s.art status_art, u.name eigentuemer_name, "
          "u.urlaub eigentuemer_urlaub, p.nummer projekt_nummer, bp.nummer beauftragt_projekt_nummer FROM angebote a "
@@ -132,6 +132,7 @@ def aendern(ctx):
             changes[k] = parse_date(changes[k])
     if "betrag" in changes:
         changes["betrag"] = to_float(changes["betrag"], "Betrag")
+    __import__("bestellung").pruefen(changes)  # R27-106
     for k in ("status_id", "eigentuemer_id", "projekt_id"):
         if k in changes:
             changes[k] = to_int(changes[k], k)

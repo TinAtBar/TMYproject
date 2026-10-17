@@ -10,7 +10,7 @@ Paketformat (Version 1):
    "projekte": [
      {"nummer": "2026-126-00",            # Auftragsnummer JJJJ-NNN-NN (Pflicht)
       "kunde": "...", "bezeichnung": "...", "notizen": "<mehrzeilig>",
-      "pm_kuerzel": ["N. Markus", "S.Keller"],   # Rohnamen; Abgleich erst beim Einspielen (Nachname)
+      "pm_kuerzel": ["J. Brandtner", "S.Wendt"],   # Rohnamen; Abgleich erst beim Einspielen (Nachname)
       "punkte": [{"titel": "... (≤ 200 Zeichen, Pflicht)", "beschreibung": "...", "zustaendig_text": "...",
                   "frist": "JJJJ-MM-TT", "kategorie": "Info", "status": "offen"}]}]}
 
@@ -146,7 +146,7 @@ def validieren(paket):
 
 # ---------------------------------------------------------------- Namensabgleich
 def _namen_teile(text):
-    """'N. Markus / S.Keller' → [('n','markus'), ('s','keller')]; Wörter ohne Punkt-Initiale → ('', wort)."""
+    """'J. Brandtner / S.Wendt' → [('j','brandtner'), ('s','wendt')]; Wörter ohne Punkt-Initiale → ('', wort)."""
     out = []
     for teil in re.split(r"[/,;+&]|\bund\b", str(text or "")):
         w = [x for x in re.split(r"[\s.]+", teil.strip()) if x]

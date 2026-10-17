@@ -7,6 +7,7 @@ let rechte = null;
 
 export async function loadRechte() {
   try { rechte = await get('/rechte'); } catch { rechte = null; }
+  try { document.dispatchEvent(new CustomEvent('rechte:geladen', { detail: rechte })); } catch { } // R27-105: Vertretungs-Banner
   return rechte;
 }
 export function setRechte(r) { rechte = r; }

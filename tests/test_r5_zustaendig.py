@@ -12,26 +12,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_server  # noqa: E402
 import zustaendig as Z  # noqa: E402
 
-US = [{"id": 1, "login": "N.Markus", "name": "Niklas Markus", "rolle": "pm"},
-      {"id": 2, "login": "pl", "name": "Peter Lehmann", "rolle": "mitarbeiter"},
-      {"id": 3, "login": "kl", "name": "Karl Lehmann", "rolle": "mitarbeiter"},
+US = [{"id": 1, "login": "J.Brandtner", "name": "Jonas Brandtner", "rolle": "pm"},
+      {"id": 2, "login": "pl", "name": "Peter Pohlmeyer", "rolle": "mitarbeiter"},
+      {"id": 3, "login": "kl", "name": "Karl Pohlmeyer", "rolle": "mitarbeiter"},
       {"id": 4, "login": "info", "name": "Anna Info", "rolle": "mitarbeiter"}]
 
 
 class Erkennung(unittest.TestCase):
     def test_varianten(self):
-        for t in ("N. Markus", "N.Markus", "n.markus", "Niklas Markus", "Markus N.", "markus, niklas", "Markus Niklas",
-                  "Markus", "QS / N. Markus", "Hr. N. Markus (TB)", "Einkauf und N.Markus"):
+        for t in ("J. Brandtner", "J.Brandtner", "j.brandtner", "Jonas Brandtner", "Brandtner J.", "brandtner, jonas", "Brandtner Jonas",
+                  "Brandtner", "QS / J. Brandtner", "Hr. J. Brandtner (TB)", "Einkauf und J.Brandtner"):
             self.assertEqual(Z.erkennen(t, US), [1], t)
 
     def test_keine_falschtreffer(self):
-        for t in ("Markusplatz", "Info", "QS", "Lehmann", "Schweißaufsicht", "Marktplatz / Einkauf", "AV"):
-            self.assertEqual(Z.erkennen(t, US), [], t)  # Lehmann: mehrdeutig
+        for t in ("Brandtnerplatz", "Info", "QS", "Pohlmeyer", "Schweißaufsicht", "Marktplatz / Einkauf", "AV"):
+            self.assertEqual(Z.erkennen(t, US), [], t)  # Pohlmeyer: mehrdeutig
 
     def test_mehrere_und_eindeutig(self):
-        self.assertEqual(Z.erkennen("P. Lehmann / N. Markus / QS", US), [2, 1])
-        self.assertEqual(Z.erkennen("K. Lehmann", US), [3])
-        self.assertEqual(Z.kurzname("Niklas Markus"), "N. Markus")
+        self.assertEqual(Z.erkennen("P. Pohlmeyer / J. Brandtner / QS", US), [2, 1])
+        self.assertEqual(Z.erkennen("K. Pohlmeyer", US), [3])
+        self.assertEqual(Z.kurzname("Jonas Brandtner"), "J. Brandtner")
 
 
 class Migration(unittest.TestCase):
@@ -39,10 +39,10 @@ class Migration(unittest.TestCase):
         import db as D
         with tempfile.TemporaryDirectory() as tmp, contextlib.closing(D.Database(tmp)) as d:  # R26-W: DB schließen (Windows)
             c = d.conn
-            c.execute("INSERT INTO users(id,login,name,rolle) VALUES(2,'nm','Niklas Markus','pm'),(3,'adm','Chef Admin','admin')")
+            c.execute("INSERT INTO users(id,login,name,rolle) VALUES(2,'nm','Jonas Brandtner','pm'),(3,'adm','Chef Admin','admin')")
             c.execute("INSERT INTO projekte(id,nummer) VALUES(1,'2026-900-00')")
             c.execute("INSERT INTO kategorien(id,name) VALUES(7,'Info')")
-            rows = [(1, None, 2, None), (2, "QS", 2, None), (3, "N. Markus / QS", 2, None), (4, "INFO", None, None),
+            rows = [(1, None, 2, None), (2, "QS", 2, None), (3, "J. Brandtner / QS", 2, None), (4, "INFO", None, None),
                     (5, " info ", 2, None), (6, "Info / QS", None, None), (7, "x", 3, None)]
             for i, t, v, k in rows:
                 c.execute("INSERT INTO opl(id,projekt_id,titel,zustaendig_text,verantwortlich_id,kategorie_id) VALUES(?,?,?,?,?,?)",
@@ -50,11 +50,11 @@ class Migration(unittest.TestCase):
             for _ in range(2):  # idempotent
                 Z.migration(c)
             g = {r["id"]: dict(r) for r in d.q("SELECT id, zustaendig_text, verantwortlich_id, kategorie_id FROM opl")}
-            self.assertEqual(g[1]["zustaendig_text"], "N. Markus")
-            self.assertEqual(g[2]["zustaendig_text"], "QS / N. Markus")
-            self.assertEqual(g[3]["zustaendig_text"], "N. Markus / QS")
+            self.assertEqual(g[1]["zustaendig_text"], "J. Brandtner")
+            self.assertEqual(g[2]["zustaendig_text"], "QS / J. Brandtner")
+            self.assertEqual(g[3]["zustaendig_text"], "J. Brandtner / QS")
             self.assertEqual((g[4]["zustaendig_text"], g[4]["kategorie_id"]), (None, 7))
-            self.assertEqual((g[5]["zustaendig_text"], g[5]["kategorie_id"]), ("N. Markus", None))
+            self.assertEqual((g[5]["zustaendig_text"], g[5]["kategorie_id"]), ("J. Brandtner", None))
             self.assertEqual(g[6]["zustaendig_text"], "Info / QS")
             self.assertEqual(g[7]["zustaendig_text"], "x")  # Admin wird nicht übertragen
             self.assertTrue(all(r["verantwortlich_id"] is None for r in g.values()))

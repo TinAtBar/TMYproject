@@ -1768,7 +1768,13 @@ def _seiten_r26w():
 
 
 _seiten_r26w()
+from seiten import vertretung as _vertretung_seite  # noqa: E402  R27-105: Vertretungen
+_vertretung_seite.registrieren()
+from seiten import exporte as _exporte_seite  # noqa: E402  R27-108: Exporte (Dateinamen-Muster)
+_exporte_seite.registrieren()
 from seiten import masken as _masken_seite  # noqa: E402,F401  R26-H: ersetzt den Platzhalter „Masken & Ansichten“
+from seiten import dashboard as _dashboard_seite  # noqa: E402  R27: Start-Layout je Rolle
+_dashboard_seite.registrieren()
 
 
 def datenordner_finden(argv):

@@ -1,4 +1,4 @@
-// Projektseite mit Tabs: Übersicht, Baugruppen, OPL, Nachträge, Dateien, Verlauf
+// Projektseite: kompakter Kopf + Reiter Übersicht (Cockpit), Offene Punkte, Termine, Budget, Dokumente, Baugruppen, Mehr ▾ (R27)
 import { h, icon, clear, activityIcon, fmtDate, fristState, fmtNum, fmtEur, fmtDateTime, avatar, uuid, today, daysBetween, parseDate } from '../util.js';
 import { get, post, put } from '../api.js';
 import { store, byId, canEditProject, userName } from '../store.js';
@@ -18,7 +18,9 @@ import { archivLeiste } from './archiv.js'; // R3-A: Archiv-Banner
 import { prefs } from '../prefs.js'; // R4-P: eingeklappte Bereiche je Benutzer
 import { termineZeilen, terminDialog, ausNotizenDialog } from './projekt-termine.js'; // R4-P: freie Termine
 import { projektTeamsKnopf } from './fertigung.js'; // R5-F: Teams-Knopf
-import { kopfFortschritt, meilensteinEditor, verlaufAbschnitt } from './projekt-fortschritt.js'; // R26-C1
+import { meilensteinEditor, verlaufAbschnitt, warnBox } from './projekt-fortschritt.js'; // R26-C1
+import { cockpit, pufferText, kwKurz } from './projekt-cockpit.js'; // R27-101: Cockpit
+import { darf } from '../rechte.js'; // R27-102: Reiter nach Recht
 import { lbl, ordne, zusatzEditor, zusatzAnzeige, pflichtPruefen } from '../formular.js'; // R26-H: Masken
 
 let budgetFeld = 'stunden', budgetIst = false;
@@ -34,62 +36,98 @@ export function mount(el, r) {
       canEdit = data.darf_bearbeiten != null ? !!data.darf_bearbeiten : canEditProject(data.pms);
       store.context = { projekt_id: data.projekt.id, baugruppe_id: store.context.baugruppe_id };
       if (!o.live) addRecent({ typ: 'projekt', titel: `${data.projekt.nummer} ${data.projekt.bezeichnung || ''}`, sub: data.projekt.kunde || '', link: '#/projekte/' + data.projekt.id });
+      fsP = get(`/projekte/${id}/fortschritt`); fsP.catch(() => { }); // R27-101: einmal je Laden (Kopf + Cockpit)
       renderHead();
       if (!o.live || tab !== 'opl') renderTab(o);
     } catch (e) { clear(body).append(errorBox(e, load)); }
   }
+  // R27-101: kompakter Projektkopf (Nummer, Bezeichnung, Kunde · Ort, PM-Avatare, Status, Liefertermin, Prognose, Bestellung)
+  let fsP = null;
   function renderHead() {
     const p = data.projekt;
-    const z = data.opl_zaehler || {};
     const more = e => menu(e.currentTarget, [
+      { label: 'Protokoll', icon: 'doc', fn: () => { location.hash = `#/protokoll?projekt_id=${p.id}&status_art=offen`; } },
       { label: 'Aus Vorlage …', icon: 'list', fn: () => vorlageDialog({ projekt_id: p.id }, () => load()) },
       { label: 'Kalkulation importieren …', icon: 'upload', fn: () => kalkImport() },
       { label: 'In OPL öffnen', icon: 'list', fn: () => { location.hash = `#/opl?projekt_id=${p.id}&status_art=offen`; } },
       ...(isAdmin() ? ['-', { label: 'Projekt löschen …', icon: 'trash', danger: true, fn: () => inlineConfirm(head, { title: `Projekt ${p.nummer} endgültig löschen?`, text: 'Alle Baugruppen, Punkte, Kommentare und Dateizuordnungen dieses Projekts werden gelöscht. Vorher wird automatisch eine Sicherung angelegt.', ok: 'Endgültig löschen', fn: async () => { await del('/projekte/' + p.id); toast(`Projekt ${p.nummer} gelöscht.`, 'ok'); go('/projekte'); } }) }] : [])]);
-    const pms = (data.pms || []).map(x => x.name || userName(x.id)).join(', ');
-    clear(head).append(h('div', { class: 'crumbs' }, h('a', { href: '#/projekte' }, 'Projekte'), ' › ', p.nummer),
-      h('header', { class: 'phead' },
-        h('div', { class: 'phead-main' },
-          h('div', { class: 'phead-nr' }, h('h1', { class: 'phead-num' }, p.nummer), p.status === 'abgeschlossen' ? h('span', { class: 'chip chip-ok' }, icon('check', 12), 'abgeschlossen') : null),
-          p.kunde ? h('div', { class: 'phead-kunde' }, p.kunde) : null,
-          p.bezeichnung ? h('div', { class: 'phead-bez' }, p.bezeichnung) : null,
-          h('dl', { class: 'phead-meta' },
-            p.ort ? [h('dt', null, 'Ort'), h('dd', null, p.ort)] : null,
-            pms ? [h('dt', null, 'PM'), h('dd', null, pms)] : null,
-            p.angebot_ref ? [h('dt', null, 'Angebot'), h('dd', { class: 'mono' }, p.angebot_ref)] : null,
-            [['projektingenieur', 'Projektingenieur'], ['av', 'AV'], ['teamleiter', 'Teamleiter']].map(([k, l]) => p[k] ? [h('dt', null, lbl('projekt', k, l, { stern: false })), h('dd', null, p[k])] : null)), // R5-F
-          zusatzAnzeige('projekt', p.zusatz || {})), // R26-H: Zusatzfelder
-        h('div', { class: 'phead-act' },
-          h('button', { class: 'btn btn-sm btn-primary', onclick: () => newPoint() }, icon('plus', 16), 'Punkt'),
-          h('a', { class: 'btn btn-sm btn-ghost', href: `#/protokoll?projekt_id=${p.id}&status_art=offen` }, icon('doc', 16), 'Protokoll'),
-          projektTeamsKnopf(p, canEdit, () => load()), // R5-F
-          canEdit ? h('button', { class: 'btn btn-sm btn-ghost', onclick: editProject }, icon('edit', 16), 'Bearbeiten') : null,
-          h('button', { class: 'btn btn-sm btn-ghost', 'aria-haspopup': 'menu', onclick: more }, 'Mehr', icon('chevD', 16)))));
-    if (canEdit) head.append(pmChips());
+    const meta = [['angebot_ref', 'Angebot'], ['projektingenieur', 'Projektingenieur'], ['av', 'AV'], ['teamleiter', 'Teamleiter']].filter(([k]) => p[k]).map(([k, l]) => h('span', null, h('span', { class: 'muted' }, (k === 'angebot_ref' ? l : lbl('projekt', k, l, { stern: false })) + ' '), p[k]));
+    const status = p.archiviert ? h('span', { class: 'chip ph-status is-archiv' }, icon('archive', 12), 'Archiviert')
+      : p.status === 'abgeschlossen' ? h('span', { class: 'chip chip-ok ph-status' }, icon('check', 12), 'Abgeschlossen')
+        : h('span', { class: 'chip ph-status is-aktiv' }, h('span', { class: 'ph-dot', 'aria-hidden': 'true' }), 'In Arbeit');
+    const feld = (l, ...v) => h('div', { class: 'ph-f' }, h('div', { class: 'ph-l' }, l), h('div', { class: 'ph-v' }, ...v));
+    const vertragEl = h('span', { class: 'muted' }, '…'), progEl = h('span', { class: 'muted' }, '…');
+    const bestell = (p.bestellnummer || p.bestelldatum) ? feld('Bestellung', h('span', { class: 'mono' }, p.bestellnummer || ''), p.bestelldatum ? h('span', { class: 'ph-sub' }, (p.bestellnummer ? ' vom ' : '') + fmtDate(p.bestelldatum)) : null) : null;
+    const warn = h('div');
+    clear(head).append(h('div', { class: 'crumbs' }, h('a', { href: '#/projekte' }, 'Projekte'), ' › ', h('strong', null, p.nummer)),
+      h('header', { class: 'card ph' },
+        h('div', { class: 'ph-id' },
+          h('h1', { class: 'ph-num' }, p.nummer),
+          p.bezeichnung ? h('div', { class: 'ph-bez' }, p.bezeichnung) : null,
+          (p.kunde || p.ort) ? h('div', { class: 'ph-kunde' }, [p.kunde, p.ort].filter(Boolean).join(' · ')) : null),
+        h('div', { class: 'ph-felder' },
+          feld('Projektleitung', pmAvatare()),
+          feld('Status', status),
+          feld('Liefertermin (Vertrag)', vertragEl),
+          feld('voraussichtlich fertig', progEl),
+          bestell),
+        h('div', { class: 'ph-act' },
+          canEdit ? h('button', { class: 'btn btn-sm', onclick: editProject }, icon('edit', 16), 'Bearbeiten') : null,
+          h('span', { class: 'ph-teams' }, projektTeamsKnopf(p, canEdit, () => load())), // R5-F (kompakt: nur Symbol, Text bleibt für Screenreader)
+          h('button', { class: 'btn btn-sm btn-primary', onclick: () => newPoint() }, icon('plus', 16), 'Offener Punkt'),
+          h('button', { class: 'icon-btn ph-mehr', 'aria-haspopup': 'menu', 'aria-label': 'Weitere Aktionen', title: 'Weitere Aktionen', onclick: more }, icon('more', 18)))),
+      meta.length || (p.zusatz && Object.keys(p.zusatz).length) ? h('div', { class: 'ph-meta small' }, meta, zusatzAnzeige('projekt', p.zusatz || {})) : null, // R26-H: Zusatzfelder
+      warn);
     head.append(archivLeiste(p, canEdit, () => load())); // R3-A: Archiv-Hinweis/Aktion
-    head.append(kopfFortschritt(p.id)); // R26-C1: Fortschritt, Prognose, Vertrags-Warnung
-    const extra = getProjektTabs(data).map(t => { let c = null; try { c = t.count ? t.count(data) : null; } catch { c = null; } return [t.key, t.label, c, t.order ?? 100]; });
-    const builtin = [['uebersicht', 'Übersicht', null, 10], ['baugruppen', 'Baugruppen', (data.baugruppen || []).length, 20], ['opl', 'OPL', z.offen ?? null, 30], ['nachtraege', 'Nachträge', (data.nachtraege || []).length, 40], ['dateien', 'Dateien', null, 50], ['verlauf', 'Verlauf', null, 60]];
-    const all = [...builtin, ...extra].sort((a, b) => a[3] - b[3]).map(x => x.slice(0, 3));
-    if (!all.some(x => x[0] === tab)) tab = 'uebersicht';
-    clear(tabBar).append(tabs(all, tab, k => { tab = k; oplFilter = null; setQuery(k === 'uebersicht' ? {} : { tab: k }); clear(tabBar); renderHead(); renderTab(); }));
+    fsP.then(f => {
+      const pg = f.prognose || {};
+      clear(vertragEl).append(pg.vertrag ? fmtDate(pg.vertrag) : h('span', { class: 'muted' }, 'nicht eingetragen'));
+      vertragEl.className = '';
+      const pf = pufferText(pg);
+      clear(progEl).append(pg.datum ? h('span', null, kwKurz(pg.datum), pf ? [' · ', h('span', { class: pf.cls }, pf.text)] : null) : h('span', { class: 'muted', title: pg.grund || '' }, 'noch keine Prognose'));
+      progEl.className = '';
+      const w = warnBox(f.warnungen); if (w) warn.append(w);
+    }).catch(() => { clear(vertragEl).append('–'); clear(progEl).append('–'); });
+    renderTabs();
   }
-  function pmChips() {
+  // R27-102: Reiter – ca. 6 Hauptreiter, Rest unter „Mehr ▾“; Reiter ohne Recht fehlen
+  const HAUPT = ['uebersicht', 'opl', 'termine', 'budget', 'dokumente', 'baugruppen'];
+  function alleReiter() {
+    const z = data.opl_zaehler || {};
+    const extra = getProjektTabs(data).filter(t => t.key !== 'dokumente' || darf('dokumente')).map(t => { let c = null; try { c = t.count ? t.count(data) : null; } catch { c = null; } return [t.key, t.label, c, t.order ?? 100]; });
+    const builtin = [['uebersicht', 'Übersicht', null, 10], darf('opl') ? ['opl', 'Offene Punkte', z.offen ?? null, 20] : null, darf('termine') ? ['termine', 'Termine', null, 25] : null,
+      ['baugruppen', 'Baugruppen', (data.baugruppen || []).length, 60], darf('angebote') ? ['nachtraege', 'Nachträge', (data.nachtraege || []).length || null, 70] : null, ['verlauf', 'Verlauf', null, 90]].filter(Boolean);
+    if (darf('dokumente') && !extra.some(x => x[0] === 'dokumente')) builtin.push(['dokumente', 'Dokumente', null, 55]); // Anhänge auch ohne Ablage-Modul
+    return [...builtin, ...extra].sort((a, b) => a[3] - b[3]);
+  }
+  function waehle(k) { tab = k; oplFilter = null; setQuery(k === 'uebersicht' ? {} : { tab: k }); renderTabs(); renderTab(); }
+  function renderTabs() {
+    const all = alleReiter();
+    const vorher = tab;
+    if (tab === 'dateien') tab = 'dokumente'; // R27-102: alter Reiter „Dateien“ → „Dokumente“
+    if (!all.some(x => x[0] === tab)) tab = 'uebersicht';
+    if (vorher !== tab) setQuery(tab === 'uebersicht' ? {} : { tab });
+    const haupt = all.filter(x => HAUPT.includes(x[0])).sort((a, b) => HAUPT.indexOf(a[0]) - HAUPT.indexOf(b[0]));
+    const rest = all.filter(x => !HAUPT.includes(x[0]));
+    const bar = tabs(haupt.map(x => x.slice(0, 3)), tab, waehle);
+    bar.classList.add('ph-tabs');
+    if (rest.length) {
+      const aktiv = rest.find(x => x[0] === tab);
+      bar.append(h('button', { role: 'tab', class: 'tab ph-mehr-tab', 'aria-selected': String(!!aktiv), 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, rest.map(x => ({ label: x[2] != null ? `${x[1]} (${x[2]})` : x[1], fn: () => waehle(x[0]) }))) },
+        aktiv ? aktiv[1] : 'Mehr', icon('chevD', 14)));
+    }
+    clear(tabBar).append(bar);
+  }
+  // PM-Initialen-Avatare (Name im Tooltip); mit Bearbeitungsrecht: Klick öffnet Menü zum Hinzufügen/Entfernen
+  function pmAvatare() {
     const pms = data.pms || [];
-    const wrap = h('div', { class: 'chips', style: { marginTop: '-8px', marginBottom: '14px' } }, h('span', { class: 'small muted' }, 'Projektleitung:'));
-    for (const pm of pms) {
-      wrap.append(h('span', { class: 'chip chip-outline' }, pm.name || userName(pm.id),
-        canEdit && pms.length > 1 ? h('button', { class: 'chip-x', 'aria-label': `${pm.name} als PM entfernen`, onclick: () => savePms(pms.filter(x => x.id !== pm.id).map(x => x.id)) }, icon('x', 14)) : null));
-    }
-    if (canEdit) {
-      const cand = store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && !pms.some(p => p.id === u.id));
-      if (cand.length) {
-        const s = select([['', '+ PM hinzufügen'], ...cand.map(u => [u.id, u.name])], '', { 'aria-label': 'Projektleiter hinzufügen', style: { width: 'auto', minHeight: '30px', padding: '2px 8px', fontSize: '.85rem' } });
-        s.addEventListener('change', () => s.value && savePms([...pms.map(p => p.id), +s.value]));
-        wrap.append(s);
-      }
-    }
-    return wrap;
+    const namen = pms.map(x => x.name || userName(x.id));
+    const grp = h('span', { class: 'ph-pms', title: namen.join(', ') || 'keine Projektleitung' }, pms.length ? namen.map(n => avatar(n)) : h('span', { class: 'muted' }, '–'), h('span', { class: 'sr-only' }, namen.join(', ')));
+    if (!canEdit) return grp;
+    const cand = store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'admin' && u.rolle !== 'controlling' && u.aktiv !== 0 && u.aktiv !== false && !pms.some(p => p.id === u.id));
+    return h('button', { type: 'button', class: 'ph-pms-btn', 'aria-haspopup': 'menu', 'aria-label': `Projektleitung: ${namen.join(', ')} – ändern`, title: `${namen.join(', ')} – Klick zum Ändern`, onclick: e => menu(e.currentTarget, [
+      ...pms.map(pm => ({ label: `${pm.name || userName(pm.id)} entfernen`, icon: 'x', fn: () => savePms(pms.filter(x => x.id !== pm.id).map(x => x.id)) })),
+      ...(cand.length ? ['-', ...cand.map(u => ({ label: `${u.name} hinzufügen`, icon: 'plus', fn: () => savePms([...pms.map(p => p.id), u.id]) }))] : [])]) }, grp);
   }
   async function savePms(ids) {
     if (!ids.length) { toast('Mindestens ein Projektleiter ist nötig.', 'error'); return; }
@@ -103,43 +141,35 @@ export function mount(el, r) {
     if (tab === 'opl') { if (list && o.live) return list.refresh(o); if (list) list.destroy(); clear(body); list = oplList(body, { fixed: { projekt_id: data.projekt.id }, filters: oplFilter || { status_art: 'offen' }, onOpen: openPanel, onNew: () => newPoint() }); return; }
     clear(body);
     if (tab === 'uebersicht') body.append(uebersicht());
+    if (tab === 'termine') body.append(termine());
     if (tab === 'baugruppen') body.append(baugruppen());
     if (tab === 'nachtraege') body.append(nachtraege());
-    if (tab === 'dateien') body.append(dateien());
     if (tab === 'verlauf') body.append(verlauf());
     const ext = getProjektTabs(data).find(t => t.key === tab);
     if (ext) { const box = h('div', { class: 'projekt-ext-tab' }); body.append(box); try { ext.render(box, { data, projekt: data.projekt, canEdit, reload: load, id }); } catch (e) { console.warn('Reiter', tab, e); clear(box).append(errorBox(e, load)); } }
+    // R27-102: „Dateien“ ist jetzt Teil von „Dokumente“ (Ablage-Kacheln oben, Anhänge in der Datenbank darunter)
+    if (tab === 'dokumente') body.append(h('section', { class: 'card ck-card dok-anh' }, h('div', { class: 'ck-head' }, h('h2', null, 'Anhänge in Barlage PM'), h('span', { class: 'small muted' }, 'Dateien, die direkt im Programm am Projekt hängen (nicht im Projektordner)')), h('div', { class: 'ck-body' }, dateien())));
+    // Soll-Werte je Baugruppe (früher in der Übersicht) – nur PM/Admin
+    if (tab === 'budget' && canEdit && data.budgets) body.append(sec('budgetgrid', 'Soll-Werte je Baugruppe bearbeiten', budget, { plain: true }));
   }
 
-  // ---------- Übersicht ----------
-  // R4-P: kompakte Kennzahl-Chips statt großer Karten; Klick öffnet den OPL-Reiter gefiltert
-  function kpiChips() {
-    const z = data.opl_zaehler || {};
-    const c = (n, l, f, cls, ic) => h('button', { type: 'button', class: 'kpi-chip' + (cls ? ' ' + cls : ''), onclick: () => openOpl(f), title: `${l}: Punkte in der OPL zeigen` }, ic ? icon(ic, 15) : null, h('strong', null, n ?? 0), ' ', l);
-    const dot = () => h('span', { class: 'kpi-sep', 'aria-hidden': 'true' }, '·');
-    return h('div', { class: 'kpi-chips', role: 'group', 'aria-label': 'Kennzahlen' },
-      c(z.offen, 'offen', { status_art: 'offen' }, 'info', 'circle'), dot(),
-      c(z.ueberfaellig, 'überfällig', { status_art: 'offen', ueberfaellig: '1' }, z.ueberfaellig ? 'danger' : '', 'alarm'), dot(),
-      c(z.gesamt, 'gesamt', { status_art: 'alle' }, '', 'list'), dot(),
-      c(z.erledigt, 'erledigt', { status_art: 'abgeschlossen' }, 'ok', 'okc'));
-  }
-  function openOpl(f) { oplFilter = f; tab = 'opl'; setQuery({ tab }); if (list) { list.destroy(); list = null; } renderHead(); renderTab(); }
+  // ---------- Übersicht = Cockpit (R27-101) ----------
+  function openOpl(f) { oplFilter = f; tab = 'opl'; setQuery({ tab }); if (list) { list.destroy(); list = null; } renderTabs(); renderTab(); }
+  function oeffne(k, f) { if (k === 'opl') return openOpl(f || { status_art: 'offen' }); if (!alleReiter().some(x => x[0] === k)) return; tab = k; setQuery({ tab: k }); renderTabs(); renderTab(); window.scrollTo({ top: 0 }); }
   function uebersicht() {
     const p = data.projekt;
-    const bgs = data.baugruppen || [];
     const nZeilen = (p.notizen || '').split('\n').filter(x => x.trim()).length;
-    const snN = bgs.reduce((a, g) => a + (g.seriennummern || []).length, 0);
-    const hatBudget = !!data.budgets;
+    return cockpit({ data, id, fs: fsP, oeffne, notizen: () => sec('notizen', 'Notizen', notizen, { sum: nZeilen ? `${nZeilen} ${nZeilen === 1 ? 'Zeile' : 'Zeilen'}` : 'leer' }) });
+  }
+  // ---------- Termine: Meilenstein-Editor, Zeitleiste/Gantt, Verlauf (R27-101) ----------
+  function termine() {
     const hatGantt = (data.meilensteine || []).some(m => m.datum) || (data.termine_frei || []).some(t => t.datum);
-    const bSum = hatBudget ? (+data.budgets.summe_stunden || 0) : 0;
-    return h('div', { class: 'stack proj-ueb' },
-      kpiChips(),
-      sec('notizen', 'Notizen', notizen, { sum: nZeilen ? `${nZeilen} ${nZeilen === 1 ? 'Zeile' : 'Zeilen'}` : 'leer' }),
-      sec('meilensteine', 'Meilensteine', milestones, { sum: msSumme() }),
-      sec('fortschritt', 'Fortschritt & Prognose', () => verlaufAbschnitt(data.projekt.id), { plain: true, sum: 'Verlauf Fortschritt / Stunden' }), // R26-C1
-      hatBudget ? sec('budget', 'Budget', budget, { plain: true, sum: bSum ? `${fmtNum(bSum, bSum % 1 ? 1 : 0)} h` : 'noch kein Budget' }) : null,
-      hatGantt ? sec('zeitleiste', 'Zeitleiste über alle Baugruppen', gantt, { plain: true, sum: zlSumme() }) : null,
-      sec('baugruppen', 'Baugruppen-Übersicht', bgUebersicht, { sum: `${bgs.length} ${bgs.length === 1 ? 'Baugruppe' : 'Baugruppen'}, ${snN} ${snN === 1 ? 'Seriennummer' : 'Seriennummern'}` }));
+    const karte = (titel, sum, inhalt) => h('section', { class: 'card ck-card' }, h('div', { class: 'ck-head' }, h('h2', null, titel), sum ? h('span', { class: 'small muted' }, sum) : null), h('div', { class: 'ck-body' }, inhalt));
+    let ms; try { ms = milestones(); } catch (e) { ms = errorBox(e, load); }
+    return h('div', { class: 'stack tm-tab' },
+      karte('Meilensteine & Termine', msSumme(), ms),
+      hatGantt ? karte('Zeitleiste über alle Baugruppen', zlSumme(), gantt()) : null,
+      karte('Fortschritt & Prognose', 'Verlauf Fortschritt / Stunden', verlaufAbschnitt(data.projekt.id)));
   }
   // alle Termine (Standard-Meilensteine + freie) einheitlich
   function alleTermine() {
@@ -194,23 +224,15 @@ export function mount(el, r) {
     });
     return h('div', { class: 'stack', style: { gap: '4px' } }, ta, st);
   }
-  function bgUebersicht() {
-    const bgs = data.baugruppen || [];
-    if (!bgs.length) return h('p', { class: 'muted small' }, 'Noch keine Baugruppen.');
-    return h('div', { class: 'table-wrap flat' }, h('table', { class: 'tbl bg-mini' },
-      h('thead', null, h('tr', null, h('th', null, 'Nr'), h('th', null, 'Bezeichnung'), h('th', { class: 'num' }, 'Menge'), h('th', { class: 'num' }, 'Offen'))),
-      h('tbody', null, bgs.map(g => h('tr', { onclick: () => { tab = 'baugruppen'; setQuery({ tab }); renderHead(); renderTab(); } },
-        h('td', { class: 'mono' }, g.nummer), h('td', null, g.bezeichnung || ''), h('td', { class: 'num' }, g.menge ?? ''), h('td', { class: 'num' }, g.offen ? h('a', { href: `#/opl?projekt_id=${id}&baugruppe_id=${g.id}&status_art=offen`, onclick: e => e.stopPropagation() }, g.offen) : '–'))))));
-  }
   function editProject() {
     const p = data.projekt;
     const bez = h('input', { value: p.bezeichnung || '' }); const kunde = h('input', { value: p.kunde || '' }); const ort = h('input', { value: p.ort || '' });
     const st = select([['aktiv', 'aktiv'], ['abgeschlossen', 'abgeschlossen']], p.status || 'aktiv');
-    const kopf = { projektingenieur: h('input', { value: p.projektingenieur || '' }), av: h('input', { value: p.av || '' }), teamleiter: h('input', { value: p.teamleiter || '' }), teams_link: h('input', { type: 'url', value: p.teams_link || '', placeholder: 'https://teams.microsoft.com/l/…' }) }; // R5-F
+    const kopf = { projektingenieur: h('input', { value: p.projektingenieur || '' }), av: h('input', { value: p.av || '' }), teamleiter: h('input', { value: p.teamleiter || '' }), teams_link: h('input', { type: 'url', value: p.teams_link || '', placeholder: 'https://teams.microsoft.com/l/…' }), bestellnummer: h('input', { value: p.bestellnummer || '', maxlength: 60, placeholder: 'z. B. 4500012345' }), bestelldatum: h('input', { type: 'date', value: p.bestelldatum || '' }) }; // R5-F  // R27-106
     const zusatz = zusatzEditor('projekt', p.zusatz || {}); // R26-H
     const L = (k, d) => lbl('projekt', k, d);
     dialog({
-      title: `Projekt ${p.nummer} bearbeiten`, body: h('div', { class: 'form-grid mk-form' }, ...ordne('projekt', { bezeichnung: field(L('bezeichnung', 'Bezeichnung'), bez), kunde: field(L('kunde', 'Kunde'), kunde), ort: field(L('ort', 'Ort'), ort), status: field(L('status', 'Status'), st, 'Abgeschlossene Projekte verschwinden aus „Aktive“.'), projektingenieur: field(L('projektingenieur', 'Projektingenieur'), kopf.projektingenieur), av: field(L('av', 'AV'), kopf.av), teamleiter: field(L('teamleiter', 'Teamleiter'), kopf.teamleiter), teams_link: field(L('teams_link', 'Teams-Link'), kopf.teams_link) }), h('div', { class: 'full' }, zusatz.el)), // R5-F: Kopf-Felder  // R26-H: Maske „Projekt“
+      title: `Projekt ${p.nummer} bearbeiten`, body: h('div', { class: 'form-grid mk-form' }, ...ordne('projekt', { bezeichnung: field(L('bezeichnung', 'Bezeichnung'), bez), kunde: field(L('kunde', 'Kunde'), kunde), ort: field(L('ort', 'Ort'), ort), status: field(L('status', 'Status'), st, 'Abgeschlossene Projekte verschwinden aus „Aktive“.'), projektingenieur: field(L('projektingenieur', 'Projektingenieur'), kopf.projektingenieur), av: field(L('av', 'AV'), kopf.av), teamleiter: field(L('teamleiter', 'Teamleiter'), kopf.teamleiter), teams_link: field(L('teams_link', 'Teams-Link'), kopf.teams_link), bestellnummer: field(L('bestellnummer', 'Bestellnummer (Kunde)'), kopf.bestellnummer), bestelldatum: field(L('bestelldatum', 'Bestelldatum'), kopf.bestelldatum) }), h('div', { class: 'full' }, zusatz.el)), // R5-F: Kopf-Felder  // R26-H: Maske „Projekt“
       actions: [{ label: 'Abbrechen', cls: 'btn-ghost' }, {
         label: 'Speichern', cls: 'btn-primary', fn: async () => {
           if (!bez.value.trim()) { toast('Bitte eine Bezeichnung eingeben.', 'error'); return false; }
@@ -500,7 +522,7 @@ export function mount(el, r) {
   return {
     title: 'Projekt',
     refresh: (o) => load({ live: true, ...(o || {}) }),
-    update: r2 => { if (r2.params.id !== id) return false; const t = r2.query.tab || 'uebersicht'; if (t !== tab) { tab = t; renderHead(); renderTab(); } },
+    update: r2 => { if (r2.params.id !== id) return false; const t = r2.query.tab || 'uebersicht'; if (t !== tab) { tab = t; renderTabs(); renderTab(); } },
     destroy: () => { undrop(); list && list.destroy(); panel && panel.close(true); },
   };
 }

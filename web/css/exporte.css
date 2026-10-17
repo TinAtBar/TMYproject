@@ -1,0 +1,39 @@
+/* R27-108: Einheitliche Ausgaben – Kopf, Druckleiste, A4-Druck mit Seitenzahlen (web/js/export.js) */
+.ex-leiste { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm, 6px); background: var(--info-bg, transparent); }
+.ex-hinweis { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .9rem; color: var(--info-text, inherit); }
+.ex-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ex-kopf { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 2px solid currentColor; }
+.ex-marke { display: flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; }
+.ex-logo { height: 28px; width: auto; }
+.ex-titel h1 { margin: 0; font-size: 1.25rem; line-height: 1.2; }
+.ex-projekt { font-weight: 600; }
+.ex-unter { font-size: .85rem; opacity: .8; }
+.ex-stand { text-align: right; font-size: .82rem; white-space: nowrap; }
+@media (max-width: 760px) { .ex-kopf { grid-template-columns: 1fr; } .ex-stand { text-align: left; } }
+
+/* eigenständige HTML-Datei (abgelegte Druckansicht) */
+body.ex-datei { background: #fff; color: #111; margin: 14mm; font: 10pt/1.4 system-ui, "Segoe UI", Arial, sans-serif; }
+
+@media print {
+  @page { size: A4; margin: 14mm 12mm 16mm;
+    @bottom-left { content: "Barlage PM"; font: 8pt system-ui, "Segoe UI", Arial, sans-serif; color: #555; }
+    @bottom-right { content: "Seite " counter(page) " von " counter(pages); font: 8pt system-ui, "Segoe UI", Arial, sans-serif; color: #555; } }
+  @page querformat { size: A4 landscape; }
+  .ex-leiste, .no-print { display: none !important; }
+  .ex-kopf { color: #000; border-bottom-color: #000; break-after: avoid; }
+  .ex-quer { page: querformat; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; }
+  .pk-sec h2, .pk-sec h3 { break-after: avoid-page; }
+  thead { display: table-header-group; }
+  .ex-ueberfaellig { color: #d10000 !important; font-weight: 700; }
+  .ex-geaendert { color: #b00000 !important; }
+}
+/* Etikettenbögen: keine Fußzeile/Seitenzahl (würde Etiketten überdrucken) */
+@media print {
+  .label-sheet { page: etiketten; }
+  @page etiketten { margin: 8mm; @bottom-left { content: none; } @bottom-right { content: none; } }
+}

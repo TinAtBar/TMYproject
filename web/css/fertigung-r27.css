@@ -1,0 +1,51 @@
+/* R27 (Punkte 103–105): Fertigungsort, Änderungsanträge, Vertretung */
+
+/* Leiste „n Anträge offen“ (nur Leitung) – Hinweis, keine Gefahr → Info-Ton, mit Symbol + Text */
+.fa-leiste { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--info); background: var(--info-bg); color: var(--info-text); font: inherit; text-align: left; cursor: pointer; }
+.fa-leiste:hover { filter: brightness(.98); }
+.fa-leiste:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fa-zahl { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; font-size: .75rem; line-height: 18px;
+  text-align: center; background: var(--badge-bg); color: var(--badge-text); }
+.fa-hinweis { display: flex; align-items: center; gap: 6px; margin: -6px 0 10px; font-size: .85rem; color: var(--info-text); }
+
+/* Fertigungsort schreibgeschützt */
+.fb-ro { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.fb-ro > svg { color: var(--text-3); }
+.fb-vorschlag { border: 0; background: none; padding: 0 2px; margin-left: 6px; font: inherit; font-size: .78rem; color: var(--accent-text);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.fb-vorschlag:hover { color: var(--accent-hover); }
+.fb-c-th .fb-vorschlag { display: block; margin: 3px 0 0; opacity: .75; }
+tr:hover .fb-c-th .fb-vorschlag, .fb-c-th .fb-vorschlag:focus-visible { opacity: 1; }
+
+/* Antragsliste */
+.fa-dlg .dlg-body { min-height: 240px; }
+.fa-seg { display: flex; gap: 6px; margin-bottom: 12px; }
+.fa-seg .btn.on { background: var(--select-bg); color: var(--select-text); border-color: var(--select-line); }
+.fa-liste { display: flex; flex-direction: column; gap: 10px; }
+.fa-karte { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--surface); }
+.fa-karte.fa-uebernommen, .fa-karte.fa-abgelehnt { background: var(--surface-2); }
+.fa-kopf { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.fa-status { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; padding: 1px 8px; border-radius: 10px;
+  background: var(--surface-3); color: var(--text-2); }
+.fa-st-uebernommen { background: var(--ok-bg); color: var(--ok-text); }
+.fa-st-abgelehnt { background: var(--surface-3); color: var(--text); }
+.fa-vn { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; margin: 0 0 6px; font-size: .9rem; }
+.fa-vn dt { color: var(--text-2); }
+.fa-vn dd { margin: 0; overflow-wrap: anywhere; }
+.fa-vn dd.fa-neu { font-weight: 600; }
+.fa-konflikt { color: var(--warn-text); }
+.fa-begr { margin: 0 0 4px; font-style: italic; color: var(--text-2); }
+.fa-akt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.fa-akt input { flex: 1 1 220px; min-width: 0; }
+.fa-fehler { color: var(--danger-text); }
+.fa-vt { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.fa-vt .fa-status { margin-left: 0; }
+.fa-h3 { font-size: 1rem; margin: 16px 0 8px; }
+.fa-neu-vt { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+
+/* Banner „Du vertrittst …“ unter der Kopfzeile */
+.vt-banner { display: flex; align-items: center; gap: 8px; padding: 6px 16px; font-size: .88rem;
+  background: var(--select-bg); color: var(--select-text); border-bottom: 1px solid var(--select-line); }
+
+@media print { .fa-leiste, .fa-hinweis, .fb-vorschlag, .vt-banner { display: none !important; } }

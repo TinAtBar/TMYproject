@@ -1,5 +1,5 @@
 // R26-B: Projektreiter „Dokumente“ – Ablage auf dem Netzlaufwerk (Kacheln je Dokumenttyp + eigene Ablagen).
-import { h, icon, clear, fmtDateTime, fmtSize, fileIcon } from '../util.js';
+import { h, icon, clear, fmtDateTime, fmtSize, fileIcon, uuid } from '../util.js';
 import { get, post, put, del, api } from '../api.js';
 import { prefs } from '../prefs.js';
 import { loading, errorBox, toast, toastErr, dialog, field, confirmDlg, empty } from '../ui.js';
@@ -85,11 +85,46 @@ function renderDokumente(el, ctx) {
     let ok = 0;
     for (const f of files.filter(f => f.size <= info.max_upload)) {
       const fd = new FormData(); fd.append('datei', f, f.name);
-      try { await api('POST', `/projekte/${id}/dokumente/hochladen?quelle=${enc(q)}&sub=${enc(s || '')}`, fd, { noOffline: true }); ok++; }
-      catch (e) { toastErr(e); }
+      const ziel = await erkennenFragen(f, q, s); // R27-107: Vorschlag für Text-PDFs, sonst unverändert
+      try { await api('POST', `/projekte/${id}/dokumente/hochladen?quelle=${enc(ziel.q)}&sub=${enc(ziel.s || '')}`, fd, { noOffline: true }); ok++; }
+      catch (e) { toastErr(e); continue; }
+      if (ziel.felder) {
+        try { await put('/projekte/' + id, { change_id: uuid(), changes: ziel.felder }); toast('Bestellnummer/-datum ins Projekt übernommen.', 'ok'); ctx.reload && ctx.reload(); }
+        catch (e) { toastErr(e); }
+      }
     }
     if (ok) toast(`${ok} Datei${ok === 1 ? '' : 'en'} abgelegt`, 'success');
     const war = offen, ws = sub; await load(); if (war) { offen = info.typen.concat(info.eigene).find(x => x.quelle === war.quelle) || war; sub = ws; render(); }
+  }
+
+  // R27-107: Einfache PDF-Erkennung (nur PDFs mit Text, ohne OCR). Nichts wird ungefragt übernommen;
+  // Scans/kein Treffer/Fehler → stilles normales Ablegen.
+  async function erkennenFragen(f, q, s) {
+    const normal = { q, s };
+    if (!/\.pdf$/i.test(f.name) || f.size > 25 * 1048576) return normal;
+    let r;
+    try { const fd = new FormData(); fd.append('datei', f, f.name); r = await api('POST', `/projekte/${id}/dokumente/erkennen`, fd, { noOffline: true }); }
+    catch { return normal; }
+    if (!r || !r.erkannt || !r.text_gefunden || (!r.dokumenttyp && !r.projektfelder)) return normal;
+    const de = iso => iso ? iso.split('-').reverse().join('.') : '';
+    const teile = [r.art_name, r.bestellnummer ? `Nr. ${r.bestellnummer}` : null, r.datum ? de(r.datum) : null].filter(Boolean).join(' · ');
+    const zielTyp = r.dokumenttyp ? info.typen.find(t => t.key === r.dokumenttyp) : null;
+    const felder = {}; if (r.projektfelder && r.bestellnummer) felder.bestellnummer = r.bestellnummer; if (r.projektfelder && r.datum) felder.bestelldatum = r.datum;
+    const cb = h('input', { type: 'checkbox', checked: Object.keys(felder).length > 0 });
+    const alt = r.projekt && r.projekt.bestellnummer && r.projekt.bestellnummer !== felder.bestellnummer ? r.projekt.bestellnummer : null;
+    return new Promise(res => {
+      let wahl = normal;
+      dialog({
+        title: 'Dokument erkannt', onClose: () => res(wahl), cls: 'dok-erkannt',
+        body: h('div', { class: 'stack', 'data-testid': 'erkennung-dialog' },
+          h('p', null, h('strong', null, 'Erkannt: ', teile), zielTyp ? [' → Ordner ', h('strong', null, zielTyp.name)] : null),
+          h('p', { class: 'small muted' }, f.name, ` · Sicherheit: ${r.stufe}`),
+          Object.keys(felder).length ? h('label', { class: 'toggle' }, cb, ' Bestellnummer/-datum ins Projekt übernehmen', alt ? h('span', { class: 'small muted' }, ` (ersetzt ${alt})`) : null) : null,
+          h('p', { class: 'small muted' }, 'Ohne Bestätigung wird die Datei wie gewählt abgelegt.')),
+        actions: [{ label: 'Normal ablegen', cls: 'btn-ghost' },
+          { label: 'Übernehmen', cls: 'btn-primary', fn: () => { wahl = { q: zielTyp ? 'typ:' + zielTyp.key : q, s: zielTyp ? '' : s, felder: cb.checked && Object.keys(felder).length ? felder : null }; } }]
+      });
+    });
   }
 
   async function renderListe() {

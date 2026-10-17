@@ -78,16 +78,36 @@ class Rechte:
     def admin(self):
         return self.u["rolle"] == "admin"
 
+    def _vertr(self, bereich):  # R27-105: aktive Vertretungen des Benutzers (als Vertreter)
+        import vertretung
+        return vertretung.aktive(self.db, self.u.get("id"), bereich)
+
+    def _pm_ids(self):
+        """Eigene id + vertretene PMs (Vertretung „projekte“)."""
+        return [self.u["id"]] + [v["vertretener_user_id"] for v in self._vertr("projekte")
+                                 if v.get("vertretener_user_id") and v.get("rolle") == "pm"]
+
     def pm_projekte(self):
-        return {r["projekt_id"] for r in self.db.q("SELECT projekt_id FROM projekt_pm WHERE user_id=?", (self.u["id"],))}
+        ids = self._pm_ids()
+        return {r["projekt_id"] for r in self.db.q(
+            f"SELECT projekt_id FROM projekt_pm WHERE user_id IN ({','.join('?' * len(ids))})", ids)}
 
     def ist_pm(self, projekt_id):
         if projekt_id is None:
             return False
-        return bool(self.db.q1("SELECT 1 x FROM projekt_pm WHERE projekt_id=? AND user_id=?", (projekt_id, self.u["id"])))
+        ids = self._pm_ids()
+        return bool(self.db.q1(f"SELECT 1 x FROM projekt_pm WHERE projekt_id=? AND user_id IN ({','.join('?' * len(ids))})",
+                               (projekt_id, *ids)))
 
     def kann_projekt_bearbeiten(self, projekt_id):
-        return self.admin or (self.u["rolle"] == "pm" and self.ist_pm(projekt_id))
+        if self.admin:
+            return True
+        if self.u["rolle"] == "pm" and self.db.q1("SELECT 1 x FROM projekt_pm WHERE projekt_id=? AND user_id=?",
+                                                  (projekt_id, self.u["id"])):
+            return True
+        vids = [v["vertretener_user_id"] for v in self._vertr("projekte") if v.get("rolle") == "pm"]  # R27-105
+        return bool(vids) and bool(self.db.q1(
+            f"SELECT 1 x FROM projekt_pm WHERE projekt_id=? AND user_id IN ({','.join('?' * len(vids))})", (projekt_id, *vids)))
 
     def need_projekt(self, projekt_id):
         if not self.kann_projekt_bearbeiten(projekt_id):
@@ -98,6 +118,8 @@ class Rechte:
         if self.admin or self.u["rolle"] in ("mitarbeiter", "controlling"):  # R26-E: Controlling pflegt OPL aller Projekte
             return True
         if __import__("fertigung").ist_allgemein(self.db, projekt_id):  # R5-F: Allgemein – alle PMs dürfen
+            return True
+        if any(v.get("rolle") in ("controlling", "mitarbeiter") for v in self._vertr("fertigung")):  # R27-105
             return True
         return self.ist_pm(projekt_id)
 

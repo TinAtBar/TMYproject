@@ -349,14 +349,15 @@ export function tabelle(opts) {
   }
 
   // ---------- Drucken (aktuelle Spalten, Reihenfolge, Filter) ----------
-  function drucken(titel) {
+  function drucken(titel, opt = {}) { // R27-108: opt.kopf (einheitlicher Kopf), opt.dateiname (PDF-Name)
     const cols = visCols();
-    const box = h('div', { class: 'tab-print' }, h('h1', null, titel || ''), h('p', { class: 'small' }, `${shown.length} Einträge · Stand ${fmtDate(new Date().toISOString())}`),
+    const box = h('div', { class: 'tab-print' }, opt.kopf || h('h1', null, titel || ''), h('p', { class: 'small' }, `${shown.length} Einträge · Stand ${fmtDate(new Date().toISOString())}`),
       chipNodes().length ? h('p', { class: 'small' }, 'Filter: ' + Object.entries(st.filters).filter(([k, f]) => filterActive(f) && byKey(k)).map(([k, f]) => filterSummary(byKey(k), f)).join(' · ')) : null,
       h('table', null, h('thead', null, h('tr', null, cols.map(c => h('th', null, c.label)))),
         h('tbody', null, shown.map(r => h('tr', null, cols.map(c => { const t = txt(c, r); return h('td', null, t === LEER ? '' : c.type === 'date' ? fmtDate(raw(c, r)) : t); }))))));
     document.body.appendChild(box); document.body.classList.add('tab-printing');
-    const done = () => { box.remove(); document.body.classList.remove('tab-printing'); removeEventListener('afterprint', done); };
+    const altTitel = document.title; if (opt.dateiname) document.title = String(opt.dateiname).replace(/\.[a-z]+$/i, '');
+    const done = () => { box.remove(); document.body.classList.remove('tab-printing'); document.title = altTitel; removeEventListener('afterprint', done); };
     addEventListener('afterprint', done); setTimeout(() => { window.print(); setTimeout(done, 500); }, 50);
   }
 

@@ -122,8 +122,9 @@ export function mount(el, r) {
     const wv = h('input', { type: 'date', value: a.wiedervorlage || '' });
     const betrag = h('input', { type: 'number', step: '0.01', value: a.betrag ?? '' });
     const vers = h('input', { type: 'date', value: a.versendet_am || '' });
+    const bnr = h('input', { value: a.bestellnummer || '', maxlength: 60 }); const bdat = h('input', { type: 'date', value: a.bestelldatum || '' }); // R27-106: Nachtrag
     const conflictHost = h('div');
-    const LBL = { status_id: 'Status', wiedervorlage: 'Wiedervorlage', betrag: 'Betrag', versendet_am: 'Versendet am', kunde: 'Kunde' };
+    const LBL = { bestellnummer: 'Bestellnummer', bestelldatum: 'Bestelldatum', status_id: 'Status', wiedervorlage: 'Wiedervorlage', betrag: 'Betrag', versendet_am: 'Versendet am', kunde: 'Kunde' };
     const show = (k, v) => v == null || v === '' ? '–' : k === 'status_id' ? ((byId('status_angebot', v) || {}).name || v) : k === 'betrag' ? fmtEur(v) : /datum|wiedervorlage|versendet/.test(k) ? fmtDate(v) : String(v);
     const inputs = {};
     const save = async (changes, force) => {
@@ -146,6 +147,7 @@ export function mount(el, r) {
     wv.addEventListener('change', () => save({ wiedervorlage: wv.value || null }));
     betrag.addEventListener('change', () => save({ betrag: betrag.value === '' ? null : +betrag.value }));
     vers.addEventListener('change', () => save({ versendet_am: vers.value || null }));
+    bnr.addEventListener('change', () => save({ bestellnummer: bnr.value.trim() || null })); bdat.addEventListener('change', () => save({ bestelldatum: bdat.value || null })); // R27-106
     const fr = new Set((a.freigaben || []).map(x => x.id ?? x.user_id ?? x));
     const frBox = h('div', { class: 'chips' }, store.sd.users.filter(u => u.id !== a.eigentuemer_id).map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: fr.has(u.id), disabled: !owner, onchange: async e => { e.target.checked ? fr.add(u.id) : fr.delete(u.id); try { await put(`/angebote/${id}/freigaben`, { user_ids: [...fr] }); toast('Freigaben gespeichert.', 'ok'); } catch (er) { toastErr(er); } } }), u.name)));
     const s = byId('status_angebot', a.status_id);
@@ -158,7 +160,7 @@ export function mount(el, r) {
       body: h('div', { class: 'stack' },
         h('div', { class: 'chips' }, h('span', { class: 'chip chip-outline chip-typ', style: { '--c': a.art === 'nachtrag' ? 'var(--sem-nachtrag)' : 'var(--sem-marke)' } }, icon(a.art === 'nachtrag' ? 'docPlus' : 'euro', 13), a.art === 'nachtrag' ? 'Nachtrag' : 'Angebot'), s ? chip(s, '', 'angebot') : null, (a.sichtbar_wegen_urlaub) ? h('span', { class: 'chip chip-warn' }, 'Eigentümer im Urlaub') : null, a.beauftragt_projekt_id ? h('a', { class: 'chip chip-ok', href: '#/projekte/' + a.beauftragt_projekt_id }, 'Projekt angelegt →') : null),
         conflictHost,
-        h('div', { class: 'form-grid' }, field('Status', st), field('Wiedervorlage', h('div', { class: 'stack', style: { gap: '6px' } }, wv, h('div', { class: 'row', style: { gap: '6px' } }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => snooze(1) }, '+1 Tag'), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => snooze(7) }, '+1 Woche')))), field('Betrag (€)', betrag), field('Versendet am', vers),
+        h('div', { class: 'form-grid' }, field('Status', st), field('Wiedervorlage', h('div', { class: 'stack', style: { gap: '6px' } }, wv, h('div', { class: 'row', style: { gap: '6px' } }, h('button', { type: 'button', class: 'btn btn-sm', onclick: () => snooze(1) }, '+1 Tag'), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => snooze(7) }, '+1 Woche')))), field('Betrag (€)', betrag), field('Versendet am', vers), ...(a.art === 'nachtrag' ? [field(lbl('angebot', 'bestellnummer', 'Bestellnummer (Kunde)', { stern: false }), bnr), field(lbl('angebot', 'bestelldatum', 'Bestelldatum', { stern: false }), bdat)] : []), // R27-106
           field('Kunde', h('input', { value: a.kunde || '', onchange: e => save({ kunde: e.target.value }) })), field('Eigentümer', h('input', { value: a.eigentuemer_name || userName(a.eigentuemer_id), disabled: true }))),
         zusatzEditor('angebot', a.zusatz || {}, { objektId: a.id }).el, // R26-H: Zusatzfelder
         (a.positionen || []).length ? h('div', null, h('div', { class: 'section-h' }, `Positionen (${a.positionen.length}) – werden beim Umwandeln zu Baugruppen`), h('div', { class: 'table-wrap flat' }, h('table', { class: 'tbl' }, h('thead', null, h('tr', null, h('th', null, 'Nr'), h('th', null, 'Bezeichnung'), h('th', null, 'Menge'), h('th', null, 'Stunden'))), h('tbody', null, a.positionen.map(p => h('tr', { style: { cursor: 'default' } }, h('td', { class: 'mono' }, p.nummer || '–'), h('td', null, p.bezeichnung), h('td', { class: 'num' }, p.menge), h('td', { class: 'num' }, Object.values(p.budgets || {}).reduce((x, y) => x + (+y || 0), 0)))))))) : null,

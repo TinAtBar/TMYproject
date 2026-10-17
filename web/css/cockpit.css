@@ -1,0 +1,191 @@
+/* R27 Punkt 101/102: Projektkopf kompakt + Projekt-Cockpit (Übersicht) + Aufräumen. Besitz: Paket Cockpit. */
+
+/* ---------- Kopf ---------- */
+.ph { display: flex; align-items: center; gap: 16px; padding: 14px 18px; margin: 4px 0 6px; flex-wrap: wrap; }
+.ph-id { min-width: 0; flex: none; padding-right: 18px; border-right: 1px solid var(--line); }
+.ph-num { font-family: var(--font-num, var(--font)); font-size: 1.7rem; line-height: 1.1; letter-spacing: .02em; color: var(--accent-text); margin: 0; font-variant-numeric: tabular-nums; }
+.ph-bez { font-weight: 700; font-size: 1.08rem; margin-top: 2px; }
+.ph-kunde { color: var(--text-2); font-size: .86rem; }
+.ph-felder { display: flex; gap: 10px 18px; flex: 1 1 0; min-width: 0; flex-wrap: wrap; align-items: flex-start; }
+@media (min-width: 901px) { .ph { flex-wrap: nowrap; } }
+.ph-f { min-width: 0; }
+.ph-l { font-size: .78rem; color: var(--text-2); margin-bottom: 4px; white-space: nowrap; }
+.ph-v { font-weight: 700; font-size: .92rem; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-height: 26px; }
+.ph-sub { font-weight: 500; color: var(--text-2); }
+.ph-pms { display: inline-flex; }
+.ph-pms .avatar { width: 28px; height: 28px; box-shadow: 0 0 0 2px var(--surface); }
+.ph-pms .avatar + .avatar { margin-left: -6px; }
+.ph-pms-btn { border: 0; background: none; padding: 2px; border-radius: 99px; cursor: pointer; color: inherit; }
+.ph-pms-btn:hover { background: var(--surface-3); }
+.ph-status.is-aktiv { background: var(--select-bg, var(--accent-soft)); color: var(--select-text, var(--accent-text)); box-shadow: none; }
+.ph-status.is-archiv { background: var(--surface-3); color: var(--text-2); }
+.ph-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ph-act { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: nowrap; }
+.ph-act .btn { white-space: nowrap; }
+.ph-mehr { width: 36px; height: 36px; }
+.ph-teams .btn { font-size: 0; gap: 0; padding: 0 9px; min-width: 36px; }
+.ph-teams .btn .ico { width: 18px; height: 18px; }
+.ph-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--text); margin: 0 4px 6px; }
+.ph-meta > * { white-space: nowrap; }
+.ph-tabs { margin-top: 10px; }
+.ph-mehr-tab .ico { margin-left: 2px; }
+@media (max-width: 900px) {
+  .ph { gap: 12px; padding: 12px 14px; }
+  .ph-id { border-right: 0; padding-right: 0; flex: 1 1 100%; }
+  .ph-felder { gap: 12px 20px; }
+  .ph-act { margin-left: 0; }
+}
+
+/* ---------- Cockpit-Gerüst ---------- */
+.ck { display: flex; flex-direction: column; gap: 16px; }
+.ck-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ck-kpis[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ck-row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.ck-row3 { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; }
+.ck-row2.ck-eins, .ck-row3.ck-eins { grid-template-columns: minmax(0, 1fr); }
+.ck-row2 > :empty, .ck-row3 > :empty { display: none; }
+@media (max-width: 1100px) { .ck-kpis, .ck-kpis[data-n="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ck-row2, .ck-row3 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .ck-kpis, .ck-kpis[data-n="3"] { grid-template-columns: minmax(0, 1fr); } }
+.ck-card { overflow: hidden; }
+.ck-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ck-head h2 { font-size: 1rem; margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.ck-head-r { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ck-body { padding: 14px 16px; }
+.ck-lade { padding: 14px 16px; }
+.ck-fuss { margin-top: 10px; }
+.ck-info { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; border: 1.3px solid var(--text-3); color: var(--text-2); font: 700 10px/1 var(--font); font-style: italic; cursor: help; flex: none; }
+.ck-info:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Legenden */
+.ck-leg { display: flex; gap: 14px; color: var(--text-2); }
+.ck-lg { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ck-lg::before { content: ""; display: inline-block; width: 16px; border-top: 2px solid var(--text-3); }
+.ck-lg-done::before { border-color: var(--sem-offen); border-top-width: 3px; }
+.ck-lg-plan::before { border-color: var(--line-strong); border-top-width: 3px; }
+.ck-lg-prog::before, .ck-lg-ideal::before { border-top-style: dashed; border-color: var(--text-2); }
+.ck-lg-offen::before { border-color: var(--sem-offen); }
+.ck-lg-soll::before { border: 0; height: 8px; width: 14px; background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--line-strong); border-radius: 2px; }
+.ck-lg-ist::before { border: 0; height: 8px; width: 14px; background: var(--sem-erledigt); border-radius: 2px; }
+.ck-lg-mark::before { border: 0; width: 2px; height: 12px; background: var(--accent-text); }
+
+/* ---------- Kennzahlkarten ---------- */
+.ck-kpi { display: flex; align-items: center; gap: 16px; padding: 16px 18px; min-height: 108px; min-width: 0; }
+.ck-kpi.ck-klick { cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.ck-kpi.ck-klick:hover { border-color: var(--line-strong); box-shadow: var(--shadow-2); }
+.ck-kpi-t { min-width: 0; flex: 1; }
+.ck-kpi-l { font-size: .84rem; font-weight: 650; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.ck-kpi-v { font-size: 1.75rem; font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; margin: 2px 0; }
+.ck-kpi-v-s { font-size: 1.15rem; color: var(--text-2); }
+.ck-kpi-e { font-size: 1rem; font-weight: 650; color: var(--text-2); }
+.ck-kpi-s { font-size: .8rem; color: var(--text-2); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ck-kpi-ms { display: flex; align-items: center; gap: 8px; font-size: 1.35rem; min-width: 0; }
+.ck-ms-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-ring { width: 72px; height: 72px; flex: none; }
+.ck-ring-bg { fill: none; stroke: var(--surface-3); stroke-width: 9; }
+.ck-ring-fg { fill: none; stroke-width: 9; stroke-linecap: round; stroke: var(--sem-offen); }
+.ck-ring.is-fs .ck-ring-fg { stroke: var(--sem-offen); }
+.ck-ring.is-ok .ck-ring-fg { stroke: var(--sem-erledigt); }
+.ck-ring.is-neutral .ck-ring-fg { stroke: var(--sem-offen); }
+.ck-ring.is-warn .ck-ring-fg { stroke: var(--warn); }
+.ck-ring.is-danger .ck-ring-fg { stroke: var(--danger); }
+.ck-ring.is-leer .ck-ring-fg { stroke: none; }
+.ck-amp { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 1px 7px; border-radius: 4px; font-size: .76rem; font-weight: 700; background: var(--surface-3); color: var(--text-2); }
+.ck-amp.is-ok { background: var(--ok-bg); color: var(--ok-text); }
+.ck-amp.is-warn { background: var(--warn-bg); color: var(--warn-text); }
+.ck-amp.is-danger { background: var(--danger-bg); color: var(--danger-text); }
+.ck-ue { display: inline-flex; align-items: center; gap: 4px; border: 0; cursor: pointer; padding: 1px 7px; border-radius: 4px; font: inherit; font-size: .78rem; font-weight: 700; background: var(--danger-bg); color: var(--danger-text); }
+.ck-raute { display: inline-block; width: 13px; height: 13px; transform: rotate(45deg); border: 2.5px solid var(--text); background: var(--surface); flex: none; border-radius: 1px; }
+.ck-raute.is-od { border-color: var(--danger); }
+.ck-raute.is-vertrag { background: var(--accent-text); border-color: var(--accent-text); }
+
+/* ---------- Zeitstrahl ---------- */
+.ck-zs-wrap { padding: 26px 28px 14px; overflow-x: auto; }
+.ck-zs { position: relative; height: 150px; min-width: 640px; }
+.ck-zs-linie { position: absolute; left: 0; right: 0; top: 74px; height: 4px; border-radius: 2px; background: var(--surface-3); }
+.ck-zs-linie.is-done { right: auto; background: var(--sem-offen); }
+.ck-zs-monat { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
+.ck-zs-monat span { position: absolute; top: 0; left: 6px; font-size: .74rem; color: var(--text-2); white-space: nowrap; }
+.ck-zs-pt { position: absolute; top: 76px; width: 14px; height: 14px; margin: -7px 0 0 -7px; transform: rotate(45deg); background: var(--surface); border: 2.5px solid var(--sem-offen); border-radius: 2px; z-index: 2; }
+.ck-zs-pt.is-done { background: var(--sem-offen); }
+.ck-zs-pt.is-od { border-color: var(--danger); }
+.ck-zs-pt.is-prog { border-style: dashed; border-color: var(--text-2); border-radius: 50%; transform: none; width: 12px; height: 12px; margin: -6px 0 0 -6px; }
+.ck-zs-pt.is-prog.is-spaet { border-color: var(--warn); }
+.ck-zs-lbl { z-index: 3; background: var(--surface); border-radius: 3px; position: absolute; transform: translateX(-50%); text-align: center; font-size: .78rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+.ck-zs-lbl b { display: block; font-weight: 650; overflow: hidden; text-overflow: ellipsis; }
+.ck-zs-lbl span { color: var(--text-2); font-size: .72rem; }
+.ck-zs-lbl.oben { top: 22px; }
+.ck-zs-lbl.unten { top: 92px; }
+.ck-zs-lbl.is-od span { color: var(--danger-text); font-weight: 650; }
+.ck-zs-lbl.is-prog b { font-weight: 600; color: var(--text-2); }
+.ck-zs-prog { position: absolute; top: 75px; height: 0; border-top: 2px dashed var(--text-2); }
+.ck-zs-prog.is-spaet { border-top-color: var(--warn); }
+.ck-zs-heute { position: absolute; top: 0; bottom: 6px; border-left: 2px solid var(--accent-text); z-index: 1; }
+.ck-zs-heute span { position: absolute; top: -20px; left: 0; transform: translateX(-50%); background: var(--accent-text); color: var(--on-accent, #fff); font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.ck-zs-vertrag { position: absolute; top: 20px; bottom: 6px; border-left: 2px dotted var(--accent-text); z-index: 1; }
+.ck-zs-vertrag .ck-raute { position: absolute; top: 49px; left: -8px; }
+.ck-zs-vlbl { position: absolute; top: 44px; left: 12px; background: var(--surface); padding: 0 4px; border-radius: 3px; z-index: 3; font-size: .78rem; color: var(--accent-text); white-space: nowrap; line-height: 1.25; }
+.ck-zs-vlbl.links { left: auto; right: 12px; text-align: right; }
+.ck-zs-vlbl b { display: block; }
+
+/* ---------- Stunden je Abteilung ---------- */
+.ck-abt-liste { display: flex; flex-direction: column; gap: 10px; }
+.ck-abt { display: grid; grid-template-columns: 130px minmax(0, 1fr) 110px; align-items: center; gap: 12px; font-size: .88rem; }
+.ck-abt-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-abt-bar { position: relative; height: 12px; }
+.ck-abt-spur { position: absolute; inset: 0 auto 0 0; background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--line); border-radius: 3px; }
+.ck-abt-ist { position: absolute; top: 2px; bottom: 2px; left: 0; background: var(--sem-erledigt); border-radius: 2px; }
+.ck-abt-ist.is-ueber { background: var(--warn); }
+.ck-abt-ist.is-rot { background: var(--danger); }
+.ck-abt-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--accent-text); }
+.ck-abt-z { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ck-hinweis { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 12px; border-radius: var(--radius-sm, 6px); background: var(--surface-2); border: 1px solid var(--line); font-size: .88rem; }
+.ck-hinweis .btn { margin-left: auto; }
+
+/* ---------- Burn-down ---------- */
+.ck-bd-svg { width: 100%; height: auto; display: block; }
+.ck-grid { stroke: var(--line); stroke-width: 1; }
+.ck-ax { font-size: 11px; fill: var(--text-2); font-family: var(--font); }
+.ck-ax-b { font-weight: 700; fill: var(--text); }
+.ck-bd-l { fill: none; stroke: var(--sem-offen); stroke-width: 2.2; stroke-linejoin: round; }
+.ck-bd-pt { fill: var(--sem-offen); }
+.ck-bd-ideal { stroke: var(--text-3); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.ck-bd-heute { stroke: var(--accent-text); stroke-width: 1; stroke-dasharray: 2 3; }
+
+/* ---------- Dokumente ---------- */
+.ck-alle { font-weight: 700; color: var(--accent-text); display: inline-flex; align-items: center; gap: 2px; }
+.ck-dok-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.ck-dok { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 8px; border: 1px solid transparent; font: inherit; font-size: .86rem; font-weight: 600; text-align: left; cursor: pointer; color: var(--text); min-width: 0; }
+.ck-dok { background: var(--pastell-himmel, var(--surface-2)); }
+.ck-dok.pastell-rosa { background: var(--pastell-rosa); } .ck-dok.pastell-pfirsich { background: var(--pastell-pfirsich); } .ck-dok.pastell-sand { background: var(--pastell-sand); }
+.ck-dok.pastell-zitrone { background: var(--pastell-zitrone); } .ck-dok.pastell-mint { background: var(--pastell-mint); } .ck-dok.pastell-salbei { background: var(--pastell-salbei); }
+.ck-dok.pastell-aqua { background: var(--pastell-aqua); } .ck-dok.pastell-lavendel { background: var(--pastell-lavendel); } .ck-dok.pastell-flieder { background: var(--pastell-flieder); }
+.ck-dok:hover { border-color: var(--line-strong); }
+.ck-dok strong { font-size: 1.1rem; }
+.ck-dok span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dok-anh { margin-top: 18px; }
+
+/* Termine-Reiter */
+.tm-tab { gap: 16px; }
+
+/* ---------- R27-102 Aufräumen: OPL-Liste ---------- */
+.frist.is-heute .d { color: var(--warn-text); font-weight: 750; }
+.frist.week:not(.is-heute) { color: inherit; font-weight: 500; }
+.frist.week:not(.is-heute) .d .ico { color: var(--text-3); }
+@media (min-width: 761px) {
+  .filterbar.fb-nowrap { flex-wrap: nowrap; position: relative; }
+  .filterbar.fb-nowrap > * { flex-shrink: 0; }
+  .filterbar.fb-nowrap > .q { flex: 1 1 200px; min-width: 160px; }
+}
+.fb-mehr-wrap { position: relative; flex: none; }
+.fb-mehr-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; width: max-content; max-width: min(520px, 80vw); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow-2); }
+.fb-mehr-panel[hidden] { display: none; }
+.fb-mehr-panel .fb-sep { display: none; }
+
+.ck-notizen .psec { border-top: 1px solid var(--line); }
+
+/* R27-102: Budget ohne Ist-Stunden */
+.bu-ohne-ist { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 14px; border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); border: 1px solid var(--line); }
+.bu-ohne-ist .btn { margin-left: auto; }
+.bu-noist { font-style: italic; }
+.ck-fsv .fs-svg { max-height: 280px; width: 100%; }
+.ck-fsv .fs-fig { margin: 0; }

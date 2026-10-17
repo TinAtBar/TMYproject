@@ -539,5 +539,9 @@ def export_csv(ctx):
                     r["erstellt_am"] or "", r["geaendert_am"] or "", r["erledigt_am"] or "",
                     r.get("zustaendig_text") or ""] + _z)  # R3-B  # R26-H
     # BOM, damit Excel UTF-8 erkennt
-    return {"_raw": ("﻿" + buf.getvalue()).encode("utf-8"), "_filename": f"OPL-{today_iso()}.csv",
+    import export as _ex  # R27-108: einheitlicher Dateiname
+    with ctx.db.lock:
+        _p = _ex.projekt_lesen(ctx.db, ctx.qp("projekt_id")) if (ctx.qp("projekt_id") or "").isdigit() else None
+        _name = _ex.dateiname(ctx.db.conn, "Offene Punkte", "csv", _p, ctx.user)
+    return {"_raw": ("﻿" + buf.getvalue()).encode("utf-8"), "_filename": _name,
             "_mime": "text/csv; charset=utf-8", "_inline": False}

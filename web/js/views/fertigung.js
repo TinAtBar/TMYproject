@@ -5,6 +5,7 @@ import { store } from '../store.js';
 import { setQuery, go } from '../router.js';
 import { toast, toastErr, dialog, field, loading, errorBox } from '../ui.js';
 import { teamsKnopf, teamsBesprechungNeu, istTeamsLink } from '../teams.js';
+import { fertigungsortFeld, antragDialog, antraegeDialog, vertretungDialog } from './fertigung-antraege.js'; // R27-103–105
 
 // ======================================================================= Kacheln (OPL)
 let kachelCache = null, kachelZeit = 0;
@@ -140,13 +141,18 @@ export function mount(el, r) {
       const want = r.query.p && reihe.findIndex(p => String(p.id) === String(r.query.p));
       idx = want > 0 ? want : 0;
       renderTop(); await zeige();
+      if (r.query.antraege === '1') { setQuery({ ...r.query, antraege: '' }); antraegeDialog({ leiter: info.ist_leiter, projekt_id: r.query.p }); } // R27: Link aus der Glocke
     } catch (e) { clear(body).append(errorBox(e, init)); }
   }
   function renderTop() {
     const s = info.sitzung;
     const exp = '/api/fertigung/export.xlsx' + qs({ stand: s ? s.datum : '', erledigte: erledigte ? 1 : '' });
-    const darfStart = store.user && ['admin', 'pm', 'controlling'].includes(store.user.rolle); // R26-E: Controlling leitet
-    clear(top).append(
+    const darfStart = store.user && (['admin', 'pm', 'controlling'].includes(store.user.rolle) || info.ist_leiter); // R26-E: Controlling leitet; R27: Vertretung
+    const nA = info.antraege_offen || 0; // R27-104: Leiste „n Anträge offen“ / eigene Anträge
+    const zeigAntraege = () => antraegeDialog({ leiter: info.ist_leiter, projekt_id: reihe[idx] && reihe[idx].id, onChange: async () => { try { const i2 = await get('/fertigung' + qs({ nur_offen: nurOffen ? 1 : '' })); info.antraege_offen = i2.antraege_offen; renderTop(); await zeige(); } catch { } } }); // R27: Blatt nach Übernahme neu laden
+    const leiste = info.ist_leiter && nA ? h('button', { class: 'fa-leiste', type: 'button', onclick: zeigAntraege }, icon('hand', 16), h('strong', null, `${nA} ${nA === 1 ? 'Antrag' : 'Anträge'} offen`), h('span', { class: 'muted' }, ' – prüfen und übernehmen oder ablehnen')) : null;
+    const vertrOk = store.user && ['admin', 'controlling'].includes(store.user.rolle);
+    clear(top).append(leiste || '',
       h('div', { class: 'fb-title' }, h('h1', null, 'Fertigungsbesprechung'),
         h('span', { class: 'fb-stand' }, 'Stand: ', h('strong', null, s ? fmtDate(s.datum) : '–'), info.seit ? h('span', { class: 'muted small' }, ` · rot = geändert seit ${fmtDate(info.seit)}`) : null)),
       h('div', { class: 'fb-actions' },
@@ -156,6 +162,8 @@ export function mount(el, r) {
         h('label', { class: 'fb-chk' }, h('input', { type: 'checkbox', checked: erledigte, onchange: e => { erledigte = e.target.checked; renderTop(); zeige(); } }), 'erledigte zeigen'),
         h('a', { class: 'btn btn-sm', href: exp, download: '' }, icon('download', 16), 'Excel'),
         darfStart ? h('button', { class: 'btn btn-sm', type: 'button', onclick: verteilen, title: 'Verschlüsseltes Excel ablegen und Mail-Entwurf erzeugen' }, icon('send', 16), 'Verteilen') : null, // R26-E
+        h('button', { class: 'btn btn-sm', type: 'button', onclick: zeigAntraege, title: info.ist_leiter ? 'Alle Änderungsanträge' : 'Status deiner Anträge' }, icon('hand', 16), info.ist_leiter ? 'Anträge' : 'Meine Anträge', nA ? h('span', { class: 'fa-zahl' }, nA) : null),
+        vertrOk ? h('button', { class: 'btn btn-sm btn-ghost', type: 'button', onclick: () => vertretungDialog(store.user) }, icon('users', 16), 'Vertretung') : null,
         h('a', { class: 'btn btn-sm btn-ghost', href: '#/fertigung/druck' + qs({ erledigte: erledigte ? 1 : '' }) }, icon('doc', 16), 'Drucken'),
         h('a', { class: 'btn btn-sm btn-ghost', href: '#/opl' }, 'OPL')));
   }
@@ -204,7 +212,9 @@ export function mount(el, r) {
 
 /** Ein Projektblatt wie im Excel-Protokoll. opts.edit → Inline-Bearbeitung. */
 function blattEl(d, opts = {}) {
-  const p = d.projekt, allg = !!p.ist_allgemein, edit = opts.edit && d.darf_schreiben;
+  const p = d.projekt, allg = !!p.ist_allgemein;
+  // R27-104: In der Besprechung ändert die Leitung direkt; alle anderen mit Projektzugriff stellen Anträge.
+  const edit = opts.edit && d.darf_schreiben && (d.ist_leiter ?? true), antrag = opts.edit && !edit && d.darf_antrag;
   const stand = opts.info && opts.info.sitzung ? opts.info.sitzung.datum : isoDate(today());
   const kopfFeld = (k, l) => {
     const v = p[k] || '';
@@ -218,7 +228,10 @@ function blattEl(d, opts = {}) {
       h('div', { class: 'fb-nr' }, allg ? 'Allgemein' : p.nummer),
       allg ? h('div', { class: 'fb-kb muted' }, 'Firmenweite Punkte') : h('div', { class: 'fb-kb' }, [p.kunde, p.bezeichnung].filter(Boolean).join(' – ')),
       !allg && p.teams_link ? teamsKnopf(p.teams_link, 'Teams', 'btn btn-sm btn-ghost no-print') : null),
-    h('dl', { class: 'fb-meta' }, allg ? null : KOPF.map(([k, l]) => kopfFeld(k, l)), h('dt', null, 'Stand:'), h('dd', null, fmtDate(stand))),
+    h('dl', { class: 'fb-meta' }, allg ? null : KOPF.map(([k, l]) => kopfFeld(k, l)),
+      allg ? null : [h('dt', null, 'Fertigungsort:'), h('dd', null, opts.edit ? fertigungsortFeld(d, opts.reload) : (p.fertigungsort || '–'))], // R27-103
+      h('dt', null, 'Stand:'), h('dd', null, fmtDate(stand))),
+    opts.edit && d.antraege_offen ? h('p', { class: 'fa-hinweis no-print' }, icon('hand', 14), `${d.antraege_offen} offene${d.antraege_offen === 1 ? 'r Antrag' : ' Anträge'} zu diesem Projekt`) : null,
     !allg ? h('div', { class: 'fb-termine' }, h('strong', null, 'Termine:'),
       (d.termine || []).length ? h('ul', null, d.termine.map(t => h('li', { class: t.notiz ? 'notiz' : '' }, t.anzeige))) : h('span', { class: 'muted' }, ' –')) : null);
 
@@ -228,7 +241,8 @@ function blattEl(d, opts = {}) {
   const row = (it, i) => {
     if (!edit) {
       return h('tr', { class: it.erledigt ? 'done' : '' }, h('td', { class: 'fb-c-nr' + rot(it, 'titel') }, i + 1),
-        h('td', { class: 'fb-c-th' + rot(it, 'titel') }, it.titel, it.beschreibung ? h('div', { class: 'fb-desc' }, it.beschreibung) : null),
+        h('td', { class: 'fb-c-th' + rot(it, 'titel') }, it.titel, it.beschreibung ? h('div', { class: 'fb-desc' }, it.beschreibung) : null,
+          antrag ? h('button', { class: 'fb-vorschlag no-print', type: 'button', title: 'Änderung an diesem Punkt beantragen', onclick: () => antragDialog({ projekt_id: p.id, item: it }, opts.reload) }, 'Änderung vorschlagen') : null),
         h('td', { class: rot(it, 'zustaendig') }, it.zustaendig_text || it.verantwortlich_name || ''),
         h('td', { class: rot(it, 'klaerung') }, klaerungText(it)),
         h('td', { class: 'fb-c-ok' + rot(it, 'erledigt') }, it.erledigt ? 'ja' : '', h('span', { class: 'pk-box' + (it.erledigt ? ' on' : '') })));
@@ -271,7 +285,11 @@ function blattEl(d, opts = {}) {
   const tbl = h('table', { class: 'fb-tbl' },
     h('colgroup', null, h('col', { style: { width: '44px' } }), h('col'), h('col', { style: { width: '18%' } }), h('col', { style: { width: '14%' } }), h('col', { style: { width: '82px' } })),
     h('thead', null, h('tr', null, h('th', null, 'Nr'), h('th', null, 'Thema ', h('span', { class: 'muted' }, titel)), h('th', null, 'Zuständig'), h('th', null, 'Klärung bis'), h('th', null, 'erledigt'))),
-    tbody, neu ? h('tfoot', null, neu) : null);
+    tbody, neu ? h('tfoot', null, neu) : antrag ? h('tfoot', null, h('tr', { class: 'fb-new-row no-print' }, h('td', { class: 'fb-c-nr muted' }, '+'),
+      h('td', { colspan: 4 }, h('input', {
+        class: 'fb-in fb-new', placeholder: 'Neuen Punkt vorschlagen … (Enter)', 'aria-label': 'Neuen Punkt vorschlagen',
+        onkeydown: e => { if (e.key !== 'Enter') return; e.preventDefault(); const v = e.target.value.trim(); antragDialog({ art: 'neu', projekt_id: p.id, titel: v }, () => { e.target.value = ''; opts.reload && opts.reload(); }); }
+      })))) : null);
   return h('article', { class: 'fb-sheet' }, head, tbl,
     !(d.punkte || []).length && !edit ? h('p', { class: 'muted small' }, 'Keine offenen Punkte.') : null,
     h('p', { class: 'fb-note small' }, 'Änderungen sind für eine Woche rot'));
@@ -285,9 +303,7 @@ function druck(el, r) {
       const info = await get('/fertigung' + qs({ nur_offen: r.query.nur_offen || '' }));
       const blaetter = await Promise.all((info.projekte || []).map(p => get(`/fertigung/projekt/${p.id}` + qs({ erledigte: r.query.erledigte || '' }))));
       clear(body).append(
-        h('div', { class: 'no-print row between', style: { marginBottom: '14px', gap: '10px', flexWrap: 'wrap' } },
-          h('p', { class: 'muted' }, 'Druckansicht Fertigungsbesprechung – ein Projekt je Seite.'),
-          h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/fertigung' }, 'Zurück'), h('button', { class: 'btn btn-primary', onclick: () => window.print() }, icon('download', 18), 'Drucken'))),
+        (await import('../export.js')).druckLeiste({ zurueck: () => { location.hash = '#/fertigung'; } }), // R27-108: Hinweis „Als PDF speichern“, Format unverändert
         h('div', { class: 'fb-druck' }, blaetter.map(d => blattEl(d, { info }))));
     } catch (e) { clear(body).append(errorBox(e)); }
   })();

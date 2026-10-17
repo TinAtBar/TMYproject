@@ -54,11 +54,13 @@ FELDER = {
                 ("kunde", "Kunde", _N, True), ("ort", "Ort", _N, True), ("status", "Status", _K, False),
                 ("angebot_ref", "Angebot", _N, False), ("projektingenieur", "Projektingenieur", _N, False),
                 ("av", "AV", _N, False), ("teamleiter", "Teamleiter", _N, False),
-                ("teams_link", "Teams-Link", _N, False), ("notizen", "Notizen", _N, False)],
+                ("teams_link", "Teams-Link", _N, False), ("notizen", "Notizen", _N, False),
+                ("bestellnummer", "Bestellnummer (Kunde)", _N, False), ("bestelldatum", "Bestelldatum", _N, False)],  # R27-106
     "angebot": [("nummer", "Nummer", _K, True), ("art", "Art", _K, True), ("bezeichnung", "Bezeichnung", _K, True),
                 ("kunde", "Kunde", _N, True), ("projekt_id", "Projekt", _N, True), ("status_id", "Status", _K, True),
                 ("eigentuemer_id", "Eigentümer", _K, True), ("betrag", "Betrag", _N, True),
-                ("versendet_am", "Versendet am", _N, True), ("wiedervorlage", "Wiedervorlage", _N, True)],
+                ("versendet_am", "Versendet am", _N, True), ("wiedervorlage", "Wiedervorlage", _N, True),
+                ("bestellnummer", "Bestellnummer (Kunde)", _N, False), ("bestelldatum", "Bestelldatum", _N, False)],  # R27-106: Nachträge
 }
 # Felder, die schon heute zwingend sind (Pflicht nicht abschaltbar)
 IMMER_PFLICHT = {"opl": {"titel", "projekt_id"}, "projekt": {"bezeichnung"}, "angebot": {"nummer"}}

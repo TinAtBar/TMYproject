@@ -241,7 +241,9 @@ def uebersicht(ctx):
     db = ctx.db
     sicherstellen(db, ctx.user)
     ss = sitzungen(db)
+    import fertigung_antraege as fa  # R27-104/105
     return {"projekte": projekt_reihe(db, ctx.qp("nur_offen") in ("1", "true")),
+            "ist_leiter": fa.ist_leiter(db, ctx.user), "antraege_offen": fa.offen_anzahl(db, ctx.user),
             "sitzung": ss[0] if ss else None, "sitzungen": ss[:20], "seit": seit_datum(db),
             "teams_link": _meta(db, "teams_link_fertigung") or ""}
 
@@ -257,13 +259,22 @@ def projekt_blatt(ctx):
     return {"projekt": p, "pms": db.q("SELECT u.id, u.name FROM projekt_pm pp JOIN users u ON u.id=pp.user_id WHERE pp.projekt_id=? ORDER BY u.name", (pid,)),
             "pm_emails": _pm_emails(db, pid), "termine": [{**t, "anzeige": _termin_text(t)} for t in _termine(db, p)],
             "punkte": _punkte(db, pid, ctx.qp("erledigte") in ("1", "true"), _tage_seit(seit)),
-            "seit": seit, "darf_schreiben": ctx.r.kann_opl_schreiben(pid), "darf_bearbeiten": ctx.r.kann_projekt_bearbeiten(pid)}
+            "seit": seit, "darf_schreiben": ctx.r.kann_opl_schreiben(pid), "darf_bearbeiten": ctx.r.kann_projekt_bearbeiten(pid),
+            **_r27(ctx, pid)}
+
+
+def _r27(ctx, pid):
+    """R27-103/104: Leitung (direkt ändern) vs. Antrag; offene Anträge zum Projekt."""
+    import fertigung_antraege as fa
+    leiter = fa.ist_leiter(ctx.db, ctx.user)
+    return {"ist_leiter": leiter, "darf_antrag": not leiter and fa.darf_antrag(ctx, pid),
+            "antraege_offen": fa.offen_anzahl(ctx.db, ctx.user, pid)}
 
 
 @route("POST", "/api/fertigung/sitzung")
 def sitzung_starten(ctx):
     """„Besprechung starten“: legt eine Sitzung mit Datum (Standard heute) an – je Datum nur einmal."""
-    if ctx.user["rolle"] not in ("admin", "pm", "controlling"):  # R26-E: Controlling leitet die Besprechung
+    if ctx.user["rolle"] not in ("admin", "pm", "controlling") and not __import__("fertigung_antraege").ist_leiter(ctx.db, ctx.user):  # R26-E/R27-105
         raise ApiError(403, "Keine Berechtigung: nur Admin, Projektleiter oder Controlling")
     datum = (ctx.body.get("datum") or today_iso())[:10]
     try:
@@ -341,7 +352,7 @@ def export_mappe(db, stand=None, erledigte=False, tage=None):
     n = tage if tage is not None else _tage_seit(seit_datum(db, stand))
     breiten = [22, 70, 20, 16, 10]
     blaetter = []
-    hinweis = {"v": "Änderungen sind für eine Woche rot", "rot": True}
+    hinweis = {"v": "Änderungen sind für eine Woche rot", "dunkelrot": True}  # R27-108
 
     def blatt(p):
         rows = []
@@ -364,11 +375,13 @@ def export_mappe(db, stand=None, erledigte=False, tage=None):
         for it in _punkte(db, p["id"], erledigte, n):
             r = it["rot"]
             kl = it["klaerung_text"] or it["frist"]
-            rows.append([{"v": it["lfd"], "rot": r["titel"]},
-                         {"v": it["titel"] + (("\n" + it["beschreibung"]) if it.get("beschreibung") else ""), "umbruch": True, "rot": r["titel"]},
-                         {"v": it["zustaendig_text"] or it["verantwortlich_name"] or "", "rot": r["zustaendig"], "umbruch": True},
-                         {"v": kl or "", "datum": bool(kl and not it["klaerung_text"]), "rot": r["klaerung"]},
-                         {"v": "ja" if it["erledigt"] else "", "rot": r["erledigt"]}])
+            # R27-108: neu/geändert dunkelrot, überfällige Klärung rot + fett (Format/Spalten unverändert)
+            ue = bool(it.get("ueberfaellig") and not it["klaerung_text"])
+            rows.append([{"v": it["lfd"], "dunkelrot": r["titel"]},
+                         {"v": it["titel"] + (("\n" + it["beschreibung"]) if it.get("beschreibung") else ""), "umbruch": True, "dunkelrot": r["titel"]},
+                         {"v": it["zustaendig_text"] or it["verantwortlich_name"] or "", "dunkelrot": r["zustaendig"], "umbruch": True},
+                         {"v": kl or "", "datum": bool(kl and not it["klaerung_text"]), "dunkelrot": r["klaerung"], "rot": ue, "fett": ue},
+                         {"v": "ja" if it["erledigt"] else "", "dunkelrot": r["erledigt"]}])
         return {"name": "Allgemein" if p["ist_allgemein"] else blattname(p["nummer"]), "rows": rows, "breiten": breiten}
 
     reihe = db.q("SELECT * FROM projekte WHERE COALESCE(archiviert,0)=0 AND (status='aktiv' OR ist_allgemein=1) "
@@ -395,5 +408,7 @@ def export(ctx):
     tage = to_int(ctx.qp("tage"), "tage") if ctx.qp("tage") not in (None, "") else None
     sicherstellen(ctx.db, ctx.user)
     data = export_mappe(ctx.db, stand, ctx.qp("erledigte") in ("1", "true"), tage)
-    name = f"Fertigungsbesprechung_{(stand or today_iso())[:10]}.xlsx"
+    import export as _ex  # R27-108: einheitlicher Dateiname (Firmenmuster)
+    with ctx.db.lock:
+        name = _ex.dateiname(ctx.db.conn, "Fertigungsbesprechung", "xlsx", None, ctx.user)
     return {"_raw": data, "_filename": name, "_mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "_inline": False}

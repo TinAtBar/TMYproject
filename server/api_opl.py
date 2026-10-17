@@ -360,8 +360,10 @@ def export(ctx):
     # R3-B: Spalte je Feld für rote Markierung
     spalten = {"titel": 4, "beschreibung": 5, "kategorie_id": 6, "prioritaet_id": 7,
                "frist": 8, "status_id": 9, "baugruppe_id": 2, "sn_id": 3, "zustaendig_text": 15}  # R5-Z
-    data, rot = [], set()
+    data, rot, fett_rot = [], set(), set()  # R27-108: überfällig rot+fett (Frist, Überfällig)
     for i, r in enumerate(rows):
+        if r["ueberfaellig"]:
+            fett_rot.update({(i, 8), (i, 10)})
         data.append([r["id"], r["projekt_nummer"], r["baugruppe_nummer"], r["sn"], r["titel"], r["beschreibung"],
                      (r["kategorie"] or {}).get("name"), r["prioritaet"]["name"], r["frist"],
                      r["status"]["name"], "ja" if r["ueberfaellig"] else "", r["erstellt_von_name"], r["erstellt_am"],
@@ -378,7 +380,13 @@ def export(ctx):
         header = [header[i] for i in idx]
         data = [[z[i] for i in idx] for z in data]
         rot = {(r, pos[c]) for r, c in rot if c in pos}
-    return {"_raw": xlsx.schreiben(header, data, rot=rot), "_filename": f"OPL-{today_iso()}.xlsx",
+        fett_rot = {(r, pos[c]) for r, c in fett_rot if c in pos}
+    import export as _ex  # R27-108: einheitlicher Kopf + Dateiname
+    with ctx.db.lock:
+        _p = _ex.projekt_lesen(ctx.db, ctx.qp("projekt_id")) if (ctx.qp("projekt_id") or "").isdigit() else None
+        _k = _ex.kopf(ctx.db.conn, ctx.user, "Offene Punkte", _p)
+        _name = _ex.dateiname(ctx.db.conn, "Offene Punkte", "xlsx", _p, ctx.user)
+    return {"_raw": xlsx.schreiben(header, data, rot=rot, fett_rot=fett_rot, kopf=_ex.excel_kopf(_k)), "_filename": _name,
             "_mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "_inline": False}
 
 

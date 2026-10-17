@@ -204,7 +204,7 @@ Einmalige Übernahme von Projekten + offenen Punkten aus einem vorbereiteten JSO
 Paketformat (Version 1):
 ```
 {"format":"barlage-pm-datenpaket","version":1,"quelle":"…","erstellt":"<iso>",
- "projekte":[{"nummer":"2026-126-00","kunde":"…","bezeichnung":"…","notizen":"…","pm_kuerzel":["N. Markus"],
+ "projekte":[{"nummer":"2026-126-00","kunde":"…","bezeichnung":"…","notizen":"…","pm_kuerzel":["J. Brandtner"],
    "punkte":[{"titel":"… (≤200)","beschreibung?":"…","zustaendig_text":"…","frist?":"JJJJ-MM-TT","kategorie?":"Info","status":"offen"}]}]}
 ```
 - `POST /api/admin/datenpaket/vorschau {paket}` (nur Admin) → `{ok, fehler[], warnungen[], neue_kategorien[], migration,
@@ -362,9 +362,9 @@ Web: Reiter „QIP“ und „Kick-Off“ (web/js/views/qip.js, kickoff.js via re
 - Nur noch `zustaendig_text` (Freitext, Einträge mit " / "). Erkannte Benutzer → Tabelle `opl_zustaendig(opl_id, user_id)`, gepflegt von
   `zustaendig.pflegen(conn, oid, notify)` aus `common.idx_opl` (Anlegen/Ändern/Bulk/Vorlage/Duplizieren/QIP-/Kick-Off-Übernahme/Sync) und im Datenpaket-Import;
   `reindex_all`, Start und Benutzeränderungen bauen ohne Benachrichtigung neu auf (`zustaendig.alle_neu`).
-  Erkennung (ohne Groß/klein): „Niklas Markus“, „Markus Niklas“, „N. Markus“, „N.Markus“, „Markus N.“, „Markus, Niklas“, Login; Nachname allein nur als ganzer
-  Eintrag, eindeutig, kein Stoppwort (Info, Einkauf …); innerhalb eines Eintrags nur mehrteilige Varianten („Hr. N. Markus (TB)“). Admins nie; mehrdeutig → nichts.
-- `opl.verantwortlich_id` bleibt als Spalte, wird aber geleert: ein Wert (Altbestand, Alt-Client, Vorlage) → Kurzname „N. Markus“ an `zustaendig_text` anhängen
+  Erkennung (ohne Groß/klein): „Jonas Brandtner“, „Brandtner Jonas“, „J. Brandtner“, „J.Brandtner“, „Brandtner J.“, „Brandtner, Jonas“, Login; Nachname allein nur als ganzer
+  Eintrag, eindeutig, kein Stoppwort (Info, Einkauf …); innerhalb eines Eintrags nur mehrteilige Varianten („Hr. J. Brandtner (TB)“). Admins nie; mehrdeutig → nichts.
+- `opl.verantwortlich_id` bleibt als Spalte, wird aber geleert: ein Wert (Altbestand, Alt-Client, Vorlage) → Kurzname „J. Brandtner“ an `zustaendig_text` anhängen
   (falls nicht schon erkannt), dann `NULL`. Idempotent, beim Start für alle Punkte. „INFO“/„Info“ als ganzer Text → leer + Kategorie „Info“ (beim Speichern und rückwirkend).
 - OPL-Items: `zustaendig_chips: [{user_id, name}]`, `zustaendig_user_ids`. Kalender `typ:'opl'`: `zustaendig_user_ids` statt `verantwortlich_id`.
 - Filter (Listen/Exporte/werte): `zustaendig_user_id=1,2|null` (= R5-L-Parameter, jetzt über Verknüpfung; `null` = Text leer); Aliase `zustaendig_user`, `verantwortlich_id`.
@@ -422,3 +422,16 @@ Web: Reiter „QIP“ und „Kick-Off“ (web/js/views/qip.js, kickoff.js via re
 - R26-W: `GET /api/fortschritt` liefert zusätzlich `stunden_prozent` und `ampel` (Admin, Controlling, Rollen mit Recht
   budget_stunden; nie Stundenzahlen)
 - Controlling: kein Zugriff (403).
+
+## R27 Punkte 106–108 (Kundenbestellung, PDF-Erkennung, Exporte)
+- `projekte.bestellnummer/bestelldatum`, `angebote.bestellnummer/bestelldatum` (Nachträge) – PUT /api/projekte/<id> bzw.
+  /api/angebote/<id> (`changes`), Standardfelder der Masken „projekt“/„angebot“ (kein Kernfeld). GET /api/projekte/<id>,
+  GET /api/projekte und Dashboard-Kacheln liefern `warnungen` [{art:"bestellnummer_fehlt", stufe:"hinweis"|"warnung", text}].
+  Dokumenttypen „Bestellung“ (rosa) und „Berichte“ (zitrone) – bei bestehender `ablage.typen` einmalig ergänzt (Merker
+  `ablage.typen_r27_ergaenzt`).
+- POST /api/projekte/<id>/dokumente/erkennen (multipart „datei“, PDF) → {text_gefunden, erkannt, art, art_name,
+  bestellnummer, datum, konfidenz, stufe, dokumenttyp, dokumenttyp_name, projektfelder, projekt:{bestellnummer,bestelldatum}}.
+  Reine Standardbibliothek (server/pdf_text.py), keine OCR. Rechte wie Hochladen.
+- GET /api/export/kopf?titel=&projekt_id=&art=&endung= → {kopf, dateiname, darf_ablegen, dokumenttyp} (FREI)
+- POST /api/export/ablegen?projekt_id=&art=&titel=&endung= (multipart „datei“) → {name, dokumenttyp} (Bereich dokumente)
+- Firmeneinstellung `export.dateiname` (Default „{projekt} {titel} {datum}“), Admin-Seite „Exporte“.

@@ -304,4 +304,8 @@ def activity_rows(db, where, args, limit=50):
         except ValueError:
             r["details"] = {}
         r["titel"] = r["details"].get("titel")
+        if r["details"].get("als_vertretung"):  # R27-105
+            r["user_name"] = f"{r['user_name'] or '?'} (als Vertretung für {r['details']['als_vertretung']})"
+        if r["details"].get("antrag"):  # R27-104
+            r["user_name"] = f"{r['user_name'] or '?'} – {r['details']['antrag']}"
     return rows

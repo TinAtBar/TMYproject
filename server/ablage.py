@@ -34,6 +34,8 @@ TYPEN_DEFAULT = [
     {"key": "kickoff", "name": "Kick-Off", "ordner": "Kick-Off", "farbe": "mint"},
     {"key": "terminplaene", "name": "Terminpläne", "ordner": "Terminpläne", "farbe": "lavendel"},
     {"key": "protokolle", "name": "Besprechungsprotokolle", "ordner": "Besprechungsprotokolle", "farbe": "salbei"},
+    {"key": "bestellung", "name": "Bestellung", "ordner": "Bestellung", "farbe": "rosa"},  # R27-106
+    {"key": "berichte", "name": "Berichte", "ordner": "Berichte", "farbe": "zitrone"},  # R27-108: Exporte ablegen
 ]
 for _i, _t in enumerate(TYPEN_DEFAULT):
     _t.update(pos=_i, aktiv=True)

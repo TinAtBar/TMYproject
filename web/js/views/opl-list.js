@@ -9,6 +9,7 @@ import { tabelle } from '../tabelle.js'; // R4-T
 import prefs from '../prefs.js'; // R4-T
 import { multiSelect, msLabel } from '../multiselect.js'; // R5-L
 import { zustFeld, zustFeldField } from '../zustaendig-feld.js'; // R5-D
+import { alsKachelDialog } from '../dashboard-ablage.js'; // R27: „Als Kachel aufs Dashboard“
 import { listenOptik } from '../darstellung.js'; // R26
 import { zusatzSpalten, lbl } from '../formular.js'; // R26-H: Zusatzfelder als Spalten
 import { isAdmin } from '../store.js'; // R26-H
@@ -183,6 +184,37 @@ export function oplList(host, opts = {}) {
     if (!f.status_id) filterbar.append(h('button', { type: 'button', class: 'toggle', 'aria-pressed': String(f.status_art !== 'offen'), title: 'Erledigte Punkte werden standardmäßig ausgeblendet', onclick: () => setF({ status_art: f.status_art !== 'offen' ? 'offen' : 'alle' }) }, icon('check', 16), 'Erledigte zeigen'));
     filterbar.append(h('button', { type: 'button', class: 'btn btn-ghost fb-views', 'aria-haspopup': 'menu', 'aria-label': 'Ansichten', title: 'Gespeicherte Ansichten', onclick: e => viewsMenu(e.currentTarget) }, icon('flag', 16), h('span', { class: 'fbv-lbl' }, 'Ansichten')));
     renderChips();
+    fbUeberlauf();
+  }
+  // R27-102: Filterleiste ohne Umbruch – was nicht in eine Zeile passt, wandert in „Weitere Filter ▾“
+  let fbRO = null, fbBreite = 0;
+  function fbUeberlauf() {
+    filterbar.classList.remove('fb-nowrap');
+    if (!filterbar.isConnected || getComputedStyle(filterbar.querySelector('.filter-toggle') || filterbar).display !== 'none' && filterbar.querySelector('.filter-toggle')) { fbBeobachten(); return; } // Handy: eingeklappte Leiste wie bisher
+    filterbar.classList.add('fb-nowrap');
+    const panel = h('div', { class: 'fb-mehr-panel', hidden: true, role: 'group', 'aria-label': 'Weitere Filter' });
+    const knopf = h('button', { type: 'button', class: 'btn btn-ghost fb-mehr', 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: e => { e.stopPropagation(); panel.hidden = !panel.hidden; knopf.setAttribute('aria-expanded', String(!panel.hidden)); } }, 'Weitere Filter', icon('chevD', 14));
+    const wrapM = h('div', { class: 'fb-mehr-wrap' }, knopf, panel);
+    const views = filterbar.querySelector('.fb-views');
+    filterbar.insertBefore(wrapM, views);
+    const beweglich = () => [...filterbar.children].filter(c => c !== wrapM && !c.classList.contains('q') && !c.classList.contains('filter-toggle') && !c.classList.contains('fb-views'));
+    let n = 0;
+    while (filterbar.scrollWidth > filterbar.clientWidth + 1 && beweglich().length && n++ < 30) panel.prepend(beweglich().pop());
+    // einzelnes Trennzeichen am Ende vermeiden
+    const rest = beweglich(); if (rest.length && rest[rest.length - 1].classList.contains('fb-sep')) panel.prepend(rest[rest.length - 1]);
+    if (!panel.children.length) wrapM.remove();
+    else {
+      const aktiv = [...panel.querySelectorAll('[aria-pressed="true"], .ms-btn.has-value, .is-active')].length;
+      if (aktiv) knopf.firstChild.textContent = `Weitere Filter (${aktiv})`;
+      document.addEventListener('click', e => { if (!wrapM.contains(e.target) && !e.target.closest('.ms-pop, .menu')) { panel.hidden = true; knopf.setAttribute('aria-expanded', 'false'); } }, { capture: true });
+    }
+    fbBeobachten();
+  }
+  function fbBeobachten() {
+    if (fbRO || typeof ResizeObserver === 'undefined') return;
+    fbBreite = filterbar.clientWidth;
+    fbRO = new ResizeObserver(() => { const b = filterbar.clientWidth; if (Math.abs(b - fbBreite) > 8) { fbBreite = b; renderFilters(); } });
+    fbRO.observe(filterbar);
   }
   function renderChips() {
     clear(chipsBar);
@@ -224,6 +256,7 @@ export function oplList(host, opts = {}) {
       ...saved.map((v, i) => ({ label: v.name, icon: 'filter', right: h('span', { class: 'chip-x', role: 'button', 'aria-label': 'Ansicht löschen', onclick: e => { e.stopPropagation(); const s = ls.get('opl.views', []); s.splice(i, 1); ls.set('opl.views', s); document.querySelector('.menu')?.remove(); toast(`Ansicht „${v.name}“ gelöscht.`); } }, icon('trash', 14)), fn: () => { f = { ...v.f }; qInput.value = f.q || ''; if (v.group != null) { groupBy = v.group; ls.set('opl.group', groupBy); } if (v.tab) tab.setState(v.tab, 'ansicht-still'); else if (v.sort || v.hidden) tab.setState({ ...tab.state(), sort: v.sort ? SORT2STATE(v.sort) : tab.sort(), hidden: v.hidden || tab.state().hidden, filters: {} }, 'ansicht-still'); sortFromTab(); setF({}); } })),
       '-',
       { label: 'Aktuelle Filter als Ansicht speichern …', icon: 'plus', fn: saveView },
+      { label: 'Als Kachel aufs Dashboard …', icon: 'grid', fn: () => alsKachelDialog({ f: { ...f } }) }, // R27: Dashboard 2
       isAdmin() ? { label: 'Als Firmenstandard speichern …', icon: 'lock', fn: saveFirmaView } : null, // R26-H: nur Admin
     ].filter(Boolean));
   }
@@ -260,8 +293,9 @@ export function oplList(host, opts = {}) {
         tab.spaltenButton(),
         h('a', { class: 'btn btn-sm', href: exportHref, download: 'opl.xlsx', title: 'Excel-Export (Spalten wie angezeigt)' }, icon('download', 16), 'Excel'),
         h('a', { class: 'btn btn-sm', href: csvHref, download: 'opl.csv', title: 'CSV-Export (Spalten wie angezeigt)' }, icon('download', 16), 'CSV'),
-        h('button', { type: 'button', class: 'btn btn-sm', title: 'Liste drucken (Spalten, Reihenfolge und Filter wie angezeigt)', onclick: () => tab.drucken('Offene Punkte') }, icon('doc', 16), 'Drucken'),
+        h('button', { type: 'button', class: 'btn btn-sm', title: 'Liste drucken oder als PDF speichern (Spalten, Reihenfolge und Filter wie angezeigt)', onclick: async () => { const ex = await import('../export.js'); const k = await ex.kopfLaden('Offene Punkte', { projektId: /^\d+$/.test(String(ep.projekt_id || '')) ? ep.projekt_id : null }); tab.drucken('Offene Punkte', { kopf: ex.kopfElement(k.kopf), dateiname: k.dateiname }); } }, icon('doc', 16), 'Drucken'), // R27-108
         h('a', { class: 'btn btn-sm', href: '#/protokoll' + qs(protoQ), title: 'Druckansicht für die Baubesprechung' }, icon('doc', 16), 'Protokoll'),
+        /^\d+$/.test(String(ep.projekt_id || '')) ? oplAblegen(ep.projekt_id, exportHref) : null, // R27-108
         h('span', { class: 'kbd-hint hide-phone' }, h('span', null, h('kbd', null, 'j'), h('kbd', null, 'k'), ' bewegen'), h('span', null, h('kbd', null, '↵'), ' öffnen'), h('span', null, h('kbd', null, 'x'), ' wählen'), h('span', null, h('kbd', null, 'n'), ' neu'))));
   }
 
@@ -347,6 +381,9 @@ export function oplList(host, opts = {}) {
   function zustRest(it, chips) {
     let t = it.zustaendig_text || '';
     for (const c of chips) t = t.replace(new RegExp(c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), '');
+    // R27-102: Kurzname/Initialen der erkannten Personen nicht zusätzlich anzeigen (z. B. „P. B“, „PB“, „M.1“)
+    const kurz = new Set(chips.flatMap(c => { const u = (store.sd.users || []).find(x => x.id === c.user_id) || {}; return [c.name.split(/\s+/).map(w => w[0]).join(''), u.kurz, u.kuerzel, u.login].filter(Boolean).map(x => String(x).toUpperCase().replace(/[^A-Z0-9ÄÖÜ]/g, '')); }));
+    if (kurz.size) t = t.split(/([,;\/+&]|\s{2,})/).map(x => kurz.has(x.toUpperCase().replace(/[^A-Z0-9ÄÖÜ]/g, '')) && x.trim() ? '' : x).join('');
     return t.replace(/^[\s,;\/+&·-]+|[\s,;\/+&·-]+$/g, '').replace(/\s*([,;\/+&])\s*(?:[,;\/+&]\s*)+/g, '$1 ').trim();
   }
   function zustText(it) { const c = zustChips(it); const r = zustRest(it, c); return [...c.map(x => x.name), r].filter(Boolean).join(', '); }
@@ -397,7 +434,8 @@ export function oplList(host, opts = {}) {
   function fristCell(it) {
     const fs = fristState(it.frist, isDone(it));
     if (!it.frist) return h('span', { class: 'frist none' }, '–');
-    return h('span', { class: 'frist ' + fs.cls, title: fs.title || null }, h('span', { class: 'd' }, fristIcon(fs.cls), fs.label), fs.sub && fs.cls !== 'overdue' ? h('span', { class: 'sub' }, fs.sub) : null); // R26: überfällig = nur Datum (fett, rot)
+    const heute = fs.cls === 'week' && fs.sub === 'heute fällig';
+    return h('span', { class: 'frist ' + fs.cls + (heute ? ' is-heute' : ''), title: fs.title || (fs.sub ? (heute ? 'heute fällig' : `fällig ${fs.sub}`) : null) }, h('span', { class: 'd' }, fristIcon(fs.cls), heute || fs.cls === 'week' ? fmtDate(it.frist) : fs.label)); // R27-102: nur Datum (heute = bernstein fett, überfällig = rot fett)
   }
   async function changeStatus(it, sid) {
     const prev = it.status; const st = byId('status_opl', sid);
@@ -492,4 +530,11 @@ export function oplList(host, opts = {}) {
   };
   aktiv = api;
   return api;
+}
+
+// R27-108: Excel der gefilterten Liste (genau ein Projekt) zusätzlich im Projektordner ablegen
+function oplAblegen(pid, href) {
+  const b = h('span', null);
+  import('../export.js').then(ex => b.append(ex.ablegenKnopf({ projektId: pid, art: 'opl', titel: 'Offene Punkte', endung: 'xlsx', cls: 'btn btn-sm btn-ghost', holen: () => ex.blobVon(href) })));
+  return b;
 }

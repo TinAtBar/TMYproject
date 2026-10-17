@@ -5,6 +5,7 @@ import { loading, errorBox, select, field } from '../ui.js';
 import { qrSvg } from '../vendor/qrcode.js';
 import { emptyIcon } from '../extras.js';
 import { FIRMA } from '../config.js';
+import { druckenMitName } from '../export.js'; // R27-108
 
 const base = () => location.origin + location.pathname;
 
@@ -37,7 +38,7 @@ export function mount(el, r) {
     clear(body).append(
       h('div', { class: 'no-print row between', style: { marginBottom: '14px', flexWrap: 'wrap', gap: '10px' } },
         h('div', null, h('h1', null, titel), h('p', { class: 'muted' }, `${labels.length} Etiketten · Scannen öffnet die Seriennummer in Barlage PM (im Firmennetz).`)),
-        h('div', { class: 'row', style: { alignItems: 'flex-end' } }, field('Format', fmt), h('button', { class: 'btn btn-ghost', onclick: () => history.back() }, 'Zurück'), h('button', { class: 'btn btn-primary', onclick: () => window.print() }, icon('download', 18), 'Drucken'))),
+        h('div', { class: 'row', style: { alignItems: 'flex-end' } }, field('Format', fmt), h('button', { class: 'btn btn-ghost', onclick: () => history.back() }, 'Zurück'), h('button', { class: 'btn btn-primary', onclick: () => druckenMitName(titel), title: 'Als PDF: im Druckdialog „Als PDF speichern“ wählen' }, icon('download', 18), 'Drucken / PDF'))), // R27-108
       labels.length ? h('div', { class: 'label-sheet fmt-' + format }, labels.map(l => h('div', { class: 'label' + (l.bg ? ' label-bg' : '') }, qrSvg(l.url, { size: format === 'klein' ? 84 : format === 'gross' ? 150 : 110, label: 'QR ' + l.kopf }),
         h('div', { class: 'label-t' }, h('div', { class: 'lk mono' }, l.kopf), h('div', { class: 'ls' }, l.sub), h('div', { class: 'ls2' }, `${l.sub2} · ${FIRMA}`)))))
         : h('div', { class: 'card' }, emptyIcon('doc', 'Keine Etiketten', 'Diese Auswahl enthält keine Seriennummern.')));

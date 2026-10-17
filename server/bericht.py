@@ -33,7 +33,7 @@ def daten(conn, projekt_ids, zeitraum="woche", stichtag=None):
     bis4 = (heute + dt.timedelta(days=28)).isoformat()
     projekte = []
     for pid in projekt_ids:
-        p = conn.execute("SELECT id, nummer, bezeichnung, kunde, status FROM projekte WHERE id=?", (pid,)).fetchone()
+        p = conn.execute("SELECT id, nummer, bezeichnung, kunde, status, bestellnummer, bestelldatum FROM projekte WHERE id=?", (pid,)).fetchone()
         if not p:
             continue
         k = budget.kennzahlen(conn, pid)
@@ -55,39 +55,52 @@ def daten(conn, projekt_ids, zeitraum="woche", stichtag=None):
             "LEFT JOIN users u ON u.id=o.verantwortlich_id WHERE o.projekt_id=? AND COALESCE(o.geloescht,0)=0 AND s.art='offen' "
             "ORDER BY o.frist IS NULL, o.frist, o.id", (pid,))]
         projekte.append({"id": pid, "nummer": p["nummer"], "bezeichnung": p["bezeichnung"], "kunde": p["kunde"],
-                         "status": p["status"], "kennzahlen": k, "meilensteine": ms, "offene_punkte": opl})
+                         "status": p["status"], "bestellnummer": p["bestellnummer"], "bestelldatum": p["bestelldatum"],  # R27-106
+                         "kennzahlen": k, "meilensteine": ms, "offene_punkte": opl})
     return {"zeitraum": zeitraum, "label": label, "von": von.isoformat(), "bis": bis.isoformat(),
             "erstellt": heute.isoformat(), "projekte": projekte}
 
 
-def mappe(d):
-    t = "Wochenbericht" if d["zeitraum"] == "woche" else "Monatsbericht"
-    kopf = [[{"v": f"{t} {d['label']}", "fett": True, "gross": True}], [f"Zeitraum {d['von']} – {d['bis']}, erstellt {d['erstellt']}"], []]
-    ueb = kopf + [[{"v": x, "fett": True} for x in ("Projekt", "Bezeichnung", "Kunde", "Fortschritt %", "Soll h", "Ist h",
-                                                     "Stunden %", "Ampel", "Ist-Stand", "Offene Punkte", "Meilensteine (4 Wo.)")]]
-    abt = [[{"v": x, "fett": True} for x in ("Projekt", "Abteilung", "Unterpunkt", "Soll h", "Ist h", "%")]]
+def titel(d):
+    return ("Wochenbericht" if d["zeitraum"] == "woche" else "Monatsbericht") + " " + d["label"]
+
+
+def mappe(d, kopf=None, stunden=True):
+    """kopf: export.kopf(...) (R27-108: einheitlicher Kopf); stunden=False → keine Stundenzahlen (nur %)."""
+    import export
+    k0 = kopf or {"app": export.APP, "titel": titel(d), "projekt": "", "stand": d["erstellt"], "erstellt_von": ""}
+    kopf_rows = export.kopf_zeilen(k0)
+    kopf_rows.insert(3, [f"Zeitraum {d['von']} – {d['bis']}"])
+    sp_ueb = ("Projekt", "Bezeichnung", "Kunde", "Bestellnr. (Kunde)", "Bestelldatum", "Fortschritt %") + \
+        (("Soll h", "Ist h") if stunden else ()) + ("Stunden %", "Ampel", "Ist-Stand", "Offene Punkte", "Meilensteine (4 Wo.)")
+    ueb = kopf_rows + [[{"v": x, "fett": True} for x in sp_ueb]]
+    abt = [[{"v": x, "fett": True} for x in ("Projekt", "Abteilung", "Unterpunkt") + (("Soll h", "Ist h") if stunden else ()) + ("%",)]]
     ms = [[{"v": x, "fett": True} for x in ("Projekt", "Datum", "Meilenstein", "Baugruppe", "erledigt")]]
     op = [[{"v": x, "fett": True} for x in ("Projekt", "Nr.", "Titel", "Frist", "Zuständig", "Status")]]
     for p in d["projekte"]:
         k = p["kennzahlen"]
         rot = k["ampel"] in ("rot", "rot_voll")
-        ueb.append([p["nummer"], p["bezeichnung"], p["kunde"], k["fortschritt"], k["soll"], k["ist"], k["stunden_prozent"],
+        h = (lambda *x: list(x)) if stunden else (lambda *x: [])
+        ueb.append([p["nummer"], p["bezeichnung"], p["kunde"], p.get("bestellnummer"), {"v": p.get("bestelldatum"), "datum": True},
+                    k["fortschritt"], *h(k["soll"], k["ist"]), k["stunden_prozent"],
                     {"v": AMPEL_TEXT.get(k["ampel"], k["ampel"]), "rot": rot, "fett": rot}, {"v": k.get("ist_stand"), "datum": True},
                     len(p["offene_punkte"]), len(p["meilensteine"])])
         for a in k["abteilungen"]:
-            abt.append([p["nummer"], {"v": a["name"], "fett": True}, "", a["soll"], a["ist"], a["prozent"]])
+            abt.append([p["nummer"], {"v": a["name"], "fett": True}, "", *h(a["soll"], a["ist"]), a["prozent"]])
             for u in a["unterpunkte"]:
-                abt.append([p["nummer"], a["name"], u["name"], u["soll"], u["ist"], u["prozent"]])
+                abt.append([p["nummer"], a["name"], u["name"], *h(u["soll"], u["ist"]), u["prozent"]])
         for m in p["meilensteine"]:
             ms.append([p["nummer"], {"v": m["datum"], "datum": True}, m["name"], m.get("baugruppe"), bool(m.get("erledigt"))])
         for o in p["offene_punkte"]:
             op.append([p["nummer"], o["id"], {"v": o["titel"], "umbruch": True}, {"v": o["frist"], "datum": True},
                        o.get("verantwortlich"), o.get("status")])
     return xlsx.mappe_schreiben([
-        {"name": "Übersicht", "rows": ueb, "breiten": [14, 34, 22, 12, 10, 10, 11, 26, 12, 13, 18]},
-        {"name": "Stunden je Abteilung", "rows": abt, "breiten": [14, 22, 26, 10, 10, 8]},
-        {"name": "Meilensteine", "rows": ms, "breiten": [14, 12, 30, 16, 9]},
-        {"name": "Offene Punkte", "rows": op, "breiten": [14, 7, 60, 12, 20, 16]}])
+        {"name": "Übersicht", "rows": ueb, "breiten": [14, 34, 22, 18, 12, 12] + ([10, 10] if stunden else []) + [11, 26, 12, 13, 18],
+         "kopf": export.excel_kopf(k0)},
+        {"name": "Stunden je Abteilung", "rows": abt, "breiten": [14, 22, 26] + ([10, 10] if stunden else []) + [8],
+         "kopf": export.excel_kopf(k0)},
+        {"name": "Meilensteine", "rows": ms, "breiten": [14, 12, 30, 16, 9], "kopf": export.excel_kopf(k0)},
+        {"name": "Offene Punkte", "rows": op, "breiten": [14, 7, 60, 12, 20, 16], "kopf": export.excel_kopf(k0)}])
 
 
 def vorlage_befuellen(d, vorlage_bytes=None):
@@ -115,13 +128,15 @@ def ep_bericht(ctx):
         if not ctx.r.admin:
             eigene = ctx.r.pm_projekte()
             ids = [i for i in ids if i in eigene]
+    import export  # R27-108: einheitlicher Kopf, Dateiname, Stundenrechte
     with ctx.db.lock:
         d = daten(ctx.db.conn, ids, zr)
-    data = mappe(d)
-    name = ("Wochenbericht" if zr == "woche" else "Monatsbericht") + "_" + d["label"].replace(" ", "").replace("/", "-")
-    if pid and d["projekte"]:
-        name += "_" + d["projekte"][0]["nummer"]
-    return {"_raw": data, "_filename": name + ".xlsx",
+        p = export.projekt_lesen(ctx.db, pid) if pid else None
+        t = titel(d).replace("/", "-")
+        k = export.kopf(ctx.db.conn, ctx.user, titel(d), p)
+        name = export.dateiname(ctx.db.conn, t, "xlsx", p, ctx.user)
+    data = mappe(d, k, stunden=export.stunden_erlaubt(ctx, pid))
+    return {"_raw": data, "_filename": name,
             "_mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "_inline": False}
 
 

@@ -37,10 +37,12 @@ import termine  # noqa: E402,F401  # R4-P: freie Termine/Meilensteine
 import meilensteine, fortschritt  # noqa: E402,F401  # R26-C1: Meilensteine je Projekt, Fortschritt/Verlauf/Prognose
 import fertigung  # noqa: E402,F401  # R5-F: Fertigungsbesprechung
 import rechte, fertigung_verteilen  # noqa: E402,F401  # R26-E: Rechte-Matrix, Verteilen
+import vertretung, fertigung_antraege  # noqa: E402,F401  # R27-103–105: Vertretung, Fertigungsort, Anträge
 import zustaendig, kontakte  # noqa: E402,F401  # R5-Z: Zuständig-Vorschläge, Kontakte
 import ablage  # noqa: E402  # R26-B: Dokumentenablage (Netzlaufwerk)
 import budget, reststunden, bericht  # noqa: E402,F401  # R26-C2: Budget, Reststunden, Bericht
 import dashboard  # noqa: E402,F401  # R26-G: Dashboard-Sammelabruf (Kacheln, Heute)
+import export, dokument_erkennung  # noqa: E402,F401  # R27-107/108: Exporte vereinheitlichen, PDF-Erkennung
 import seed as seed_mod  # noqa: E402
 import pairing, sync  # noqa: E402,F401  mobile: Geräte-Kopplung, Offline-Abgleich
 import tls as tls_mod  # noqa: E402  mobile:
@@ -309,6 +311,7 @@ def build_app(data_dir, port, seed=False, force_server=False, user=None, https=F
     app.stop_events.append(reststunden.starten(app))  # R26-C2: Reststunden-Abruf beim Start und täglich
     ablage.start_pruefung(db)  # R26-B: Ablagepfade im Hintergrund prüfen (nur Warnungen)
     app.stop_events.append(fortschritt.starte_timer(db))  # R26-C1: tägliche Fortschritt-Momentaufnahme
+    app.stop_events.append(dashboard.starte_timer(db))  # R27: tägliche Kennzahlen-Momentaufnahme
     handler = type("H", (Handler,), {"app": app})
     httpd = ThreadingHTTPServer(("0.0.0.0", port), handler)
     httpd.daemon_threads = True

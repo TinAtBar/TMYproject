@@ -2,6 +2,7 @@
 import { h, clear } from '../util.js';
 import { get } from '../api.js';
 import { qrSvg } from '../vendor/qrcode.js';
+import { kopfLaden, kopfElement, druckLeiste } from '../export.js'; // R27-108
 
 const NS = 'http://www.w3.org/2000/svg';
 function svg(inner) { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 80 140'); s.setAttribute('class', 'skizze'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = inner; return s; }
@@ -18,12 +19,14 @@ export function mount(el) {
   el.append(seite);
   (async () => {
     let a = null; try { a = await get('/sync/adressen'); } catch { }
+    const k = await kopfLaden('Handy-Anleitung', { endung: 'pdf' }); // R27-108
     const schritt = (nr, titel, skizze, texte, qr) => h('section', { class: 'druck-schritt' },
       h('div', { class: 'druck-text' }, h('h2', null, `${nr}. ${titel}`), h('ol', null, texte.map(t => h('li', null, t)))),
       qr || null, skizze());
     const qr = (url, label) => url ? h('figure', { class: 'druck-qr' }, qrSvg(url, { size: 150, label }), h('figcaption', null, label, h('br'), h('code', null, url))) : null;
     clear(seite).append(
-      h('div', { class: 'druck-kopf' }, h('h1', null, 'Barlage PM aufs Handy'), h('button', { class: 'btn btn-primary no-print', onclick: () => print() }, 'Drucken')),
+      druckLeiste({ zurueck: null }), kopfElement(k.kopf), // R27-108
+      h('div', { class: 'druck-kopf' }, h('h2', null, 'Barlage PM aufs Handy')),
       h('p', null, 'Diese Anleitung einmal pro Handy durchgehen. Dauer: etwa 5 Minuten. Handy und Firmen-WLAN bereithalten.'),
       schritt(1, 'Sicherheits-Zertifikat installieren', SKIZZEN.zert, [
         'Android: QR-Code „Android“ scannen, Datei laden. Einstellungen → Sicherheit → „Zertifikat installieren“ → „CA-Zertifikat“.',

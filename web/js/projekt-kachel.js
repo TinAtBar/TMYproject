@@ -20,7 +20,7 @@ export function kachelZiele(p, darfDetails = darf('projekte_details')) {
   const base = '#/projekte/' + p.id;
   return {
     projekt: base,
-    fortschritt: base, // Meilensteine/Terminplan stehen im Reiter „Übersicht“
+    fortschritt: darf('termine') ? base + '?tab=termine' : base, // R27-101: Meilensteine/Zeitleiste/Verlauf im Reiter „Termine“
     stunden: darf('budget_stunden') ? base + '?tab=budget' : null,
     punkt: p.erster_offener_punkt ? '#/opl/' + p.erster_offener_punkt.id : opl,
   };

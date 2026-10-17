@@ -54,7 +54,7 @@ class AblageTest(unittest.TestCase):
 
     def test_standardtypen_und_muster(self):
         tt = ablage.typen(self.db.conn)
-        self.assertEqual([t["name"] for t in tt], ["Spezifikationen", "SV zu Kunde", "SV von Kunde", "Kick-Off", "Terminpläne", "Besprechungsprotokolle"])
+        self.assertEqual([t["name"] for t in tt], ["Spezifikationen", "SV zu Kunde", "SV von Kunde", "Kick-Off", "Terminpläne", "Besprechungsprotokolle", "Bestellung", "Berichte"])  # R27: + Bestellung, Berichte
         self.assertTrue(all(t["farbe"] in ablage.PASTELL for t in tt))
         self.assertEqual(ablage.projektordner(self.db.conn, {"nummer": "2026-1", "bezeichnung": "A/B..\\C"}),
                          str(self.share) + os.sep + "2026-1 A-B..-C")

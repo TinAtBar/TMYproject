@@ -76,3 +76,194 @@
 .db-zahl b { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
 .db-zahl.od b { color: var(--sem-ueber, var(--sem-danger)); }
 .db-zahl:focus-visible { outline: 2px solid var(--focus, var(--accent)); }
+
+/* =====================================================================
+   R27 – Dashboard 2 (views/start.js, infotexte.js, diagramme.js)
+   Raster: Container-Query für Spaltenzahl (5/4/2/1), Zeilenhöhe 4px, Kachel-Span aus Inhaltshöhe (lückenlos).
+   Auswahl-/Aktiv-Zustände nur Navy/neutral (--select*), Rot nur für überfällig, Bernstein für „bald“.
+   ===================================================================== */
+.db2-kopf { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.db2-titel h1 { margin: 0; color: var(--accent-text); font-size: 1.75rem; line-height: 1.15; }
+.db2-titel .sub { margin: 4px 0 0; color: var(--text-2); }
+.db2-aktionen { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.db2-zeitraum strong { font-weight: 700; }
+.btn-anpassen { border-color: var(--select-line, var(--accent)); color: var(--select-text, var(--accent-text)); background: var(--select-bg, var(--accent-soft)); }
+.db2-reiter { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; scrollbar-width: thin; }
+.db2-tabs { display: flex; gap: 2px; }
+.db2-tab { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; border: 0; background: none; color: var(--text-2); font: inherit; font-weight: 600; cursor: pointer;
+  border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; border-radius: 6px 6px 0 0; }
+.db2-tab:hover { background: var(--surface-3); }
+.db2-tab[aria-selected="true"] { color: var(--select-text, var(--accent-text)); border-bottom-color: var(--select, var(--accent)); }
+.db2-tab:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: -2px; }
+.db2-neu { white-space: nowrap; color: var(--text-2); }
+.db2-hinweis { display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 14px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--line); }
+.db2-leer { padding: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+
+/* ---------- Raster ---------- */
+.dk-huelle { container-type: inline-size; }
+.dk-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 4px; grid-auto-flow: row dense; column-gap: 16px; row-gap: 0; align-items: start; }
+.dk { position: relative; min-width: 0; grid-column: 1 / -1; }
+.dk-K { grid-column: span 1; }
+.dk-kopf { flex-wrap: wrap; }
+@container (max-width: 559px) { .dk-kz .dk-kopf { padding: 8px 10px 0 12px; } .dk-kz-link { padding: 2px 12px 10px; } .dk-kz .dg-spark { display: none; } .dk-termine, .dk[data-id="termine"], .dk[data-id="stunden_ampel"] { grid-column: 1 / -1; } }
+@container (min-width: 560px) {
+  .dk-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dk-K { grid-column: span 1; } .dk-M { grid-column: span 2; } .dk-G { grid-column: 1 / -1; }
+}
+@container (min-width: 900px) { .dk-raster { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container (min-width: 1100px) { .dk-raster { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.dk-karte { display: flex; flex-direction: column; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius, 12px); box-shadow: var(--shadow-1); }
+.dk-kopf { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 10px 14px 8px 16px; border-bottom: 1px solid var(--line); }
+.dk-kopf h2 { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.25; min-width: 0; overflow-wrap: normal; flex: 0 1 auto; }
+.dk-kopf-sp { flex: 1; }
+.dk-kopf-akt { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.dk-leer { padding: 18px 16px; }
+.dk-mehr { display: inline-block; padding: 10px 16px 12px; font-weight: 650; font-size: .9rem; text-decoration: none; }
+.dk-mehr:hover { text-decoration: underline; }
+.dk-fuss { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-left: 8px; }
+.dk-fuss .dk-mehr { margin-left: auto; }
+.dk-rot { color: var(--sem-danger) !important; font-weight: 750; }
+.dk-warn { color: var(--warn-text, var(--warn)); font-weight: 750; }
+.dk-anz { margin-left: auto; padding-left: 14px; font-variant-numeric: tabular-nums; color: var(--text-3); font-weight: 650; }
+
+/* ---------- Kennzahl ---------- */
+.dk-kz .dk-kopf { border-bottom: 0; padding-bottom: 0; min-height: 0; }
+.dk-kz .dk-kopf h2 { font-size: .9rem; font-weight: 600; color: var(--text-2); }
+.dk-kz-link { display: flex; flex-direction: column; gap: 2px; padding: 2px 16px 12px; color: inherit; text-decoration: none; border-radius: 0 0 var(--radius, 12px) var(--radius, 12px); }
+.dk-kz-link:hover { background: var(--surface-2); }
+.dk-kz-link:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: -2px; }
+.dk-kz-zeile { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.dk-kz-wert { font-size: 2rem; line-height: 1.1; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--accent-text); }
+.dk-trend { font-size: .8rem; color: var(--text-3); font-weight: 600; }
+.dk-trend-gut { color: var(--sem-erledigt); }
+.dk-trend-schlecht { color: var(--sem-danger); }
+
+/* ---------- Diagramme (diagramme.js) ---------- */
+.dg-spark { flex: none; overflow: visible; }
+.dg-spark .dg-linie, .dg-linien .dg-linie { fill: none; stroke: var(--dg-c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dg-spark .dg-flaeche { fill: var(--dg-c); opacity: .12; stroke: none; }
+.dg-spark .dg-punkt { fill: var(--dg-c); }
+.dg-linien { display: block; width: 100%; height: auto; }
+.dg-linien .dg-punkt { fill: var(--surface); stroke: var(--dg-c); stroke-width: 2; }
+.dg-gitter { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.dg-achse { fill: var(--text-3); font-size: 11px; font-family: var(--font, inherit); }
+.dg-ring { width: 150px; height: 150px; flex: none; }
+.dg-ring-spur { stroke: var(--surface-3); }
+.dg-ring-zahl { fill: var(--text); font-size: 26px; font-weight: 750; font-family: var(--font, inherit); }
+.dg-ring-unter { fill: var(--text-3); font-size: 11px; font-family: var(--font, inherit); }
+.dk-diagramm { padding: 10px 12px 8px; }
+.dk-leg { display: inline-flex; gap: 12px; font-size: .82rem; color: var(--text-2); flex-wrap: wrap; }
+.dk-leg span { display: inline-flex; align-items: center; gap: 5px; }
+.dk-leg i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.dk-ring { display: flex; align-items: center; gap: 18px; padding: 14px 16px; flex-wrap: wrap; }
+.dk-ring-leg { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 2px; }
+.dk-ring-leg a { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; color: inherit; text-decoration: none; font-size: .9rem; }
+.dk-ring-leg a:hover { background: var(--surface-2); }
+.dk-ring-leg i { width: 11px; height: 11px; border-radius: 2px; }
+.dk-ring-leg b { font-variant-numeric: tabular-nums; }
+
+/* ---------- Personen / Balken ---------- */
+.dk-pers { list-style: none; margin: 0; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+.dk-pers a { display: grid; grid-template-columns: auto minmax(70px, 1fr) minmax(60px, 1.4fr) 2.4em; align-items: center; gap: 10px; padding: 6px; border-radius: 8px; color: inherit; text-decoration: none; }
+.dk-balken a { grid-template-columns: minmax(70px, 1fr) minmax(60px, 1.6fr) 2.4em; }
+.dk-pers a:hover { background: var(--surface-2); }
+.dk-pers-n { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .92rem; }
+.dk-pers-bar { display: flex; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.dk-pers-bar i { height: 100%; background: var(--sem-offen); flex: none; }
+.dk-pers-bar i.dk-pers-ue { background: var(--sem-danger); }
+.dk-pers b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Stunden-Ampel ---------- */
+.dk-ampel { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 16px; }
+.dk-ampel-box { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-2); text-decoration: none; font-size: .86rem; }
+.dk-ampel-box b { font-size: 1.5rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.dk-ampel-box span { display: inline-flex; align-items: center; gap: 4px; }
+.dk-warn-box b { color: var(--warn-text, var(--warn)); }
+.dk-rot-box b { color: var(--sem-danger); }
+
+/* ---------- Meine offenen Punkte ---------- */
+.dk-auswahl { max-width: 100%; gap: 4px; }
+.dk-auswahl-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22ch; }
+.dk-mzahlen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 10px 12px 4px; }
+.dk-mz { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 10px; border-radius: 8px; border: 1px solid transparent; background: var(--surface-2); color: inherit; font: inherit; text-decoration: none; cursor: pointer; text-align: left; }
+.dk-mz b { font-size: 1.25rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.dk-mz span { font-size: .78rem; color: var(--text-3); }
+.dk-mz:hover { border-color: var(--line-strong); }
+.dk-mz[aria-pressed="true"] { background: var(--select-bg, var(--accent-soft)); border-color: var(--select-line, var(--accent)); }
+.dk-mz[aria-pressed="true"] span { color: var(--select-text, var(--accent-text)); }
+.dk-mz.dk-rot b { color: var(--sem-danger); }
+.dk-mz:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 1px; }
+.dk-mp-liste { list-style: none; margin: 0; padding: 4px 8px; }
+.dk-mp-liste li + li { border-top: 1px solid var(--line); }
+.dk-mp { display: grid; grid-template-columns: minmax(90px, 9.5em) minmax(0, 1fr) auto; align-items: center; gap: 4px 14px; padding: 9px 8px; color: inherit; text-decoration: none; border-radius: 8px; }
+.dk-mp:hover { background: var(--surface-2); }
+.dk-mp-kurz { grid-template-columns: minmax(70px, 7.5em) minmax(0, 1fr) auto; }
+.dk-mp-p { display: flex; flex-direction: column; min-width: 0; }
+.dk-mp-p > * { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dk-mp-p b { font-size: .88rem; }
+.dk-mp-t { min-width: 0; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dk-mp-f { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+.dk-mp-z { grid-column: 2 / -1; justify-self: start; display: inline-flex; gap: 6px; align-items: center; font-size: .78rem; }
+.dk-ini { font-size: .66rem; font-weight: 800; }
+@container (min-width: 900px) { .dk-M .dk-mp { grid-template-columns: minmax(90px, 9.5em) minmax(0, 1fr) auto auto; } .dk-M .dk-mp-z { grid-column: auto; } }
+
+/* ---------- Termine ---------- */
+.dk-termine ul { list-style: none; margin: 0; padding: 4px 10px; }
+.dk-termine li + li { border-top: 1px solid var(--line); }
+.dk-termine a { display: flex; align-items: center; gap: 12px; padding: 8px 6px; color: inherit; text-decoration: none; border-radius: 8px; }
+.dk-termine a:hover { background: var(--surface-2); }
+.dk-badge { flex: none; width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px;
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); line-height: 1.05; }
+.dk-badge b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.dk-badge small { font-size: .62rem; font-weight: 750; letter-spacing: .04em; color: var(--text-3); }
+.dk-badge-bald { background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn-line, var(--warn)); }
+.dk-badge-bald b, .dk-badge-bald small { color: var(--warn-text, var(--warn)); }
+.dk-ter-t { display: flex; flex-direction: column; min-width: 0; }
+.dk-ter-t > * { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dk-ter-t b { font-weight: 650; font-size: .93rem; }
+
+/* ---------- Projekte / Ansicht / Steuerung ---------- */
+.dk-projekte > .pk-raster { padding: 14px; }
+.dk-projekte .pk { box-shadow: none; }
+.dk-ansicht .dk-kz-link { padding-top: 12px; }
+.dk-quelle { font-size: .72rem; }
+.dk-steuerung { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px 16px; padding: 8px 12px; }
+.dk-st-block h3 { margin: 6px 4px; font-size: .86rem; color: var(--text-2); }
+
+/* ---------- Anpassen-Modus ---------- */
+.dk-anpassen .dk-karte { outline: 1.5px dashed var(--line-strong); outline-offset: 3px; }
+.dk-anpassen .dk { cursor: grab; padding-top: 0; }
+.dk-anpassen .dk-karte a, .dk-anpassen .dk-karte button { pointer-events: none; }
+.dk-anpassen .dk-karte .dk-kopf-akt button[data-fokus^="pfilter"] { pointer-events: auto; }
+.dk-aus .dk-karte { opacity: .45; filter: grayscale(.6); }
+.dk-zieht { opacity: .5; }
+.dk-ziel-vor .dk-karte { box-shadow: -4px 0 0 0 var(--select, var(--accent)); }
+.dk-ziel-nach .dk-karte { box-shadow: 4px 0 0 0 var(--select, var(--accent)); }
+.dk-werkzeuge { position: absolute; z-index: 3; top: -13px; right: 10px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px; border-radius: 8px;
+  background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-1); cursor: default; }
+.dk-griff { padding: 0 4px; color: var(--text-3); cursor: grab; letter-spacing: -2px; font-weight: 800; user-select: none; }
+.dk-wz { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 24px; border: 0; border-radius: 5px; background: none; color: var(--text-2); cursor: pointer; }
+.dk-wz:hover:not(:disabled) { background: var(--surface-3); }
+.dk-wz:disabled { opacity: .35; cursor: default; }
+.dk-wz[aria-pressed="false"] { color: var(--text-3); }
+.dk-gr { display: inline-flex; margin-left: 2px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--line-strong); overflow: hidden; }
+.dk-gr button { border: 0; background: none; font: inherit; font-size: .74rem; font-weight: 750; width: 22px; height: 22px; color: var(--text-2); cursor: pointer; }
+.dk-gr button[aria-pressed="true"] { background: var(--select, var(--accent)); color: var(--on-accent, #fff); }
+.dk-wz:focus-visible, .dk-gr button:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 1px; }
+.dk-fusshinweis { margin: 4px 0 0; }
+.dk-katalog { display: flex; flex-wrap: wrap; gap: 8px; }
+.dk-dlg-h { margin: 6px 0 0; font-size: .95rem; }
+.dk-dlg-reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.dk-pf-liste { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; }
+.dk-pf-p { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+
+/* ---------- ⓘ (infotexte.js) ---------- */
+.info-wrap { display: inline-flex; }
+.info-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text-3); cursor: help; }
+.info-btn:hover, .info-btn[aria-expanded="true"] { color: var(--accent-text); background: var(--surface-3); }
+.info-btn:focus-visible { outline: 2px solid var(--focus, var(--accent)); }
+.info-tip { position: fixed; z-index: 200; padding: 9px 12px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: .84rem; font-weight: 450; line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0,0,0,.22); pointer-events: auto; text-align: left; white-space: normal; }
+.info-tip[hidden] { display: none; }
+@media (max-width: 760px) { .info-btn { width: 32px; height: 32px; } .db2-titel h1 { font-size: 1.4rem; } }
+@media print { .dk-werkzeuge, .db2-reiter, .db2-aktionen { display: none; } }
