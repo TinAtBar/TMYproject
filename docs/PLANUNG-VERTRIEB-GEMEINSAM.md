@@ -6,7 +6,7 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | Nr | Baustein | Festlegung |
 |---|---|---|
 | G1 | Anmeldung Windows-Domäne | Lokale Domäne BARLAGE, Benutzername + Windows-Passwort, Prüfung per Windows (LogonUser) auf dem Server-PC; kostenlos; KEINE Microsoft-365-Anmeldung; Notfall-Admin lokal; Handys koppeln weiter per QR; SSO (Negotiate) später als Stufe 2 |
-| G2 | Rollen + Rechte-Matrix | wie Barlage PM, optional Rollen aus Windows-Gruppen |
+| G2 | Rollen + Rechte-Matrix | wie Barlage PM; Rollen vergibt der Admin (entschieden, keine Windows-Gruppen) |
 | G3 | Vertretung mit Zeitraum | wie Barlage PM |
 | G4 | Admin-Konsole | Kacheln, Dunkelmodus, Wartung, Änderungspakete |
 | G5 | Dokumentenablage | Kacheln je Typ, Pfadprüfung |
@@ -33,4 +33,4 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | V12 | Ordner verschieben | Auftrag: Laufwerk Vertrieb → Verkauf, umbenennen, kopieren-prüfen-löschen, Abbruch bei offenen Dateien, Verknüpfung am alten Ort, Protokoll |
 
 ## Offen
-IT: Domäne BARLAGE bestätigen, Rollen aus Gruppen?, Sammelpostfach + App-Registrierung, Internet für Server-PC, Laufwerksrechte, Pfad „Verkauf“, Umzug Datenordner. Vertrieb: Beispielvorgang, Word-Vorlagen, Ablauf, Word auf Server-PC, Controlling sieht Preise?, wer ist „Mitarbeiter“.
+IT: Domäne BARLAGE bestätigen, Sammelpostfach + App-Registrierung, Internet für Server-PC, Laufwerksrechte, Pfad „Verkauf“, Umzug Datenordner. Vertrieb: Beispielvorgang, Word-Vorlagen, Ablauf, Word auf Server-PC, Controlling sieht Preise?, wer ist „Mitarbeiter“.
