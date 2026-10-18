@@ -28,9 +28,9 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | V7 | Dokumente erstellen | Word-Vorlagen, PDF, Outlook-Entwurf |
 | V8 | Wiedervorlagen | Nachfass-Termine |
 | V9 | Dashboard | offene Angebote, Volumen, Trefferquote |
-| V10 | Rollen | Admin, Vertrieb (alles), Controlling (lesen), Mitarbeiter (zuarbeiten, keine Preise) |
+| V10 | Rollen | Admin, Vertrieb (alles), Controlling (lesen, keine Preise/Summen – entschieden), Mitarbeiter (zuarbeiten, keine Preise) |
 | V11 | – | in G1 aufgegangen |
 | V12 | Ordner verschieben | Auftrag: Laufwerk Vertrieb → Verkauf, umbenennen, kopieren-prüfen-löschen, Abbruch bei offenen Dateien, Verknüpfung am alten Ort, Protokoll |
 
 ## Offen
-IT: Domäne BARLAGE bestätigen, Sammelpostfach + App-Registrierung, Internet für Server-PC, Laufwerksrechte, Pfad „Verkauf“, Umzug Datenordner. Vertrieb: Beispielvorgang, Word-Vorlagen, Ablauf, Word auf Server-PC, Controlling sieht Preise?, wer ist „Mitarbeiter“.
+IT: Domäne BARLAGE bestätigen, Sammelpostfach + App-Registrierung, Internet für Server-PC, Laufwerksrechte, Pfad „Verkauf“, Umzug Datenordner. Vertrieb: Beispielvorgang, Word-Vorlagen, Ablauf, Word auf Server-PC, wer ist „Mitarbeiter“.
