@@ -15,6 +15,7 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | G8 | Betrieb | Installer, Updates, Server-Wechsel, Handy-Einrichtung |
 | G9 | Bestandsaufnahme Laufwerke | PowerShell liest Ordnerstruktur (Vertrieb, Verkauf, Projekte); Ergebnis nie ins Repo, nur Muster ohne Namen hinterlegen |
 | G10 | Problem melden / Idee | Knopf: Art, Text, Dringlichkeit, Screenshot (Aufnahme, Strg+V, Datei, Schwärzen), Technikdaten; Hinweis Admin-Konsole + Glocke, optional Outlook-Entwurf; Ticketseite mit Status/Bewertung/Rückmeldung; „Als KI-Auftrag weitergeben“ (Screenshots nur bewusst) |
+| G11 | Hochladen mit Freigabe | Mitarbeiter laden zu zugewiesenen Aufgaben hoch; Datei liegt im Warte-Bereich der App, erst nach Freigabe durch zuständigen Projektleiter/Vertrieb im Server-Ordner gespeichert; Ablehnen mit Kommentar. Beide Apps. Rollenname „Leiter“ noch abstimmen |
 
 ## Vertriebs-App (eigene App, eigene Daten, 2 Nutzer)
 | Nr | Baustein | Inhalt |
@@ -28,7 +29,7 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | V7 | Dokumente erstellen | Word-Vorlagen, PDF, Outlook-Entwurf |
 | V8 | Wiedervorlagen | Nachfass-Termine |
 | V9 | Dashboard | offene Angebote, Volumen, Trefferquote |
-| V10 | Rollen | Admin, Vertrieb (alles), Controlling (lesen, keine Preise/Summen – entschieden), Mitarbeiter (zuarbeiten, keine Preise) |
+| V10 | Rollen | Admin, Vertrieb (alles), Controlling (lesen, keine Preise/Summen – entschieden), Mitarbeiter (sehen nur ihnen zugewiesene Aufgaben, Unterlagen hochladen mit Freigabe G11, sonst nichts) |
 | V11 | – | in G1 aufgegangen |
 | V12 | Ordner verschieben | Auftrag: Laufwerk Vertrieb → Verkauf, umbenennen, kopieren-prüfen-löschen, Abbruch bei offenen Dateien, Verknüpfung am alten Ort, Protokoll |
 
