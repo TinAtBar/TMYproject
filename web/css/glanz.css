@@ -1,0 +1,103 @@
+/* =====================================================================
+   R28 Paket D – Optik-Feinschliff (alle Designs klassik/hell/werkstatt × hell/dunkel)
+   Wird nach den übrigen Stylesheets geladen; nur Ergänzungen/Überschreibungen.
+   ---------------------------------------------------------------------
+   Tokens
+     --elev-1..3   weiche, mehrstufige Schatten (Kachel ruhend / angehoben / schwebend)
+     --glanz       1px-Lichtkante oben (inset) für Kacheln und Knöpfe
+     --glanz-verlauf  sehr leichter Verlauf auf Knöpfen
+     --ring-fokus  Fokus-Halo zusätzlich zur Outline
+     --glas-bg / --glas-blur  Glas-Effekt (Kopfzeile, Dialoge) mit Fallback ohne backdrop-filter
+   Textur: :root[data-textur="an"] (darstellung.js, Benutzer kann abschalten) – Rauschen als inline-SVG.
+   Animationen: nutzen --anim-dauer aus optik.css → aus bei data-anim="aus" oder prefers-reduced-motion.
+   Auswahl-/Aktiv-Zustände bleiben --select* (nie Ampelfarben).
+   ===================================================================== */
+:root[data-scheme] {
+  --radius: 14px; --radius-sm: 9px; --radius-btn: 10px;
+  --elev-1: 0 0 0 .5px rgba(16, 24, 40, .04), 0 1px 2px rgba(16, 24, 40, .05), 0 2px 6px -1px rgba(16, 24, 40, .06);
+  --elev-2: 0 0 0 .5px rgba(16, 24, 40, .05), 0 2px 4px rgba(16, 24, 40, .05), 0 8px 18px -4px rgba(16, 24, 40, .12);
+  --elev-3: 0 0 0 .5px rgba(16, 24, 40, .06), 0 6px 12px rgba(16, 24, 40, .07), 0 22px 48px -10px rgba(16, 24, 40, .26);
+  --glanz: inset 0 1px 0 rgba(255, 255, 255, .85);
+  --glanz-verlauf: linear-gradient(to bottom, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 60%);
+  --glanz-akzent: linear-gradient(to bottom, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 55%);
+  --ring-fokus: 0 0 0 4px color-mix(in srgb, var(--focus) 24%, transparent);
+  --glas-bg: color-mix(in srgb, var(--surface) 78%, transparent);
+  --glas-blur: saturate(1.6) blur(18px);
+  --shadow-1: var(--elev-1);
+  --shadow-2: var(--elev-3);
+}
+:root[data-scheme="dark"] {
+  --elev-1: 0 0 0 .5px rgba(0, 0, 0, .5), 0 1px 2px rgba(0, 0, 0, .35), 0 3px 8px -2px rgba(0, 0, 0, .4);
+  --elev-2: 0 0 0 .5px rgba(0, 0, 0, .55), 0 3px 6px rgba(0, 0, 0, .35), 0 10px 22px -4px rgba(0, 0, 0, .5);
+  --elev-3: 0 0 0 .5px rgba(0, 0, 0, .6), 0 8px 16px rgba(0, 0, 0, .4), 0 26px 56px -10px rgba(0, 0, 0, .7);
+  --glanz: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --glanz-verlauf: linear-gradient(to bottom, rgba(255, 255, 255, .045), rgba(255, 255, 255, 0) 60%);
+  --glanz-akzent: linear-gradient(to bottom, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 55%);
+  --ring-fokus: 0 0 0 4px color-mix(in srgb, var(--focus) 30%, transparent);
+  --glas-bg: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+/* ---------- Kacheln / Karten: weiche Schatten + Lichtkante ---------- */
+.card, .dk-karte, .pk, .ck-kpi, .db2-hinweis.card {
+  border-radius: var(--radius);
+  box-shadow: var(--glanz), var(--elev-1);
+  border-color: color-mix(in srgb, var(--line) 80%, transparent);
+}
+.card, .dk-karte, .pk { transition: box-shadow var(--anim-dauer) var(--anim-kurve), border-color var(--anim-dauer) var(--anim-kurve), transform var(--anim-dauer) var(--anim-kurve); }
+.pk:hover, .ck-kpi.ck-klick:hover { box-shadow: var(--glanz), var(--elev-2); border-color: var(--line-strong); }
+.dk-kz-link { border-radius: 0 0 var(--radius) var(--radius); }
+
+/* ---------- Knöpfe: Glanz-Verlauf, weichere Rundung ---------- */
+.btn { border-radius: var(--radius-btn); background-image: var(--glanz-verlauf); box-shadow: var(--glanz), 0 1px 2px rgba(16, 24, 40, .05);
+  transition: background-color var(--anim-dauer) var(--anim-kurve), border-color var(--anim-dauer) var(--anim-kurve), box-shadow var(--anim-dauer) var(--anim-kurve), transform var(--anim-dauer) var(--anim-kurve); }
+.btn-primary, .btn-danger { background-image: var(--glanz-akzent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 2px rgba(16, 24, 40, .12), 0 2px 6px -2px color-mix(in srgb, var(--accent) 45%, transparent); }
+.btn-ghost, .btn-link, .icon-btn { background-image: none; box-shadow: none; }
+.btn:active:not(:disabled) { transform: translateY(.5px) scale(.99); }
+:root[data-scheme="dark"] .btn { box-shadow: var(--glanz), 0 1px 2px rgba(0, 0, 0, .3); }
+
+/* ---------- Segment-Schalter: iOS-ähnlich ---------- */
+.seg { border-radius: 11px; padding: 3px; background: color-mix(in srgb, var(--surface-3) 85%, var(--bg)); box-shadow: inset 0 1px 2px rgba(16, 24, 40, .06); }
+.seg-btn { border-radius: 8px; transition: background-color var(--anim-dauer) var(--anim-kurve), color var(--anim-dauer) var(--anim-kurve), box-shadow var(--anim-dauer) var(--anim-kurve); }
+.seg-btn:hover:not([aria-pressed="true"]) { color: var(--text); }
+.seg-btn[aria-pressed="true"] { background: var(--surface); color: var(--select-text); box-shadow: inset 0 0 0 1px var(--select-line), 0 1px 3px rgba(16, 24, 40, .12), var(--glanz); }
+/* Größenwahl der Dashboard-Kachel (K/M/G) als Segment-Schalter */
+.dk-gr { border-radius: 8px; padding: 2px; gap: 1px; background: var(--surface-3); box-shadow: inset 0 1px 2px rgba(16, 24, 40, .06); }
+.dk-gr button { border-radius: 6px; }
+.dk-gr button[aria-pressed="true"] { background: var(--select); color: var(--on-select); box-shadow: 0 1px 2px rgba(16, 24, 40, .2); }
+
+/* ---------- Fokus: klare Outline + weicher Halo ---------- */
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: var(--ring-fokus); border-radius: 6px; }
+.btn:focus-visible, .seg-btn:focus-visible { box-shadow: var(--ring-fokus), var(--glanz); }
+.tbl :focus-visible, .nav :focus-visible { box-shadow: none; }
+
+/* ---------- Glas: Kopfzeile, Dialoge, Menüs ---------- */
+.topbar { background: color-mix(in srgb, var(--bg) 92%, transparent); }
+.dlg { border-radius: 18px; box-shadow: var(--elev-3), inset 0 1px 0 rgba(255, 255, 255, .5); }
+:root[data-scheme="dark"] .dlg { box-shadow: var(--elev-3), inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 0 1px var(--line); }
+.dlg::backdrop { background: rgba(8, 12, 18, .42); }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar { background: color-mix(in srgb, var(--bg) 74%, transparent); -webkit-backdrop-filter: var(--glas-blur); backdrop-filter: var(--glas-blur); }
+  .dlg::backdrop { background: rgba(8, 12, 18, .32); -webkit-backdrop-filter: blur(6px) saturate(1.1); backdrop-filter: blur(6px) saturate(1.1); }
+}
+@media (max-width: 760px) { .dlg { border-radius: 20px 20px 0 0; } }
+@media (prefers-reduced-transparency: reduce) {
+  .topbar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .dlg::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 12, 18, .5); }
+}
+
+/* ---------- Eingabefelder: weichere Rundung, Fokus-Halo ---------- */
+input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { border-radius: var(--radius-sm); transition: border-color var(--anim-dauer) var(--anim-kurve), box-shadow var(--anim-dauer) var(--anim-kurve); }
+
+/* ---------- Textur: sehr leichtes Korn über der Seite (abschaltbar) ---------- */
+:root[data-textur="an"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; opacity: .035; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-textur="an"][data-scheme="dark"] body::after { opacity: .06; mix-blend-mode: screen; filter: invert(1); }
+@media print { :root[data-textur="an"] body::after { display: none; } }
+
+/* ---------- Ringe: Skala/Fugen nur im Stil „Leitstand“ (dstil-leitstand.css) ---------- */
+.dg-skala, .dg-fugen { display: none; }
+
+/* ---------- Druck: keine Schatten ---------- */
+@media print { .card, .dk-karte, .pk, .ck-kpi, .btn { box-shadow: none !important; background-image: none !important; } }

@@ -101,6 +101,9 @@ class ServerTest(unittest.TestCase):
                 time.sleep(0.1)
         else:
             raise RuntimeError("Server startet nicht: " + (cls.proc.stdout.read() if cls.proc.poll() is not None else ""))
+        if getattr(cls, "MITARBEITER_WIE_BISHER", True):  # R28-M: ältere Tests nutzen ma1/ma2 als „sieht alles“ (Matrix gelockert)
+            import rechte
+            rechte.mitarbeiter_wie_bisher(cls.data)
 
     @classmethod
     def tearDownClass(cls):

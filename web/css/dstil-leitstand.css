@@ -1,0 +1,162 @@
+/* =====================================================================
+   R28 Paket D – Dashboard-Stil „Leitstand“ (:root[data-dstil="leitstand"], darstellung.js)
+   Dunkles Leitstand-/HUD-Design für Start-Dashboard, Projekt-Übersicht (Cockpit) und Projekt-Kacheln.
+   Erzwingt auf diesen Seiten ein dunkles Farbschema (eigene Tokens im Bereich), unabhängig von hell/dunkel.
+   Lesbarkeit: Fließtext hellgrau/weiß (≥ 7:1 auf #0c1521), Cyan nur für Akzente/Linien/Zahlen-Glühen,
+   Rot (überfällig/Gefahr) kräftig und immer mit Symbol/Text. Auswahl bleibt neutral (Cyan-Blau, nie Ampel).
+   Ringe: Tick-Skala + Segmentfugen (diagramme.js skala()/fugen(), sonst ausgeblendet).
+   Balken: Segmente (Maske) + Pfeil-Schraffur. Kachelkanten mit abgeschrägten Ecken (clip-path).
+   ===================================================================== */
+:root[data-dstil="leitstand"] .app:has(.db2-kopf),
+:root[data-dstil="leitstand"] .app:has(.ck),
+:root[data-dstil="leitstand"] .pk {
+  color-scheme: dark;
+  --ls-cyan: #4fd6ef; --ls-cyan-hell: #8be6f7; --ls-glow: rgba(79, 214, 239, .32); --ls-linie: rgba(79, 214, 239, .22);
+  --bg: #060a10; --surface: #0c1521; --surface-2: #111c2b; --surface-3: #18263a; --sunken: #08101a;
+  --line: #1c2c40; --line-strong: #2f4864;
+  --text: #e8f1fa; --text-2: #b9c9da; --text-3: #94a9bf;
+  --accent: #4fd6ef; --accent-hover: #8be6f7; --accent-soft: #0f2a3a; --accent-text: #8be6f7; --on-accent: #02131b; --focus: #8be6f7;
+  --signal: #4fd6ef; --secondary: #94a9bf; --secondary-text: #b9c9da;
+  --danger: #ff6a5f; --danger-bg: #3a1312; --danger-text: #ffb3ab; --danger-line: #7a2a25;
+  --warn: #f2c14e; --warn-bg: #2f2408; --warn-text: #f6d47e; --warn-line: #6b5216;
+  --ok: #67d68a; --ok-bg: #0f2d1b; --ok-text: #97e8ae; --ok-line: #285533;
+  --info: #8cc0f5; --info-bg: #10263f; --info-text: #b5d6fa;
+  --select: #4fd6ef; --select-bg: #0f2a3a; --select-text: #c4f1fb; --select-line: #4fd6ef; --on-select: #02131b;
+  --sem-neutral: #a3a8ae; --sem-offen: #9fb3cc; --sem-info: #9fb3cc; --sem-aktiv: #8cc0f5; --sem-warten: #e3b341;
+  --sem-erledigt: #67d68a; --sem-abgenommen: #6fd0c8; --sem-danger: #ff6a5f; --sem-ueber: #ff5a4f; --sem-nachtrag: #c3a3ec;
+  --sem-marke: #8be6f7; --on-danger: #1a0605; --badge-bg: #ff6a5f; --badge-text: #1a0605;
+  --cat-1: #8cc0f5; --cat-2: #6fd0c8; --cat-3: #c7a4ee; --cat-4: #d9c35a; --cat-5: #a6acf2; --cat-6: #a9b4c2; --cat-7: #79cf8a; --cat-8: #d7a98a;
+  --tint: 22%; --tint-line: 50%; --tint-ico: 50%;
+  --pk-fortschritt: var(--ls-cyan); --pk-stunden: #8aa2bd; --pk-track: #142236;
+  --glanz: inset 0 1px 0 rgba(139, 230, 247, .10);
+  --glanz-verlauf: linear-gradient(to bottom, rgba(139, 230, 247, .06), rgba(139, 230, 247, 0) 60%);
+  --ring-fokus: 0 0 0 4px rgba(79, 214, 239, .28);
+  --elev-1: none; --elev-2: none; --shadow-1: none;
+  --heading: #e8f1fa;
+  --nav-bg: #070d16; --nav-active: #10233a; --nav-text: #c3d3e4; --nav-muted: #93a8bf; --nav-indicator: #4fd6ef; --nav-focus: #8be6f7; --nav-line: #15263a; --brand-text: #ffffff;
+}
+/* Seitenfläche: tiefes Navy mit feinem Raster und Vignette */
+:root[data-dstil="leitstand"] .app:has(.db2-kopf),
+:root[data-dstil="leitstand"] .app:has(.ck) {
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(79, 214, 239, .08), transparent 60%),
+    linear-gradient(rgba(79, 214, 239, .035) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(79, 214, 239, .035) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bg);
+  min-height: 100dvh; color: var(--text);
+}
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .topbar,
+:root[data-dstil="leitstand"] .app:has(.ck) .topbar { background: rgba(6, 10, 16, .78); border-bottom-color: var(--ls-linie); }
+
+/* ---------- Kacheln: abgeschrägte Ecken, Leuchtkante ---------- */
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .dk-karte,
+:root[data-dstil="leitstand"] .ck .card,
+:root[data-dstil="leitstand"] .pk {
+  --ls-ecke: 14px;
+  position: relative; border-radius: 0; border: 0;
+  background:
+    linear-gradient(180deg, rgba(79, 214, 239, .06), rgba(79, 214, 239, 0) 46px),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--ls-linie), inset 0 1px 0 rgba(139, 230, 247, .18);
+  clip-path: polygon(var(--ls-ecke) 0, 100% 0, 100% calc(100% - var(--ls-ecke)), calc(100% - var(--ls-ecke)) 100%, 0 100%, 0 var(--ls-ecke));
+}
+/* schräge Kanten als Leuchtlinie nachzeichnen + Eck-Marke */
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .dk-karte::before,
+:root[data-dstil="leitstand"] .ck .card::before,
+:root[data-dstil="leitstand"] .pk::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    linear-gradient(135deg, transparent calc(var(--ls-ecke) * .7 - 1px), var(--ls-cyan) calc(var(--ls-ecke) * .7 - 1px), var(--ls-cyan) calc(var(--ls-ecke) * .7), transparent calc(var(--ls-ecke) * .7)) 0 0 / var(--ls-ecke) var(--ls-ecke) no-repeat,
+    linear-gradient(315deg, transparent calc(var(--ls-ecke) * .7 - 1px), var(--ls-linie) calc(var(--ls-ecke) * .7 - 1px), var(--ls-linie) calc(var(--ls-ecke) * .7), transparent calc(var(--ls-ecke) * .7)) 100% 100% / var(--ls-ecke) var(--ls-ecke) no-repeat,
+    linear-gradient(90deg, var(--ls-cyan), transparent) var(--ls-ecke) 0 / 64px 2px no-repeat;
+  opacity: .9;
+}
+:root[data-dstil="leitstand"] .pk::before { z-index: 0; }
+:root[data-dstil="leitstand"] .pk:hover,
+:root[data-dstil="leitstand"] .ck .ck-kpi.ck-klick:hover { box-shadow: inset 0 0 0 1px rgba(79, 214, 239, .5), inset 0 0 24px rgba(79, 214, 239, .08); }
+
+/* Kopfzeilen: Großbuchstaben, Leuchtlinie */
+:root[data-dstil="leitstand"] .dk-kopf,
+:root[data-dstil="leitstand"] .ck .ck-head {
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, rgba(79, 214, 239, .45), rgba(79, 214, 239, .08) 70%, transparent) 1;
+}
+:root[data-dstil="leitstand"] .dk-kopf h2,
+:root[data-dstil="leitstand"] .ck .ck-head h2,
+:root[data-dstil="leitstand"] .ck-kpi-l {
+  text-transform: uppercase; letter-spacing: .09em; font-size: .78rem; font-weight: 700; color: var(--text-2);
+}
+:root[data-dstil="leitstand"] .dk-kz .dk-kopf { border-image: none; border-bottom: 0; }
+:root[data-dstil="leitstand"] .db2-titel h1 { color: var(--text); letter-spacing: .01em; }
+:root[data-dstil="leitstand"] .db2-titel h1::before { content: "▸ "; color: var(--ls-cyan); }
+:root[data-dstil="leitstand"] .db2-titel .sub { font-family: var(--mono); font-size: .86rem; color: var(--text-3); letter-spacing: .04em; }
+:root[data-dstil="leitstand"] .db2-reiter { border-bottom-color: var(--ls-linie); }
+:root[data-dstil="leitstand"] .db2-tab[aria-selected="true"] { text-shadow: 0 0 10px var(--ls-glow); }
+
+/* ---------- Zahlen: Monospace, leichtes Glühen (Text bleibt hell) ---------- */
+:root[data-dstil="leitstand"] :is(.dk-kz-wert, .dk-mz b, .dk-ampel-box b, .ck-kpi-v, .pk-bw, .dk-badge b, .dk-ring-leg b, .dk-anz) {
+  font-family: var(--mono); letter-spacing: -.02em;
+}
+:root[data-dstil="leitstand"] :is(.dk-kz-wert, .ck-kpi-v) { color: var(--text); text-shadow: 0 0 14px var(--ls-glow); font-weight: 700; }
+:root[data-dstil="leitstand"] .dk-kz-wert { font-size: 2.3rem; }
+:root[data-dstil="leitstand"] .dk-kz-wert.dk-rot { color: var(--sem-ueber) !important; text-shadow: 0 0 14px rgba(255, 90, 79, .45); }
+:root[data-dstil="leitstand"] .dg-ring-zahl { font-family: var(--mono); fill: var(--text); }
+:root[data-dstil="leitstand"] .dg-ring-unter { font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--text-3); }
+@media (min-width: 761px) { :root[data-dstil="leitstand"] .dk-trend { font-family: var(--mono); font-size: .76rem; } }
+
+/* Text-Werte (z. B. nächster Meilenstein) in normaler Schrift */
+:root[data-dstil="leitstand"] .ck-kpi-v:has(> .ico, > svg) { font-family: var(--font); letter-spacing: 0; }
+
+/* ---------- Ringe: Skala + Segmente ---------- */
+:root[data-dstil="leitstand"] .dg-skala, :root[data-dstil="leitstand"] .dg-fugen { display: inline; }
+:root[data-dstil="leitstand"] .dg-tick { stroke: rgba(139, 230, 247, .35); stroke-width: 1; }
+:root[data-dstil="leitstand"] .dg-tick-l { stroke: var(--ls-cyan); stroke-width: 1.6; }
+:root[data-dstil="leitstand"] .dg-fugen { stroke: var(--surface); }
+:root[data-dstil="leitstand"] .dg-ring-spur { stroke: #122034; }
+:root[data-dstil="leitstand"] .dg-ring { filter: drop-shadow(0 0 6px rgba(79, 214, 239, .18)); }
+:root[data-dstil="leitstand"] .ck-ring-bg { stroke: #122034; }
+:root[data-dstil="leitstand"] .ck-ring-fg { stroke-linecap: butt; filter: drop-shadow(0 0 4px currentColor); }
+:root[data-dstil="leitstand"] .ck-ring.is-fs .ck-ring-fg,
+:root[data-dstil="leitstand"] .ck-ring.is-neutral .ck-ring-fg { stroke: var(--ls-cyan); color: var(--ls-cyan); }
+:root[data-dstil="leitstand"] .ck-ring { overflow: visible; }
+
+/* ---------- Balken: Segmente + Pfeil-Schraffur ---------- */
+:root[data-dstil="leitstand"] :is(.pk-track, .fb-track, .dk-pers-bar) {
+  border-radius: 0; height: 10px; background-color: #0f1b2b;
+  box-shadow: inset 0 0 0 1px rgba(79, 214, 239, .16);
+  background-image: repeating-linear-gradient(90deg, transparent 0 7px, rgba(6, 10, 16, .9) 7px 9px);
+}
+:root[data-dstil="leitstand"] :is(.pk-fill, .fb-fill, .dk-pers-bar i) {
+  border-radius: 0;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, .22) 25%, transparent 25%) 0 0 / 8px 50% repeat-x,
+    linear-gradient(135deg, rgba(255, 255, 255, .22) 25%, transparent 25%) 0 100% / 8px 50% repeat-x;
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 9px);
+  mask: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 9px);
+  filter: drop-shadow(0 0 4px rgba(79, 214, 239, .35));
+}
+:root[data-dstil="leitstand"] .pk-stunden.pk-amp-rot .pk-fill,
+:root[data-dstil="leitstand"] .pk-stunden.pk-amp-rot_voll .pk-fill,
+:root[data-dstil="leitstand"] .dk-pers-bar i.dk-pers-ue { filter: drop-shadow(0 0 4px rgba(255, 90, 79, .5)); }
+:root[data-dstil="leitstand"] .pk-fuss { border-top: 1px solid var(--ls-linie); }
+:root[data-dstil="leitstand"] .pk-nr { font-family: var(--mono); color: var(--ls-cyan-hell); letter-spacing: .04em; }
+
+/* ---------- Kleinteile ---------- */
+:root[data-dstil="leitstand"] :is(.dk-mz, .dk-ampel-box, .dk-badge) { border-radius: 0; background: var(--surface-2); }
+:root[data-dstil="leitstand"] .dk-mz { box-shadow: inset 0 0 0 1px var(--line); }
+:root[data-dstil="leitstand"] .dk-mz[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--select-line), 0 0 12px rgba(79, 214, 239, .2); }
+:root[data-dstil="leitstand"] .dg-gitter { stroke: #15253a; }
+:root[data-dstil="leitstand"] .dg-linien .dg-linie { filter: drop-shadow(0 0 3px var(--dg-c)); }
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .btn,
+:root[data-dstil="leitstand"] .app:has(.ck) .btn { border-radius: 4px; }
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .btn-primary,
+:root[data-dstil="leitstand"] .app:has(.ck) .btn-primary { box-shadow: 0 0 14px rgba(79, 214, 239, .35); }
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .seg,
+:root[data-dstil="leitstand"] .app:has(.ck) .seg { border-radius: 4px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-dstil="leitstand"] :is(.pk-fill, .fb-fill, .dk-pers-bar i, .ck-ring-fg, .dg-ring) { filter: none; }
+}
+@media print {
+  :root[data-dstil="leitstand"] .app { background: #fff !important; }
+}

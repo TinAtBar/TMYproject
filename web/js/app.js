@@ -31,9 +31,11 @@ import * as Abgleich from './views/abgleich.js'; // R26-M
 import * as HandyAnleitung from './views/handy-anleitung.js'; // R26-M
 import { off as offState } from './offline/index.js'; // R26-M: Abgleich-Status in der Kopfzeile
 import { bellButton, themeButton, paletteButton, renderForcedPw, addRecent } from './extras.js';
+import { ladeAnmeldeInfo, istDomaenenBenutzer } from './anmeldung.js'; // R28-G1: Windows-Domäne
 import * as Archiv from './views/archiv.js';
+import * as Meldungen from './views/meldungen.js'; import { meldenButton, meldenDialog } from './ticket.js'; // R28-G10: Problem melden / Idee
 import * as Fertigung from './views/fertigung.js'; // R5-F: Fertigungsbesprechung + OPL-Projektkacheln
-import { DESIGNS, MODI, SB_MIN, SB_MAX, getPrefs, setPrefs, setDesign, fromUser, apply as applyDarstellung, effectiveScheme, onDarstellung, SYMBOL_MODI, KOPF_MODI, listenOptik, setListenOptik } from './darstellung.js';
+import { DESIGNS, MODI, SB_MIN, SB_MAX, getPrefs, setPrefs, setDesign, fromUser, apply as applyDarstellung, effectiveScheme, onDarstellung, SYMBOL_MODI, KOPF_MODI, listenOptik, setListenOptik, DSTILE } from './darstellung.js'; // R28-D: + DSTILE
 import { loadRechte, darf, navErlaubt, projektHref, ROLLE_ANZEIGE } from './rechte.js'; // R26-E: Rechte-Matrix
 import { ladeMasken } from './formular.js'; // R26-H: Masken (Beschriftung/Pflicht/Zusatzfelder)
 
@@ -49,6 +51,8 @@ function renderLogin(msg) {
   stopPolling();
   clear(root);
   const err = h('div', { class: 'login-err', role: 'alert', hidden: !msg }, icon('alert', 18), h('span', null, msg || ''));
+  const hinweis = h('p', { class: 'muted', style: { marginTop: '6px' } }, 'Mit deinem Firmen-Login.'); // R28-G1: bei Domäne Windows-Hinweis
+  ladeAnmeldeInfo().then(i => { if (i.hinweis) { hinweis.textContent = i.hinweis + '.'; login.placeholder = i.domaene ? 'z. B. vorname.nachname' : ''; } });
   const login = h('input', { name: 'login', autocomplete: 'username', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false', required: true });
   const pw = h('input', { name: 'passwort', type: 'password', autocomplete: 'current-password', required: true });
   const btn = h('button', { class: 'btn btn-primary', type: 'submit', style: { minHeight: '48px' } }, 'Anmelden');
@@ -63,7 +67,7 @@ function renderLogin(msg) {
         err.hidden = false; pw.select(); btn.disabled = false;
       }
     }
-  }, h('div', null, h('h1', null, 'Anmelden'), h('p', { class: 'muted', style: { marginTop: '6px' } }, 'Mit deinem Firmen-Login.')),
+  }, h('div', null, h('h1', null, 'Anmelden'), hinweis),
     err, field('Login', login), field('Passwort', pw), btn,
     h('p', { class: 'small muted' }, 'Passwort vergessen? Bitte beim Admin melden.'));
   root.append(h('div', { class: 'login' },
@@ -117,7 +121,7 @@ function renderShell() {
   const plus = h('button', { class: 'fab-new', type: 'button', 'aria-label': 'Neuer Punkt', title: 'Neuer Punkt', onclick: () => quickCreate() }, icon('plus', 26)); // R4-T: nur Handy (schwebend), Desktop: Taste n / Seitenaktionen
   const prof = h('button', { class: 'profile-btn', 'aria-haspopup': 'menu', 'aria-label': 'Profil-Menü', onclick: e => profileMenu(e.currentTarget) },
     avatar(store.user.name), h('span', { class: 'pname' }, store.user.name), store.user.urlaub ? h('span', { class: 'chip chip-warn vac-pill' }, 'Urlaub') : null);
-  const topbar = h('header', { class: 'topbar' }, h('a', { class: 'brand-mini', href: '#/start', 'aria-label': 'Start' }, logoImg('')), searchBox(), paletteButton(), h('div', { class: 'spacer' }), connEl, themeButton(), bellButton(), prof);
+  const topbar = h('header', { class: 'topbar' }, h('a', { class: 'brand-mini', href: '#/start', 'aria-label': 'Start' }, logoImg('')), searchBox(), paletteButton(), h('div', { class: 'spacer' }), connEl, themeButton(), meldenButton(), bellButton(), prof);
   bannerEl = h('div', { class: 'banner', role: 'alert', hidden: true }, icon('wifi', 18), 'Keine Verbindung zum Server – Änderungen werden nicht gespeichert. Neuer Versuch läuft …');
   mainEl = h('main', { class: 'main', id: 'main', tabindex: '-1' });
   const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navigation' }, TABBAR.filter(n => navErlaubt(n[0])).map(([k, l, ic, p]) => h('a', { href: '#' + p, dataset: { nav: k } }, icon(ic, 22), l)));
@@ -161,6 +165,9 @@ function darstellungDialog() {
   const modus = segmented(MODI, p0.modus, v => setPrefs({ modus: v }), 'Hell oder dunkel');
   const rail = h('input', { type: 'checkbox', checked: p0.sidebar_eingeklappt, onchange: e => setPrefs({ sidebar_eingeklappt: e.target.checked }) });
   const anim = h('input', { type: 'checkbox', checked: p0.animationen !== false, onchange: e => setPrefs({ animationen: e.target.checked }) }); // R26
+  // R28-D: Dashboard-Stil + Textur
+  const dstilSeg = segmented(DSTILE.map(x => [x[0], x[1]]), p0.dstil || 'klassik', v => setPrefs({ dstil: v }), 'Dashboard-Stil');
+  const textur = h('input', { type: 'checkbox', checked: p0.textur !== false, onchange: e => setPrefs({ textur: e.target.checked }) });
   const lo = listenOptik();
   const symSeg = segmented(SYMBOL_MODI, lo.symbole, v => setListenOptik({ symbole: v }), 'Symbole in schmalen Spalten');
   const kopfSeg = segmented(KOPF_MODI, lo.kopf, v => setListenOptik({ kopf: v }), 'Überschrift schmaler Spalten');
@@ -172,6 +179,8 @@ function darstellungDialog() {
       field('Hell / Dunkel', modus, 'Automatisch folgt der Einstellung des Geräts.'),
       h('label', { class: 'toggle hide-phone' }, rail, 'Seitenleiste nur mit Symbolen (Strg+B)'),
       h('label', { class: 'toggle' }, anim, 'Animationen (dezente Übergänge; aus, wenn das Gerät „Bewegung reduzieren“ meldet)'),
+      field('Dashboard-Stil', dstilSeg, 'Glas: milchig und hell · Klassik plus: gewohnt · Leitstand: dunkel mit Leuchtakzenten. Wirkt auf Start-Dashboard, Projekt-Kacheln und Projekt-Übersicht.'), // R28-D
+      h('label', { class: 'toggle' }, textur, 'Feine Oberflächen-Textur (sehr dezentes Korn)'), // R28-D
       field('Listen: Kategorie, Priorität, Status', symSeg, 'Nur Symbol spart Platz; der Text steht im Tooltip.'),
       field('Überschrift schmaler Spalten', kopfSeg),
       h('p', { class: 'small muted' }, 'Wird für dein Benutzerkonto gespeichert.')),
@@ -192,7 +201,8 @@ function profileMenu(anchor) {
     { label: 'Darstellung …', icon: 'palette', fn: darstellungDialog },
     { label: dark ? 'Hell' : 'Dunkel', icon: dark ? 'sun' : 'moon', fn: () => setTheme(dark ? 'light' : 'dark') },
     { label: 'Archiv', icon: 'archive', fn: () => go('/archiv') },
-    { label: 'Passwort ändern', icon: 'key', fn: passwortDialog },
+    { label: 'Problem melden / Idee …', icon: 'question', fn: () => meldenDialog() }, { label: 'Meine Meldungen', icon: 'list', fn: () => go('/meldungen') }, // R28-G10
+    ...(istDomaenenBenutzer(u) ? [] : [{ label: 'Passwort ändern', icon: 'key', fn: passwortDialog }]), // R28-G1: Windows-Passwort in Windows ändern
     { label: 'Geräte & Offline', icon: 'lock', fn: () => go('/geraete') }, // mobile:
     { label: 'Meine Einstellungen', icon: 'gear', fn: () => go('/einstellungen') }, // R26-H: nur persönliche Einstellungen
     '-',
@@ -320,6 +330,7 @@ route('/angebote', Angebote);
 route('/angebote/:id', Angebote);
 route('/einstellungen', Einstellungen);
 route('/archiv', Archiv);
+route('/meldungen', Meldungen); // R28-G10
 route('/fertigung', Fertigung); route('/fertigung/druck', Fertigung); // R5-F
 route('/sn/:id', SnDetail);
 route('/uebersicht', Uebersicht);
@@ -360,13 +371,14 @@ async function boot(fresh) {
     await loadRechte(); // R26-E: Rechte-Matrix für Navigation/Reiter
     await prefs.load(); // R4-T: Ansichten/Filter/Spalten des Benutzers (Server gewinnt, offline: lokal)
     await ladeMasken(true); // R26-H
+    await ladeAnmeldeInfo(); // R28-G1
   } catch (e) {
     if (e.status === 401 || e.status === 403) return renderLogin();
     clear(root).append(h('div', { class: 'login-form', style: { minHeight: '100vh' } }, h('div', { class: 'empty empty-error' }, h('div', { class: 'empty-ico' }, icon('wifi', 28)), h('h3', null, 'Keine Verbindung zum Server'), h('p', null, e.message), h('button', { class: 'btn btn-primary', onclick: () => boot() }, 'Erneut versuchen'))));
     return;
   }
   fromUser(store.user);
-  if (store.user && store.user.muss_pw_aendern) { stopPolling(); return renderForcedPw(root, () => boot(true), logout); }
+  if (store.user && store.user.muss_pw_aendern && !istDomaenenBenutzer(store.user)) { stopPolling(); return renderForcedPw(root, () => boot(true), logout); }
   activeView = null; renderShell(); dispatch(); stopPolling(); poll();
 }
 setPwAendernHandler(() => { if (store.user && !store.user.muss_pw_aendern) { store.user.muss_pw_aendern = 1; stopPolling(); renderForcedPw(root, () => boot(true), logout); } });

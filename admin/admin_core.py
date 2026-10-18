@@ -235,8 +235,13 @@ class Lesen:
             em = {r["id"]: r["email"] for r in self.q("SELECT id, email FROM users")}
         except Exception:
             em = {}
+        try:  # R28-G1: Windows-Benutzer (Spalte ab 2.8)
+            wl = {r["id"]: r["windows_login"] for r in self.q("SELECT id, windows_login FROM users")}
+        except Exception:
+            wl = {}
         for u in out["users"]:
             u["email"] = em.get(u["id"]) or ""
+            u["windows_login"] = wl.get(u["id"]) or ""
         out["projekte"] = self.q("SELECT id, nummer, bezeichnung, status FROM projekte ORDER BY nummer")
         out["projekt_pm"] = self.q("SELECT projekt_id, user_id FROM projekt_pm")
         out["angebote"] = self.q("SELECT a.id, a.nummer, a.bezeichnung, a.eigentuemer_id, u.name eigentuemer_name "

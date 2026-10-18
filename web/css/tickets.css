@@ -1,0 +1,45 @@
+/* R28-G10: Problem melden / Idee – Dialog, Schwärzen, „Meine Meldungen“ */
+.tk-dlg .tk-form { gap: 14px; }
+.tk-dlg .seg { flex-wrap: wrap; }
+.tk-bild-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tk-bilder { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.tk-bild { margin: 0; display: flex; flex-direction: column; gap: 6px; width: 156px; padding: 6px; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface-2, var(--surface)); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+button.tk-bild { cursor: zoom-in; width: 132px; }
+.tk-bild img { width: 100%; height: 96px; object-fit: contain; background: var(--sunken); border-radius: var(--radius-sm); }
+.tk-bild figcaption { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.tk-bild figcaption .icon-btn { margin-left: auto; }
+.tk-leer { margin: 0; }
+.tk-technik summary { cursor: pointer; color: var(--text-2, var(--text)); font-size: .9em; }
+.tk-technik pre { white-space: pre-wrap; word-break: break-word; max-height: 180px; overflow: auto; font-size: 12px; font-family: var(--mono);
+  background: var(--sunken); padding: 8px 10px; border-radius: var(--radius-sm); margin: 8px 0 4px; }
+.tk-canvas-wrap { display: flex; justify-content: center; background: var(--sunken); border-radius: var(--radius); padding: 8px; overflow: auto; }
+.tk-canvas { cursor: crosshair; touch-action: none; max-width: 100%; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+
+/* Meine Meldungen */
+.tk-liste { display: flex; flex-direction: column; gap: 10px; }
+.tk-karte > summary { list-style: none; }
+.tk-karte > summary::-webkit-details-marker { display: none; }
+.tk-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 16px; cursor: pointer; }
+.tk-kopf .tk-titel { font-weight: 600; flex: 1 1 220px; min-width: 0; }
+.tk-nr { color: var(--text-3, var(--text)); }
+.tk-karte.tk-fokus { box-shadow: 0 0 0 2px var(--accent); }
+.tk-text { white-space: pre-wrap; margin: 0 0 10px; }
+.tk-vl-t { font-size: 13px; margin: 14px 0 6px; color: var(--text-2, var(--text)); }
+.tk-verlauf { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tk-verlauf li { padding: 6px 10px; border-left: 3px solid var(--line); }
+.tk-verlauf li.tk-rm { border-left-color: var(--accent); background: var(--accent-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.tk-verlauf li.tk-intern { opacity: .75; font-style: italic; }
+.tk-st { display: inline-flex; align-items: center; gap: 4px; }
+.tk-st-neutral { background: var(--surface-3, var(--sunken)); color: var(--text-2, var(--text)); }
+.tk-st-info { background: var(--accent-soft); color: var(--accent-text); }
+.tk-st-ok { background: var(--ok-bg); color: var(--ok-text); }
+.tk-ausgang { margin-bottom: 12px; }
+.tk-ausgang .card-body { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .tk-bild { width: calc(50% - 5px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tk-bild { transition: box-shadow .2s ease, transform .2s ease; }
+  .tk-bild:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, .1); }
+}

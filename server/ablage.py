@@ -331,7 +331,8 @@ def start_pruefung(db):
 
 
 def ist_upload_pfad(path):
-    return bool(re.match(r"^/api/projekte/\d+/dokumente/hochladen$", path or ""))
+    return bool(re.match(r"^/api/projekte/\d+/dokumente/hochladen$", path or "")) or \
+        bool(re.match(r"^/api/opl/\d+/hochladen$", path or ""))  # R28-G11: Hochladen mit Freigabe (gleiches Limit)
 
 
 # ------------------------------------------------------------------ API

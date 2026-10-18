@@ -82,6 +82,9 @@ SORTS = {"frist": "o.frist IS NULL, o.frist, o.id", "-frist": "o.frist IS NULL, 
 def opl_filter(ctx, extra_where=None):
     """Baut WHERE + Parameter aus Query-Parametern (/api/opl und Export)."""
     w, a = ["o.geloescht=0"], []
+    if ctx.user and __import__("mitarbeiter").nur_eigene(ctx.user, ctx.db):  # R28-M: nur eigene Aufgaben (Liste, Export, Werte)
+        w.append(__import__("mitarbeiter").EIGEN_SQL)
+        a.append(ctx.user["id"])
     # R5-Z: Zuständig-Benutzer über Verknüpfung opl_zustaendig – zustaendig_user_id (R5-L-UI), zustaendig_user,
     # Altparameter verantwortlich_id; Mehrfachwerte „1,2“, „null“ = niemand eingetragen
     for pn in ("zustaendig_user_id", "zustaendig_user", "verantwortlich_id"):

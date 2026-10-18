@@ -27,7 +27,10 @@ def call(app, user, tok, method, path, body=None, raw=b"", ctype=""):
         raise ApiError(404, "Unbekannte API-Adresse")
     headers = {"_token": tok, "content-type": ctype}
     ctx = router.Ctx(app, user, body, parse_qs(url.query), params, headers, raw)
-    res = fn(ctx)
+    import rechte  # R28-M: Rechte-Matrix + „nur eigene“ auch im Abgleich (Offline-Paket, Änderungen)
+    res = rechte.vorab(ctx, method, url.path) if user else None
+    if res is None:
+        res = fn(ctx)
     if isinstance(res, dict) and "_raw" in res:
         raise ApiError(400, "Rohdaten-Antwort im Abgleich nicht erlaubt")
     return res

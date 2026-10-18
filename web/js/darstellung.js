@@ -10,10 +10,16 @@ export const DESIGNS = [
   ['hell', 'Barlage Hell', 'Alles hell, Navy-Akzente'],
   ['werkstatt', 'Werkstatt Dunkel', 'Anthrazit mit Signalgelb – für Halle und Abend'],
 ];
+// R28-D: Dashboard-Stil (wirkt auf Dashboard, Projekt-Kacheln, Cockpit-Kennzahlen) + feine Textur an/aus
+export const DSTILE = [
+  ['glas', 'Glas', 'Milchige Kacheln, große Zahlen, weiche Ringe'],
+  ['klassik', 'Klassik plus', 'Der gewohnte Stil, verfeinert (Standard)'],
+  ['leitstand', 'Leitstand', 'Dunkles Leitstand-Design mit Leuchtakzenten'],
+];
 export const MODI = [['auto', 'Automatisch'], ['light', 'Hell'], ['dark', 'Dunkel']];
 export const SB_MIN = 200, SB_MAX = 420, SB_RAIL = 72;
 
-const DEF = { design: 'klassik', modus: 'auto', sidebar_breite: 232, sidebar_eingeklappt: false, animationen: true };
+const DEF = { design: 'klassik', modus: 'auto', sidebar_breite: 232, sidebar_eingeklappt: false, animationen: true, dstil: 'klassik', textur: true }; // R28-D: dstil, textur
 function sauber(p) {
   const d = { ...DEF, ...(p || {}) };
   if (!DESIGNS.some(x => x[0] === d.design)) d.design = 'klassik';
@@ -21,6 +27,8 @@ function sauber(p) {
   d.sidebar_breite = Math.max(SB_MIN, Math.min(SB_MAX, +d.sidebar_breite || DEF.sidebar_breite));
   d.sidebar_eingeklappt = !!d.sidebar_eingeklappt;
   d.animationen = d.animationen !== false;
+  if (!DSTILE.some(x => x[0] === d.dstil)) d.dstil = 'klassik'; // R28-D
+  d.textur = d.textur !== false;
   return d;
 }
 let prefs = sauber(ls.get('darstellung', null) || (ls.get('theme', null) ? { modus: ls.get('theme', null) } : null));
@@ -37,6 +45,8 @@ export function apply() {
   if (prefs.modus === 'auto') delete de.dataset.theme; else de.dataset.theme = prefs.modus;
   de.dataset.scheme = effectiveScheme();
   de.dataset.anim = prefs.animationen ? 'an' : 'aus'; // R26: optik.css schaltet --anim-dauer ab
+  de.dataset.dstil = prefs.dstil; // R28-D: dstil-glas.css / dstil-leitstand.css
+  de.dataset.textur = prefs.textur ? 'an' : 'aus'; // R28-D: glanz.css
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = getComputedStyle(de).getPropertyValue('--nav-bg').trim() || '#032d6e';
   const app = document.querySelector('.app');

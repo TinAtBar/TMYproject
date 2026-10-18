@@ -453,3 +453,25 @@ Web: Reiter „QIP“ und „Kick-Off“ (web/js/views/qip.js, kickoff.js via re
 - `GET/POST /api/vertretungen`, `DELETE /api/vertretungen/<id>` – Admin/Controlling legen an (FREI, Prüfung im Endpunkt);
   aktive Vertretung hebt `rechte.stufe` im Bereich auf die Rolle des Vertretenen, Protokoll mit Zusatz „als Vertretung“.
   `GET /api/rechte` liefert `vertretungen` (aktive für mich).
+
+## Runde 28 – G1 Anmeldung über Windows-Domäne (Stufe 1)
+- `GET /api/anmeldung/info` (ohne Anmeldung, FREI) → `{modus: lokal|domaene|beides, domaene, hinweis}` für die Anmeldeseite.
+- `POST /api/login` prüft über `domaene.pruefen`: Benutzer mit `windows_login` (bei aktiver Domäne) per
+  `LogonUserW`, sonst lokales Passwort; Admin immer auch lokal. Eingabe `name`, `DOMÄNE\name`, `name@…`.
+  Fehler: 401 „Anmeldung fehlgeschlagen“ (Domäne aktiv) bzw. „Benutzername oder Passwort falsch“; 401
+  „Domänen-Anmeldung nur auf Windows-Server“; 429 nach 5 Fehlversuchen je Login+Client (5 Min.).
+- `public_user` enthält `windows_login`. Für Domänen-Benutzer: kein Pflicht-Passwortwechsel (403 `pw_aendern` entfällt),
+  `POST /api/me/passwort` → 400.
+- Änderungspaket `benutzer`: Feld `windows_login` (leer = lokal), eindeutig; neue Benutzer mit `windows_login` ohne
+  Startpasswort zulässig. Firmeneinstellungen `anmeldung.domaene`, `anmeldung.modus`. Migration: `users.windows_login`.
+
+## R28-G10: Problem melden / Idee (server/tickets.py)
+Alle Rollen melden; Melder sieht nur eigene Meldungen, Bearbeiten nur Admin (Web-API oder Admin-Konsole → Tickets). Die App verschickt nie E-Mails.
+- `GET /api/tickets/konfig` → `{admin_email, version, max_bilder, max_bytes, arten, dringlichkeiten, status}`
+- `POST /api/tickets` `{art, titel*, text, erwartet, dringlichkeit, technik, change_id}` → `{ticket:{id,nr,status,titel}}`; Technikdaten werden serverseitig gefiltert (nur bekannte Schlüssel, Geheimnisse geschwärzt); Glocke an alle Admins
+- `POST /api/tickets/<id>/bilder?change_id=` (multipart, Feld `bild`) – nur Melder/Admin, nur PNG/JPEG (magische Bytes), ≤5 MB, ≤5 je Meldung; Datei unter `<Daten>/tickets/<id>/`
+- `GET /api/tickets/meine` → eigene inkl. `rueckmeldungen` (ohne interne Kommentare)
+- `GET /api/tickets` (Admin; `status`, `art`, `q`, `offen=1`) → `{items, neu}`
+- `GET /api/tickets/<id>` (Melder/Admin; interne Kommentare nur Admin) · `GET /api/tickets/<id>/bilder/<bid>`
+- `POST /api/tickets/<id>/aktion` (Admin) `{status, prioritaet, version_erledigt, kommentar (intern), rueckmeldung, zusammenfuehren_nr, change_id}` → Glocke an Melder (auch an Melder zusammengeführter Meldungen bei Statuswechsel)
+- `GET /api/tickets/<id>/entwurf.eml` – Outlook-Entwurf (X-Unsent, An = Firmeneinstellung `tickets.admin_email`, sonst E-Mail des ersten Admins), Bilder als Anhang

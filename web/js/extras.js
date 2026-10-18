@@ -38,7 +38,7 @@ function setUnread(n) {
 }
 // R5-D: Symbol je Benachrichtigungsart aus semantik.js
 const NOTE_SEM = { zugewiesen: 'note-zugewiesen', erwaehnt: 'note-erwaehnt', kommentar: 'akt-kommentar', status: 'akt-status', angebot: 'wiedervorlage', frist: 'note-frist' };
-const ART_LABEL = { zugewiesen: 'Zugewiesen', kommentar: 'Kommentar', status: 'Status', angebot: 'Angebot', erwaehnt: 'Erwähnt' };
+const ART_LABEL = { zugewiesen: 'Zugewiesen', kommentar: 'Kommentar', status: 'Status', angebot: 'Angebot', erwaehnt: 'Erwähnt', ticket: 'Meldung' }; // R28-G10: + ticket
 async function openBell(anchor) {
   document.querySelectorAll('.bell-pop').forEach(p => p.remove());
   const listEl = h('div', { class: 'bell-list' }, h('div', { class: 'loading' }, h('span', { class: 'spinner' }), 'Lädt …'));

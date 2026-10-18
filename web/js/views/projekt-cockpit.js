@@ -4,6 +4,7 @@
 // /projekte/<id>/budget (nur mit Recht budget_stunden + budget_sichtbar), /opl?projekt_id=…&status_art=alle, /projekte/<id>/dokumente.
 import { h, icon, clear, fmtDate, fmtNum, parseDate, today, daysBetween, isoDate } from '../util.js';
 import { get } from '../api.js';
+import { skala, fugen } from '../diagramme.js'; // R28-D
 import { darf } from '../rechte.js';
 import { verlaufSvg } from './projekt-fortschritt.js';
 import { info } from './projekt-info.js';
@@ -32,7 +33,8 @@ function ring(prozent, cls, label) {
   const r = 30, u = 2 * Math.PI * r, p = Math.max(0, Math.min(100, +prozent || 0));
   return s('svg', { viewBox: '0 0 76 76', class: 'ck-ring ' + (cls || ''), role: 'img', 'aria-label': label },
     s('circle', { cx: 38, cy: 38, r, class: 'ck-ring-bg' }),
-    p <= 0 ? null : s('circle', { cx: 38, cy: 38, r, class: 'ck-ring-fg', 'stroke-dasharray': `${(u * p / 100).toFixed(1)} ${u.toFixed(1)}`, transform: 'rotate(-90 38 38)' }));
+    p <= 0 ? null : s('circle', { cx: 38, cy: 38, r, class: 'ck-ring-fg', 'stroke-dasharray': `${(u * p / 100).toFixed(1)} ${u.toFixed(1)}`, transform: 'rotate(-90 38 38)' }),
+    fugen(38, 38, r, 8, 32), skala(38, 38, r + 5.5, r + 7.5, 32)); // R28-D: nur im Dashboard-Stil „Leitstand“ sichtbar
 }
 const karte = (cls, ...kids) => h('div', { class: 'card ck-kpi ' + (cls || '') }, ...kids);
 

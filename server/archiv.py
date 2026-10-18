@@ -107,6 +107,7 @@ def archiv_liste(ctx):
 
 DESIGNS = ("klassik", "hell", "werkstatt")
 MODI = ("auto", "light", "dark")
+DSTILE = ("glas", "klassik", "leitstand")  # R28-D
 
 
 @route("PUT", "/api/me/darstellung")
@@ -123,6 +124,10 @@ def darstellung(ctx):
         d["sidebar_eingeklappt"] = bool(b.get("sidebar_eingeklappt"))
     if "animationen" in b:  # R26: dezente Übergänge an/aus
         d["animationen"] = bool(b.get("animationen"))
+    if b.get("dstil") in DSTILE:  # R28-D: Dashboard-Stil
+        d["dstil"] = b.get("dstil")
+    if "textur" in b:  # R28-D: feine Textur an/aus
+        d["textur"] = bool(b.get("textur"))
     txt = json.dumps(d)
 
     def fn(c):

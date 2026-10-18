@@ -1,0 +1,95 @@
+/* =====================================================================
+   R28 Paket D – Dashboard-Stil „Glas“ (:root[data-dstil="glas"], darstellung.js)
+   iOS-ähnlich: milchige Glas-Kacheln über weichem Pastell-Hintergrund, große Zahlen, weiche Ringe.
+   Wirkt auf Start-Dashboard, Projekt-Übersicht (Cockpit) und Projekt-Kacheln; folgt hell/dunkel.
+   Text bleibt in Textfarbe (Kontrast AA auf der fast deckenden Glasfläche); Pastell nur als Fläche/Akzent.
+   Ohne backdrop-filter: Kacheln fast deckend (Fallback).
+   ===================================================================== */
+:root[data-dstil="glas"] {
+  --gl-flaeche: color-mix(in srgb, var(--surface) 90%, transparent);
+  --gl-kante: rgba(255, 255, 255, .75);
+  --gl-blob-1: rgba(150, 190, 255, .55); --gl-blob-2: rgba(190, 175, 255, .42); --gl-blob-3: rgba(150, 225, 200, .42); --gl-blob-4: rgba(255, 205, 170, .42);
+  --gl-pastell-1: #dbe8ff; --gl-pastell-2: #e7e1ff; --gl-pastell-3: #dcf4ea; --gl-pastell-4: #ffe9dc;
+  --gl-radius: 20px;
+}
+:root[data-dstil="glas"][data-scheme="dark"] {
+  --gl-flaeche: color-mix(in srgb, var(--surface) 86%, transparent);
+  --gl-kante: rgba(255, 255, 255, .09);
+  --gl-blob-1: rgba(64, 110, 210, .38); --gl-blob-2: rgba(120, 90, 210, .30); --gl-blob-3: rgba(40, 150, 125, .26); --gl-blob-4: rgba(180, 105, 60, .20);
+  --gl-pastell-1: #1b2a44; --gl-pastell-2: #251f3d; --gl-pastell-3: #16302a; --gl-pastell-4: #33241a;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-dstil="glas"] { --gl-flaeche: color-mix(in srgb, var(--surface) 70%, transparent); }
+  :root[data-dstil="glas"][data-scheme="dark"] { --gl-flaeche: color-mix(in srgb, var(--surface) 62%, transparent); }
+}
+
+/* Hintergrund: weiche Pastell-Flecken */
+:root[data-dstil="glas"] .main:has(.db2-kopf),
+:root[data-dstil="glas"] .main:has(.ck) {
+  background:
+    radial-gradient(900px 520px at 8% 0%, var(--gl-blob-1), transparent 62%),
+    radial-gradient(760px 520px at 92% 8%, var(--gl-blob-2), transparent 60%),
+    radial-gradient(820px 600px at 30% 92%, var(--gl-blob-3), transparent 62%),
+    radial-gradient(700px 520px at 96% 86%, var(--gl-blob-4), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Glas-Kacheln */
+:root[data-dstil="glas"] .dk-karte,
+:root[data-dstil="glas"] .ck .card,
+:root[data-dstil="glas"] .pk,
+:root[data-dstil="glas"] .ph.card {
+  background: var(--gl-flaeche);
+  -webkit-backdrop-filter: saturate(1.8) blur(22px); backdrop-filter: saturate(1.8) blur(22px);
+  border: 1px solid var(--gl-kante);
+  border-radius: var(--gl-radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 1px 1px rgba(16, 24, 40, .03), 0 10px 30px -12px rgba(30, 40, 80, .22);
+}
+:root[data-dstil="glas"][data-scheme="dark"] :is(.dk-karte, .ck .card, .pk, .ph.card) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 12px 32px -12px rgba(0, 0, 0, .7);
+}
+:root[data-dstil="glas"] .dk-projekte .pk { background: color-mix(in srgb, var(--surface) 55%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); }
+:root[data-dstil="glas"] .pk:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 16px 36px -14px rgba(30, 40, 80, .32); }
+:root[data-dstil="glas"] .dk-kopf, :root[data-dstil="glas"] .ck .ck-head { border-bottom-color: color-mix(in srgb, var(--line) 55%, transparent); }
+:root[data-dstil="glas"] .dk-kz-link { border-radius: 0 0 var(--gl-radius) var(--gl-radius); }
+:root[data-dstil="glas"] .dk-kz-link:hover { background: color-mix(in srgb, var(--surface) 40%, transparent); }
+
+/* Kennzahl-Kacheln: Pastell-Tönung von oben */
+:root[data-dstil="glas"] .dk:nth-child(4n+2) .dk-kz { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-4) 75%, transparent), var(--gl-flaeche) 65%); }
+:root[data-dstil="glas"] .dk:nth-child(4n+3) .dk-kz { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-2) 75%, transparent), var(--gl-flaeche) 65%); }
+:root[data-dstil="glas"] .dk:nth-child(4n+4) .dk-kz { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-3) 75%, transparent), var(--gl-flaeche) 65%); }
+:root[data-dstil="glas"] .dk:nth-child(4n+1) .dk-kz { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-1) 75%, transparent), var(--gl-flaeche) 65%); }
+:root[data-dstil="glas"] .ck .ck-kpi:nth-child(1) { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-1) 70%, transparent), var(--gl-flaeche) 70%); }
+:root[data-dstil="glas"] .ck .ck-kpi:nth-child(2) { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-2) 70%, transparent), var(--gl-flaeche) 70%); }
+:root[data-dstil="glas"] .ck .ck-kpi:nth-child(3) { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-3) 70%, transparent), var(--gl-flaeche) 70%); }
+:root[data-dstil="glas"] .ck .ck-kpi:nth-child(4) { background: linear-gradient(160deg, color-mix(in srgb, var(--gl-pastell-4) 70%, transparent), var(--gl-flaeche) 70%); }
+
+/* Große, ruhige Zahlen */
+:root[data-dstil="glas"] .dk-kz-wert { font-size: 2.7rem; font-weight: 650; letter-spacing: -.035em; color: var(--text); }
+:root[data-dstil="glas"] .dk-kz-wert.dk-rot { color: var(--sem-danger) !important; }
+:root[data-dstil="glas"] .ck-kpi-v { font-size: 2.1rem; font-weight: 650; letter-spacing: -.03em; }
+:root[data-dstil="glas"] .dk-kz .dk-kopf h2, :root[data-dstil="glas"] .ck-kpi-l { font-weight: 600; letter-spacing: -.005em; }
+:root[data-dstil="glas"] .dk-mz b, :root[data-dstil="glas"] .dk-ampel-box b { font-weight: 650; letter-spacing: -.02em; }
+:root[data-dstil="glas"] .db2-titel h1 { font-weight: 700; letter-spacing: -.025em; }
+
+/* Weiche Ringe */
+:root[data-dstil="glas"] .dg-ring-teil { stroke-linecap: round; }
+:root[data-dstil="glas"] .dg-ring-spur { stroke: color-mix(in srgb, var(--surface-3) 70%, transparent); }
+:root[data-dstil="glas"] .dg-ring-zahl { font-weight: 650; letter-spacing: -.03em; }
+:root[data-dstil="glas"] .ck-ring-bg { stroke: color-mix(in srgb, var(--surface-3) 70%, transparent); }
+:root[data-dstil="glas"] .ck-ring { filter: drop-shadow(0 2px 6px rgba(30, 40, 80, .12)); }
+
+/* Weiche Balken mit Lichtkante */
+:root[data-dstil="glas"] :is(.pk-track, .fb-track, .dk-pers-bar) { height: 10px; border-radius: 99px; background: color-mix(in srgb, var(--surface-3) 75%, transparent); box-shadow: inset 0 1px 2px rgba(16, 24, 40, .08); }
+:root[data-dstil="glas"] :is(.pk-fill, .fb-fill) { border-radius: 99px; background-image: linear-gradient(to bottom, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0)); }
+
+/* Kleinteile: Glas-Pillen */
+:root[data-dstil="glas"] :is(.dk-mz, .dk-ampel-box, .dk-badge) { border-radius: 14px; background: color-mix(in srgb, var(--surface) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent), inset 0 1px 0 rgba(255, 255, 255, .5); }
+:root[data-dstil="glas"][data-scheme="dark"] :is(.dk-mz, .dk-ampel-box, .dk-badge) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+:root[data-dstil="glas"] .dk-mz[aria-pressed="true"] { background: var(--select-bg); box-shadow: inset 0 0 0 1.5px var(--select-line); }
+:root[data-dstil="glas"] .dk-badge-bald { background: var(--warn-bg); }
+:root[data-dstil="glas"] .db2-hinweis, :root[data-dstil="glas"] .db2-reiter { border-radius: 14px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-dstil="glas"] :is(.dk-karte, .ck .card, .pk, .ph.card) { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

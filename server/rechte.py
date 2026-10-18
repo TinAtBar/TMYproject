@@ -19,13 +19,15 @@ ROLLEN_ANZEIGE = {"admin": "Administrator", "pm": "Projektleiter", "mitarbeiter"
 ROLLEN_KURZ = {"admin": "A", "pm": "PM", "mitarbeiter": "M", "controlling": "C"}
 
 BEREICHE = ("dashboard", "projekte_details", "opl", "fertigung", "kalender", "angebote", "kalkulation",
-            "budget_stunden", "dokumente", "termine", "einstellungen_firma", "berichte")
+            "budget_stunden", "dokumente", "termine", "einstellungen_firma", "berichte",
+            "opl_alle")  # R28-M: opl_alle = alle Punkte sehen (aus → nur eigene Aufgaben)
 BEREICH_ANZEIGE = {
     "dashboard": "Dashboard / Projektübersicht", "projekte_details": "Projektdetails (Projektseite, Reiter)",
     "opl": "Offene-Punkte-Liste", "fertigung": "Fertigungsbesprechung", "kalender": "Kalender",
     "angebote": "Angebote", "kalkulation": "Kalkulation", "budget_stunden": "Budget / Stunden (Details)",
     "dokumente": "Dokumente (QIP, Kick-Off, Dateien am Projekt)", "termine": "Termine / Meilensteine",
     "einstellungen_firma": "Firmeneinstellungen / Vorlagen", "berichte": "Berichte / Gesamtübersicht / Archiv",
+    "opl_alle": "Alle offenen Punkte (aus = nur eigene Aufgaben)",  # R28-M
 }
 STUFEN = ("aus", "lesen", "bearbeiten")
 _RANG = {s: i for i, s in enumerate(STUFEN)}
@@ -35,10 +37,26 @@ DEFAULT = {
     # PM/Mitarbeiter: so offen wie bisher – feinere Prüfungen (eigene Projekte, Budget nur PM) bleiben in den Endpunkten.
     # R26-H: Firmeneinstellungen pflegt nur noch der Admin (Admin-Konsole) – PM/Mitarbeiter nur lesen.
     "pm": {**{b: _B for b in BEREICHE}, "einstellungen_firma": _L},
-    "mitarbeiter": {**{b: _B for b in BEREICHE}, "fertigung": _L, "budget_stunden": _A, "einstellungen_firma": _L},
-    "controlling": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "fertigung": _B, "kalender": _L},
+    # R28-M: Mitarbeiter sieht nur eigene Aufgaben (opl_alle aus) – Dashboard „Meine Aufgaben“, Kalender nur eigene Fristen.
+    "mitarbeiter": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "kalender": _L},
+    "controlling": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "fertigung": _B, "kalender": _L, "opl_alle": _B},  # R28-M
 }
 FIRMA_KEY = "rechte_matrix"
+# R28-M: Mitarbeiter-Rechte bis Version 2.7 (alles sehen) – zum Lockern per Admin-Konsole bzw. für ältere Tests.
+MITARBEITER_BIS_27 = {**{b: _B for b in BEREICHE}, "fertigung": _L, "budget_stunden": _A, "einstellungen_firma": _L}
+
+
+def mitarbeiter_wie_bisher(data_dir):
+    """Test-/Supporthilfe: setzt die Override-Matrix für Mitarbeiter auf den Stand bis 2.7 (direkt in opl.db)."""
+    import sqlite3, firma, os
+    conn = sqlite3.connect(os.path.join(str(data_dir), "opl.db"), timeout=10)
+    try:
+        ov = firma.get(conn, FIRMA_KEY, None) or {}
+        ov["mitarbeiter"] = dict(MITARBEITER_BIS_27)
+        firma.set(conn, FIRMA_KEY, ov)
+        conn.commit()
+    finally:
+        conn.close()
 
 
 # ------------------------------------------------------------------ Migration
@@ -139,6 +157,9 @@ FREI = [
     r"/api/vertretungen(/.*)?",        # R27-105: Vertretungen (Prüfung im Endpunkt: Admin/Controlling)
     r"/api/(masken|ansichten/.*)",  # Masken-Definition/Ansichten lesen (alle); Schreiben nur Admin (Endpunkt)
     r"/api/zusatzwerte/[^/]+/[^/]+",   # nur unbekannte Masken (→ 404); opl/projekt/angebot siehe ROUTEN
+    r"/api/anmeldung/info",            # R28-G1: Anmeldeseite (ohne Anmeldung): Domänen-Modus
+    r"/api/freigaben(/.*)?",          # R28-G11: Hochladen mit Freigabe (Prüfung im Endpunkt)
+    r"/api/tickets(/.*)?",             # R28-G10: Meldungen – alle Rollen melden; Prüfung im Endpunkt (Melder/Admin)
     r"/api/export/kopf",               # R27-108: Export-Kopf/Dateiname (nur Nummer/Bezeichnung, wie in der OPL sichtbar)
 ]
 ROUTEN = [
@@ -203,6 +224,10 @@ def vorab(ctx, method, path):
             ctx.user["_zusatz"] = {"als_vertretung": vertretung.zusatz_text(vs)}
     except Exception:  # noqa: BLE001
         pass
+    import mitarbeiter  # R28-M: nur eigene Aufgaben (Filter/Ersatzantworten, auch für FREI-Pfade)
+    ers = mitarbeiter.vorab(ctx, method, path)
+    if ers is not None:
+        return ers
     b, st = bereich_fuer(method, path)
     if not b or ctx.user.get("rolle") == "admin":
         return None
@@ -238,4 +263,5 @@ def rechte_lesen(ctx):
     return {"vertretungen": [{k: v.get(k) for k in ("id", "bereich", "bereich_anzeige", "vertretener_anzeige", "von", "bis")}
                              for v in vertretung.aktive(ctx.db, ctx.user["id"])],"rolle": rolle, "rolle_anzeige": ROLLEN_ANZEIGE.get(rolle, rolle), "rolle_kurz": ROLLEN_KURZ.get(rolle, ""),
             "bereiche": eigene, "stufen": list(STUFEN),
+            "nur_eigene": __import__("mitarbeiter").nur_eigene(ctx.user, ctx.db),  # R28-M
             "matrix": matrix(ctx.db) if rolle == "admin" else None}

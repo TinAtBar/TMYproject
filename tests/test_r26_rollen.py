@@ -197,12 +197,13 @@ class ControllingServerTest(unittest.TestCase):
     def test_admin_override_wirkt(self):
         c = sqlite3.connect(str(Path(self.data) / "opl.db"), timeout=10)
         try:
-            firma.set(c, rechte.FIRMA_KEY, {"controlling": {"angebote": "lesen"}})
+            firma.set(c, rechte.FIRMA_KEY, {"controlling": {"angebote": "lesen"},
+                                            "mitarbeiter": rechte.MITARBEITER_BIS_27})  # R28-M: Mitarbeiter wie bisher
             c.commit()
             self.assertEqual(self.c("co1").get("/api/angebote")[0], 200)
             self.assertEqual(self.c("co1").post("/api/angebote", {})[0], 403)
         finally:
-            firma.set(c, rechte.FIRMA_KEY, None)
+            firma.set(c, rechte.FIRMA_KEY, {"mitarbeiter": rechte.MITARBEITER_BIS_27})  # R28-M
             c.commit()
             c.close()
 

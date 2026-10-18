@@ -255,7 +255,7 @@ class R27OfflineTest(unittest.TestCase):
                 c.execute("INSERT INTO users(login,name,rolle) VALUES('mx','M X','mitarbeiter')")
                 co = dict(c.execute("SELECT * FROM users WHERE login='cx'").fetchone())
                 ma = dict(c.execute("SELECT * FROM users WHERE login='mx'").fetchone())
-                self.assertEqual(rechte.stufe(ma, "fertigung", db), "lesen")
+                self.assertEqual(rechte.stufe(ma, "fertigung", db), "aus")  # R28-M: Mitarbeiter ohne Fertigungsbesprechung
                 c.execute("INSERT INTO vertretungen(vertretener_rolle, vertreter_user_id, von, bis, bereich) VALUES('controlling',?,?,?,'fertigung')",
                           (ma["id"], D(0), D(0)))
                 self.assertEqual(rechte.stufe(ma, "fertigung", db), "bearbeiten")

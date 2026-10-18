@@ -482,8 +482,8 @@ class Konsole:
         alt = {u["id"]: u for u in self.sd["users"]}
         for u in self.entwurf["users"]:
             a = alt.get(u.get("id"))
-            if not a or u.get("passwort") or any(a.get(f) != u.get(f) for f in ("login", "name", "rolle", "aktiv", "email")):  # R5-Z: + email
-                geaendert.append({k: u.get(k) for k in ("id", "login", "name", "rolle", "aktiv", "passwort", "email") if u.get(k) is not None})
+            if not a or u.get("passwort") or any((a.get(f) or "") != (u.get(f) or "") for f in ("login", "name", "rolle", "aktiv", "email", "windows_login")):  # R5-Z: + email, R28-G1: + windows_login
+                geaendert.append({k: u.get(k) for k in ("id", "login", "name", "rolle", "aktiv", "passwort", "email", "windows_login") if u.get(k) is not None})
         if geaendert:
             ops.append({"op": "benutzer", "eintraege": geaendert})
         if self.entwurf["einstellungen"] != self.sd["einstellungen"]:
@@ -605,6 +605,11 @@ class Konsole:
         ttk.Label(r, text="Firmeneinstellungen und Stammdaten werden nur hier gepflegt. Änderungen sammeln sich im "
                           "Änderungspaket (unten) und werden erst nach „Prüfen“ und „Einspielen“ wirksam.",
                   style="Leise.TLabel", wraplength=1000, justify="left").pack(anchor="w", pady=(0, 8))
+        try:  # R28-G10: Hinweis „N neue Tickets“
+            from seiten import tickets as _tk_s
+            _tk_s.start_hinweis(self, r)
+        except Exception:  # noqa: BLE001
+            core.log.exception("Ticket-Hinweis")
         for gruppe, liste in seiten.gruppiert():
             ttk.Label(r, text=gruppe.upper(), style="Gruppe.TLabel").pack(anchor="w", pady=(12, 6))
             g = ttk.Frame(r)
@@ -909,6 +914,7 @@ class Konsole:
                       "zurückgesetzte Passwörter müssen bei der nächsten Anmeldung geändert werden.")
         self.tv_u = self._tree(f, [("login", "Login", 120), ("name", "Name", 220), ("rolle", "Rolle", 120),
                                    ("email", "E-Mail", 200),  # R5-Z
+                                   ("windows", "Windows-Benutzer", 150),  # R28-G1
                                    ("aktiv", "Aktiv", 70), ("letzte", "Letzte Anmeldung", 170), ("hinweis", "Entwurf", 200)])
         self._knoepfe(f, ("Neuer Benutzer …", self.u_neu), ("Bearbeiten …", self.u_bearb),
                       ("Passwort zurücksetzen …", self.u_pw), ("Aktiv / Inaktiv", self.u_aktiv))
@@ -921,10 +927,10 @@ class Konsole:
         alt = {u["id"]: u for u in self.sd["users"]}
         for n, u in enumerate(self.entwurf["users"]):
             a = alt.get(u.get("id"))
-            h = "neu" if not a else ("geändert" if any(a.get(k) != u.get(k) for k in ("login", "name", "rolle", "aktiv", "email")) else "")  # R5-Z: + email
+            h = "neu" if not a else ("geändert" if any((a.get(k) or "") != (u.get(k) or "") for k in ("login", "name", "rolle", "aktiv", "email", "windows_login")) else "")  # R5-Z: + email, R28-G1
             if u.get("passwort"):
                 h = (h + ", " if h else "") + "neues Passwort"
-            tv.insert("", "end", iid=str(n), values=(u["login"], u["name"], u["rolle"], u.get("email") or "", "ja" if u["aktiv"] else "nein",  # R5-Z
+            tv.insert("", "end", iid=str(n), values=(u["login"], u["name"], u["rolle"], u.get("email") or "", u.get("windows_login") or "—", "ja" if u["aktiv"] else "nein",  # R5-Z
                                                       (u.get("letzte_anmeldung") or "—").replace("T", " "), h))
 
     def _u_sel(self):
@@ -935,15 +941,18 @@ class Konsole:
         d = Dialog(self.root, "Benutzer bearbeiten" if u else "Neuer Benutzer",
                    [("login", "Login", (u or {}).get("login", "")), ("name", "Name", (u or {}).get("name", "")),
                     ("rolle", "Rolle", (u or {}).get("rolle", "mitarbeiter"), ("pm", "mitarbeiter", "controlling", "admin")),
-                    ("email", "E-Mail", (u or {}).get("email", ""))]  # R5-Z
-                   + ([] if u else [("passwort", "Startpasswort", "", None, "•")]))
+                    ("email", "E-Mail", (u or {}).get("email", "")),  # R5-Z
+                    ("windows_login", "Windows-Benutzer", (u or {}).get("windows_login", ""))]  # R28-G1: leer = lokales Passwort
+                   + ([] if u else [("passwort", "Startpasswort (leer bei Windows-Benutzer)", "", None, "•")]))
         return d.ergebnis
 
     def u_neu(self):
         r = self.u_dialog()
         if r:
-            if len(r.get("passwort") or "") < 6:
-                return messagebox.showerror("Benutzer", "Startpasswort mindestens 6 Zeichen.", parent=self.root)
+            if len(r.get("passwort") or "") < 6 and not (r.get("windows_login") or "").strip():  # R28-G1
+                return messagebox.showerror("Benutzer", "Startpasswort mindestens 6 Zeichen (oder Windows-Benutzer angeben).", parent=self.root)
+            if not r.get("passwort"):
+                r.pop("passwort", None)
             self.entwurf["users"].append(dict(r, aktiv=1, id=None))
             self.u_fuellen()
             self.paket_aktualisieren()
@@ -1770,11 +1779,15 @@ def _seiten_r26w():
 _seiten_r26w()
 from seiten import vertretung as _vertretung_seite  # noqa: E402  R27-105: Vertretungen
 _vertretung_seite.registrieren()
+from seiten import anmeldung as _anmeldung_seite  # noqa: E402  R28-G1: Windows-Domäne
+_anmeldung_seite.registrieren()
 from seiten import exporte as _exporte_seite  # noqa: E402  R27-108: Exporte (Dateinamen-Muster)
 _exporte_seite.registrieren()
 from seiten import masken as _masken_seite  # noqa: E402,F401  R26-H: ersetzt den Platzhalter „Masken & Ansichten“
 from seiten import dashboard as _dashboard_seite  # noqa: E402  R27: Start-Layout je Rolle
 _dashboard_seite.registrieren()
+from seiten import tickets as _tickets_seite  # noqa: E402  R28-G10: Tickets (Problem melden / Idee)
+_tickets_seite.registrieren()
 
 
 def datenordner_finden(argv):

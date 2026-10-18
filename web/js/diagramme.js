@@ -12,6 +12,22 @@ function s(tag, attrs = {}, ...kids) {
 }
 const r1 = v => Math.round(v * 10) / 10;
 
+/** R28-D: Skala (Tick-Marken) + Segmentfugen für Ringe. Standardmäßig per CSS ausgeblendet,
+ *  sichtbar nur im Dashboard-Stil „Leitstand“ (dstil-leitstand.css) – andere Stile unverändert. */
+export function skala(cx, cy, rInnen, rAussen, n = 48) {
+  const g = s('g', { class: 'dg-skala', 'aria-hidden': 'true' });
+  for (let i = 0; i < n; i++) {
+    const w = i / n * 2 * Math.PI - Math.PI / 2, lang = i % (n / 4) === 0;
+    const ri = lang ? rInnen - 2 : rInnen, c = Math.cos(w), sn = Math.sin(w);
+    g.append(s('line', { class: lang ? 'dg-tick dg-tick-l' : 'dg-tick', x1: r1(cx + ri * c), y1: r1(cy + ri * sn), x2: r1(cx + rAussen * c), y2: r1(cy + rAussen * sn) }));
+  }
+  return g;
+}
+export function fugen(cx, cy, r, sw, n = 40) {
+  const u = 2 * Math.PI * r, t = u / n;
+  return s('circle', { class: 'dg-fugen', cx, cy, r, fill: 'none', 'stroke-width': sw + 1, 'stroke-dasharray': `${r1(t * 0.18)} ${r1(t * 0.82)}`, 'aria-hidden': 'true' });
+}
+
 /** „Schöne“ Achsenteilung: Obergrenze + Schrittweite (1/2/5 × 10^n). */
 export function achse(max, schritte = 4) {
   if (!(max > 0)) return { max: 4, schritt: 1 };
@@ -76,6 +92,7 @@ export function ring(o) {
     }, s('title', {}, `${t.name}: ${t.wert}`)));
     pos += len;
   }
+  svg.append(fugen(70, 70, R, SW), skala(70, 70, R + SW / 2 + 3, R + SW / 2 + 8)); // R28-D (nur Leitstand sichtbar)
   svg.append(s('text', { class: 'dg-ring-zahl', x: 70, y: o.unter ? 72 : 78, 'text-anchor': 'middle' }, String(o.mitte ?? summe)));
   if (o.unter) svg.append(s('text', { class: 'dg-ring-unter', x: 70, y: 90, 'text-anchor': 'middle' }, o.unter));
   return svg;

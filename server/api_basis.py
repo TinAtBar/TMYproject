@@ -20,9 +20,20 @@ LISTEN = {
 def login(ctx):
     lg = (ctx.body.get("login") or "").strip()
     pw = ctx.body.get("passwort") or ""
-    u = user_per_login(ctx.db, lg)
-    if not u or not u["aktiv"] or not check_pw(pw, u["pw_hash"], u["pw_salt"]):
-        raise ApiError(401, "Benutzername oder Passwort falsch")
+    import domaene  # R28-G1: Windows-Domäne + Fehlversuch-Sperre
+    client = ctx.headers.get("_client")
+    rest = domaene.wartezeit(lg, client)
+    if rest:
+        raise ApiError(429, f"Zu viele Fehlversuche – bitte in {max(1, (rest + 59) // 60)} Minuten erneut versuchen")
+    with ctx.db.lock:
+        u, art = domaene.pruefen(ctx.db.conn, lg, pw, check_pw)
+        dom_aktiv = domaene.einstellungen(ctx.db.conn)["aktiv"]
+    if not u:
+        domaene.fehlversuch(lg, client)
+        if art == "nicht_windows":
+            raise ApiError(401, domaene.NUR_WINDOWS)
+        raise ApiError(401, domaene.FEHLER if dom_aktiv else "Benutzername oder Passwort falsch")
+    domaene.erfolg(lg, client)
 
     def fn(c):
         jetzt = now_iso()
@@ -54,6 +65,11 @@ def me(ctx):
 
 @route("POST", "/api/me/passwort")
 def passwort(ctx):
+    import domaene  # R28-G1: Windows-Passwort wird in Windows geändert
+    with ctx.db.lock:
+        dom = domaene.ist_domaenen_benutzer(ctx.db.conn, ctx.user)
+    if dom:
+        raise ApiError(400, "Das Windows-Passwort wird in Windows geändert")
     alt, neu = ctx.body.get("alt") or "", ctx.body.get("neu") or ""
     if not check_pw(alt, ctx.user["pw_hash"], ctx.user["pw_salt"]):
         raise ApiError(400, "Altes Passwort ist falsch")

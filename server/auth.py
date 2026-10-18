@@ -56,7 +56,7 @@ def public_user(u):
     if not u:
         return None
     return {k: u.get(k) for k in ("id", "login", "name", "rolle", "muss_pw_aendern", "aktiv", "urlaub",
-                                  "letzte_anmeldung", "vorletzte_anmeldung", "darstellung", "email")}  # R5-Z: + email
+                                  "letzte_anmeldung", "vorletzte_anmeldung", "darstellung", "email", "windows_login")}  # R5-Z: + email, R28-G1: + windows_login
 
 
 def new_session(conn, user_id):

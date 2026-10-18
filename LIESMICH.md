@@ -21,6 +21,14 @@ Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispie
 - **Einheitliche Exporte**: gleicher Kopf (Titel, Projekt, Stand, erstellt von), Dateinamen nach Firmenmuster,
   „Auch im Projektordner ablegen“. Stundenzahlen nur für Projektleiter des Projekts und Admin.
 
+## Anmeldung mit Windows-Benutzer (ab 2.8)
+- In der Admin-Konsole → „Anmeldung“ die Domäne eintragen; bei jeder Person unter „Benutzer & Rollen“ den
+  **Windows-Benutzer** hinterlegen. Diese Personen melden sich dann mit Windows-Name und **Windows-Passwort** an
+  (auch „DOMÄNE\name“ geht). Wer keinen Windows-Benutzer hat, nutzt weiter sein App-Passwort.
+- Das Windows-Passwort wird in Windows geändert – in der App gibt es dafür keinen Knopf. Der Administrator kann sich im
+  Notfall immer mit seinem lokalen Passwort anmelden. Handys koppeln wie bisher per QR-Code.
+- Funktioniert nur, wenn der Server-PC ein Windows-PC in der Domäne ist. Details: `docs/admin-seiten/anmeldung.md`.
+
 ## Neu in 2.6
 - **Rolle Controlling** („C“): sieht die Projektkacheln mit Fortschritts- und Stundenbalken (nur Prozent, keine
   Stundenzahlen) und arbeitet in der Offene-Punkte-Liste und der Fertigungsbesprechung mit.

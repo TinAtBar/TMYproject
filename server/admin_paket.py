@@ -195,6 +195,15 @@ def _pruef_benutzer(conn, op, aus):
             raise PaketFehler(f"Benutzer {login}: Login ist bereits vergeben")
         if e.get("passwort") is not None and 0 < len(e["passwort"]) < 6:
             raise PaketFehler(f"Benutzer {login}: Startpasswort mindestens 6 Zeichen")
+        if (e.get("windows_login") or "").strip():  # R28-G1: Windows-Benutzer eindeutig
+            import domaene
+            wl = domaene.windows_login_bereinigen(e["windows_login"])
+            hat = "windows_login" in {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+            if hat and conn.execute("SELECT 1 FROM users WHERE windows_login=? COLLATE NOCASE AND id IS NOT ?",
+                                    (wl, e.get("id"))).fetchone():
+                raise PaketFehler(f"Benutzer {login}: Windows-Benutzer „{wl}“ ist bereits vergeben")
+            if not e.get("id") or (alt.get(e["id"]) or {}).get("windows_login") != wl:
+                aus.append(f"{e.get('name') or login}: Anmeldung mit Windows-Benutzer {wl}")
         if e.get("id"):
             a = alt.get(e["id"])
             if not a:
@@ -217,7 +226,7 @@ def _pruef_benutzer(conn, op, aus):
                 aus.append(f"{a['name']}: neues Startpasswort (muss bei Anmeldung geändert werden)")
             endzustand[e["id"]].update(rolle=e["rolle"], aktiv=akt)
         else:
-            if not e.get("passwort"):
+            if not e.get("passwort") and not (e.get("windows_login") or "").strip():  # R28-G1: Windows-Benutzer ohne Startpasswort
                 raise PaketFehler(f"Neuer Benutzer {login}: Startpasswort fehlt")
             aus.append(f"Neuer Benutzer {e['name']} ({login}, {e['rolle']}) – muss Passwort bei erster Anmeldung ändern")
             endzustand[f"neu-{login}"] = {"rolle": e["rolle"], "aktiv": 1 if e.get("aktiv", 1) else 0}
@@ -483,18 +492,28 @@ def _anw_benutzer(conn, op, hash_pw):
             if "email" in e and "email" in {r[1] for r in conn.execute("PRAGMA table_info(users)")}:  # R5-Z
                 conn.execute("UPDATE users SET email=? WHERE id=?", ((e["email"] or "").strip() or None, e["id"]))
         else:
-            h, s = hash_pw(e["passwort"])
+            h, s = hash_pw(e.get("passwort") or __import__("secrets").token_urlsafe(24))  # R28-G1: Windows-Benutzer ohne Startpasswort
             conn.execute("INSERT INTO users(login,name,rolle,pw_hash,pw_salt,muss_pw_aendern,aktiv) VALUES(?,?,?,?,?,?,?)",
                          (e["login"].strip(), e["name"].strip(), e["rolle"], h, s,
                           0 if e.get("muss_pw_aendern") == 0 else 1, akt))
             if e.get("email") and "email" in {r[1] for r in conn.execute("PRAGMA table_info(users)")}:  # R5-Z
                 conn.execute("UPDATE users SET email=? WHERE login=?", (e["email"].strip(), e["login"].strip()))
+    _anw_windows_login(conn, op)  # R28-G1
     try:  # R5-Z: Namen geändert → Zuständig-Verknüpfungen neu (nur wenn Server-Module vorhanden)
         import zustaendig
         if conn.execute("SELECT 1 FROM sqlite_master WHERE name='opl_zustaendig'").fetchone():
             zustaendig.alle_neu(conn)
     except ImportError:
         pass
+
+
+def _anw_windows_login(conn, op):  # R28-G1: Windows-Benutzer (leer = lokale Anmeldung)
+    import domaene
+    domaene.migration(conn)
+    for e in op.get("eintraege") or []:
+        if "windows_login" in e:
+            conn.execute("UPDATE users SET windows_login=? WHERE login=? COLLATE NOCASE",
+                         (domaene.windows_login_bereinigen(e["windows_login"]), e["login"].strip()))
 
 
 def _anw_pms(conn, op, hash_pw):

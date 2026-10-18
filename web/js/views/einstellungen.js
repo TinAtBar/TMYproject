@@ -1,3 +1,4 @@
+import { istDomaenenBenutzer } from '../anmeldung.js'; // R28-G1
 // R26-H: „Meine Einstellungen“ – nur noch persönliche Einstellungen (Darstellung, eigene Ansichten, Geräte,
 // Profil/Passwort/PIN). Firmeneinstellungen und Stammdaten (Status, Kategorien, Nummern, Vorlagen, Benutzer …)
 // pflegt der Admin ausschließlich in der Admin-Konsole.
@@ -29,7 +30,8 @@ export function mount(el) {
   const u = store.user || {};
   clear(body).append(
     karte('Profil', null, h('dl', { class: 'mk-dl' }, h('dt', null, 'Name'), h('dd', null, u.name || '–'), h('dt', null, 'Anmeldung'), h('dd', { class: 'mono' }, u.login || '–'), h('dt', null, 'Rolle'), h('dd', null, ROLLE_ANZEIGE[u.rolle] || u.rolle || '–')),
-      h('div', { class: 'mk-aktionen links' }, h('button', { class: 'btn', onclick: () => document.dispatchEvent(new CustomEvent('bpm:passwort')) }, icon('key', 16), 'Passwort ändern'))),
+      istDomaenenBenutzer(u) ? h('p', { class: 'muted small' }, 'Anmeldung mit Windows-Benutzer – das Passwort wird in Windows geändert.') // R28-G1
+        : h('div', { class: 'mk-aktionen links' }, h('button', { class: 'btn', onclick: () => document.dispatchEvent(new CustomEvent('bpm:passwort')) }, icon('key', 16), 'Passwort ändern'))),
     karte('Darstellung', 'Design, hell/dunkel, Schriftgröße, Listenoptik.',
       h('div', { class: 'mk-aktionen links' }, h('button', { class: 'btn', onclick: () => document.dispatchEvent(new CustomEvent('bpm:darstellung')) }, icon('palette', 16), 'Darstellung anpassen …'))),
     karte('Eigene Ansichten', 'Gespeicherte Listenansichten (Offene Punkte). Firmenstandard-Ansichten erscheinen in der Ansichtsauswahl und lassen sich dort als eigene kopieren.', ansichtenListe()),

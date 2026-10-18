@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS kopplungen(token TEXT PRIMARY KEY, user_id INTEGER, e
         import markierung; markierung.migration(self.conn)  # R3-B: opl.zustaendig_text, projekte.notizen
         import datenpaket; datenpaket.migration(self.conn)  # R3-D: Datenübernahme (idempotent)
         import qip, kickoff; qip.migration(self.conn); kickoff.migration(self.conn)  # R3-C: QIP + Kick-Off
+        import domaene; domaene.migration(self.conn)  # R28-G1: users.windows_login
         for t, col, typ in self.MIGRATION_SPALTEN:
             cols = {r[1] for r in self.conn.execute(f"PRAGMA table_info({t})")}
             if col not in cols:
@@ -166,6 +167,8 @@ CREATE TABLE IF NOT EXISTS kopplungen(token TEXT PRIMARY KEY, user_id INTEGER, e
         import vertretung, fertigung_antraege; vertretung.migration(self.conn); fertigung_antraege.migration(self.conn)  # R27-103–105
         import dashboard; dashboard.migration(self.conn)  # R27: Dashboard 2 (Kennzahl-Verlauf, eigene Dashboards)
         import bestellung; bestellung.migration(self.conn)  # R27-106: Kundenbestellung + Dokumenttyp „Bestellung“
+        import freigaben; freigaben.migration(self.conn)  # R28-G11: Hochladen mit Freigabe (ablage_freigaben)
+        import tickets; tickets.migration(self.conn)  # R28-G10: Problem melden / Idee (Tickets)
 
     # ---------------------------------------------------------------- Suche-Index
     def _init_fts(self):

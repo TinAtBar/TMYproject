@@ -39,10 +39,13 @@ import fertigung  # noqa: E402,F401  # R5-F: Fertigungsbesprechung
 import rechte, fertigung_verteilen  # noqa: E402,F401  # R26-E: Rechte-Matrix, Verteilen
 import vertretung, fertigung_antraege  # noqa: E402,F401  # R27-103–105: Vertretung, Fertigungsort, Anträge
 import zustaendig, kontakte  # noqa: E402,F401  # R5-Z: Zuständig-Vorschläge, Kontakte
+import domaene  # noqa: E402,F401  # R28-G1: Windows-Domäne (/api/anmeldung/info)
 import ablage  # noqa: E402  # R26-B: Dokumentenablage (Netzlaufwerk)
 import budget, reststunden, bericht  # noqa: E402,F401  # R26-C2: Budget, Reststunden, Bericht
 import dashboard  # noqa: E402,F401  # R26-G: Dashboard-Sammelabruf (Kacheln, Heute)
 import export, dokument_erkennung  # noqa: E402,F401  # R27-107/108: Exporte vereinheitlichen, PDF-Erkennung
+import freigaben, mitarbeiter  # noqa: E402,F401  # R28-M/G11: nur eigene Aufgaben, Hochladen mit Freigabe
+import tickets  # noqa: E402,F401  # R28-G10: Problem melden / Idee (Tickets)
 import seed as seed_mod  # noqa: E402
 import pairing, sync  # noqa: E402,F401  mobile: Geräte-Kopplung, Offline-Abgleich
 import tls as tls_mod  # noqa: E402  mobile:
@@ -142,6 +145,12 @@ class Handler(BaseHTTPRequestHandler):
 
     PW_FREI = {("GET", "/api/me"), ("POST", "/api/me/passwort"), ("GET", "/api/stammdaten")}
 
+    @staticmethod
+    def _domaene_benutzer(app, user):  # R28-G1: kein Pflicht-Passwortwechsel für Windows-Anmeldung
+        import domaene
+        with app.db.lock:
+            return domaene.ist_domaenen_benutzer(app.db.conn, user)
+
     def _sperren_pruefen(self, app, user, tok, method, path):
         """Serverseitige Sperren: Pflicht-Passwortwechsel und PIN-Sperre gekoppelter Geräte."""
         pin_pfad = path.startswith("/api/geraete/pin")
@@ -152,7 +161,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not pairing.ist_entsperrt(app, tok):
                     raise ApiError(423, "PIN erforderlich", code="pin")
                 pairing.entsperren(app, tok)  # gleitend: jede Anfrage verlängert
-        if user.get("muss_pw_aendern") and (method, path) not in self.PW_FREI and not pin_pfad:
+        if user.get("muss_pw_aendern") and (method, path) not in self.PW_FREI and not pin_pfad \
+                and not self._domaene_benutzer(app, user):  # R28-G1
             raise ApiError(403, "Bitte zuerst das Passwort ändern", code="pw_aendern")
 
     DESKTOP_COOKIE = "bpm_desktop"

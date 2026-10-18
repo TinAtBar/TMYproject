@@ -268,6 +268,33 @@ def anmeldung_pruefen(data_dir, login, passwort):
     p = db_pfad(data_dir)
     if not p.is_file():
         return None, "Datenbank nicht gefunden – ist der Datenordner erreichbar?"
+    try:  # R28-G1: Windows-Domäne (gleiche Prüfung wie der Server, Modul server/domaene.py)
+        server_modules_path()
+        import domaene
+    except ImportError:
+        domaene = None
+    if domaene is not None:
+        lg = (login or "").strip()
+        rest = domaene.wartezeit(lg, "lokal")
+        if rest:
+            return None, f"Zu viele Fehlversuche – bitte in {max(1, (rest + 59) // 60)} Minuten erneut versuchen"
+        try:
+            conn = ro_connect(p)
+            try:
+                u, grund = domaene.pruefen(conn, lg, passwort,
+                                           lambda pw, h, s: bool(h and s) and hmac.compare_digest(_hash(pw or "", s), h))
+                aktiv = domaene.einstellungen(conn)["aktiv"]
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            return None, f"Datenbank nicht lesbar: {e}"
+        if not u:
+            domaene.fehlversuch(lg, "lokal")
+            if grund == "nicht_windows":
+                return None, domaene.NUR_WINDOWS
+            return None, domaene.FEHLER if aktiv else "Benutzername oder Passwort falsch"
+        domaene.erfolg(lg, "lokal")
+        return {k: u[k] for k in ("id", "login", "name", "rolle")}, None
     try:
         conn = ro_connect(p)
         try:

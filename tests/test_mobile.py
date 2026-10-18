@@ -39,6 +39,8 @@ class MobilServer(unittest.TestCase):
                 break
             except OSError:
                 time.sleep(0.1)
+        import rechte  # R28-M: Mitarbeiter wie bis 2.7 (ma1 legt Punkte in fremden Projekten an)
+        rechte.mitarbeiter_wie_bisher(cls.data)
 
     @classmethod
     def tearDownClass(cls):
