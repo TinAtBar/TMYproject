@@ -279,7 +279,7 @@ class R27OfflineTest(unittest.TestCase):
                 admin_paket.anwenden(c, ende, lambda pw: ("h", "s"))
                 c.execute("COMMIT")
                 self.assertEqual(vertretung.liste(c), [])
-                self.assertEqual(rechte.stufe(ma, "fertigung", db), "lesen")
+                self.assertEqual(rechte.stufe(ma, "fertigung", db), "aus")  # R28-M
             finally:
                 db.close()
 

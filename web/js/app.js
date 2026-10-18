@@ -33,6 +33,7 @@ import { off as offState } from './offline/index.js'; // R26-M: Abgleich-Status 
 import { bellButton, themeButton, paletteButton, renderForcedPw, addRecent } from './extras.js';
 import { ladeAnmeldeInfo, istDomaenenBenutzer } from './anmeldung.js'; // R28-G1: Windows-Domäne
 import * as Archiv from './views/archiv.js';
+import * as MeineAufgaben from './views/meine-aufgaben.js'; import * as Freigaben from './views/freigaben.js'; import { nurEigene } from './rechte.js'; // R28-M/G11
 import * as Meldungen from './views/meldungen.js'; import { meldenButton, meldenDialog } from './ticket.js'; // R28-G10: Problem melden / Idee
 import * as Fertigung from './views/fertigung.js'; // R5-F: Fertigungsbesprechung + OPL-Projektkacheln
 import { DESIGNS, MODI, SB_MIN, SB_MAX, getPrefs, setPrefs, setDesign, fromUser, apply as applyDarstellung, effectiveScheme, onDarstellung, SYMBOL_MODI, KOPF_MODI, listenOptik, setListenOptik, DSTILE } from './darstellung.js'; // R28-D: + DSTILE
@@ -118,7 +119,7 @@ function renderShell() {
   updToggle(); if (offDs) offDs(); offDs = onDarstellung(updToggle);
   connEl = h('a', { class: 'conn', href: '#/abgleich', title: 'Abgleich: Verbindung und wartende Änderungen', role: 'status', 'data-testid': 'abgleich-link' }, h('span', null, 'Verbunden'), h('span', { class: 'conn-n' })); // R26-M
   offState.onState(st => { const n = connEl && connEl.querySelector('.conn-n'); if (n) n.textContent = st.pending ? ` · ${st.pending} wartend` : (st.konflikte ? ` · ${st.konflikte} klären` : ''); });
-  const plus = h('button', { class: 'fab-new', type: 'button', 'aria-label': 'Neuer Punkt', title: 'Neuer Punkt', onclick: () => quickCreate() }, icon('plus', 26)); // R4-T: nur Handy (schwebend), Desktop: Taste n / Seitenaktionen
+  const plus = nurEigene() ? null : h('button', { class: 'fab-new', type: 'button', 'aria-label': 'Neuer Punkt', title: 'Neuer Punkt', onclick: () => quickCreate() }, icon('plus', 26)); // R28-M: kein „Neuer Punkt“ bei nur eigenen Aufgaben // R4-T: nur Handy (schwebend), Desktop: Taste n / Seitenaktionen
   const prof = h('button', { class: 'profile-btn', 'aria-haspopup': 'menu', 'aria-label': 'Profil-Menü', onclick: e => profileMenu(e.currentTarget) },
     avatar(store.user.name), h('span', { class: 'pname' }, store.user.name), store.user.urlaub ? h('span', { class: 'chip chip-warn vac-pill' }, 'Urlaub') : null);
   const topbar = h('header', { class: 'topbar' }, h('a', { class: 'brand-mini', href: '#/start', 'aria-label': 'Start' }, logoImg('')), searchBox(), paletteButton(), h('div', { class: 'spacer' }), connEl, themeButton(), meldenButton(), bellButton(), prof);
@@ -331,6 +332,7 @@ route('/angebote/:id', Angebote);
 route('/einstellungen', Einstellungen);
 route('/archiv', Archiv);
 route('/meldungen', Meldungen); // R28-G10
+route('/meine-aufgaben', MeineAufgaben); route('/freigaben', Freigaben); // R28-M/G11
 route('/fertigung', Fertigung); route('/fertigung/druck', Fertigung); // R5-F
 route('/sn/:id', SnDetail);
 route('/uebersicht', Uebersicht);
@@ -349,6 +351,7 @@ onRoute(async r => {
   if (!r) { go('/start', true); return; }
   const top = r.path.split('/')[1];
   document.querySelectorAll('[data-nav]').forEach(a => { if (a.dataset.nav === top) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (nurEigene() && (r.path === '/start' || r.path === '/projekte')) { go('/meine-aufgaben', true); return; } // R28-M: Mitarbeiter → Meine Aufgaben
   if (r.path.startsWith('/projekte/') && r.params && r.params.id && !darf('projekte_details')) { location.replace(projektHref(r.params.id)); return; } // R26-E (vor update/destroy, sonst bleibt die alte View aktiv und die Seite leer): Controlling → OPL des Projekts
   // Gleiche View, nur Parameter geändert → update statt Neuaufbau
   if (activeView && activeView.module === r.view && activeView.update && activeView.update(r) !== false) return;

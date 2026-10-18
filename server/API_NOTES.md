@@ -475,3 +475,17 @@ Alle Rollen melden; Melder sieht nur eigene Meldungen, Bearbeiten nur Admin (Web
 - `GET /api/tickets/<id>` (Melder/Admin; interne Kommentare nur Admin) · `GET /api/tickets/<id>/bilder/<bid>`
 - `POST /api/tickets/<id>/aktion` (Admin) `{status, prioritaet, version_erledigt, kommentar (intern), rueckmeldung, zusammenfuehren_nr, change_id}` → Glocke an Melder (auch an Melder zusammengeführter Meldungen bei Statuswechsel)
 - `GET /api/tickets/<id>/entwurf.eml` – Outlook-Entwurf (X-Unsent, An = Firmeneinstellung `tickets.admin_email`, sonst E-Mail des ersten Admins), Bilder als Anhang
+
+## R28-M / G11 – Mitarbeiter nur eigene Aufgaben, Hochladen mit Freigabe
+- Neuer Matrix-Bereich `opl_alle` (Standard: PM/Controlling bearbeiten, Mitarbeiter aus). Ohne `opl_alle` gilt
+  „nur eigene“ (`mitarbeiter.nur_eigene`): OPL-Liste/Export/Werte gefiltert (common.opl_filter), `/api/dashboard`,
+  `/api/kalender`, `/api/suche`, `/api/projekte` als Ersatzantwort nur mit eigenen Punkten; Detail/Kommentar/Zusatzwerte/
+  Dateien nur eigener Punkte, Anlegen/Löschen/Bulk/Duplizieren/Verschieben/Vorlagen 403. `GET /api/rechte` → `nur_eigene`.
+- Mitarbeiter-Default: dashboard lesen, opl bearbeiten, kalender lesen, sonst aus. Lockern: Admin-Konsole (Rechte-Matrix),
+  `rechte.MITARBEITER_BIS_27` = alter Stand.
+- Offline-Abgleich (`sync.call`) läuft jetzt ebenfalls durch `rechte.vorab` (Sync-Paket und Änderungen mit gleichen Rechten).
+- `POST /api/opl/<id>/hochladen` (multipart `datei`, `?dokumenttyp=`) → Warte-Bereich `uploads_wartend/`, Tabelle `ablage_freigaben`.
+  Max. 200 MB, keine ausführbaren/aktiven Dateien (Endung + MZ/ELF).
+- `GET /api/freigaben?status=wartend|freigegeben|abgelehnt|alle&projekt_id=&opl_id=` → `{items, typen}`; `GET /api/freigaben/anzahl`;
+  `GET /api/freigaben/<id>/datei` (Bilder/PDF inline); `POST /api/freigaben/<id>/freigeben {dokumenttyp, dateiname}` (PM des Projekts/Admin,
+  schreibt in den Typ-Ordner des Projektordners, OPL-Verlauf, Glocke an Melder); `POST /api/freigaben/<id>/ablehnen {kommentar}` (Datei gelöscht).

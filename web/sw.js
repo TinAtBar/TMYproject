@@ -1,7 +1,7 @@
 // mobile: Service Worker – App-Shell offline verfügbar (Netz zuerst, Cache als Rückfall).
 // Neue Server-Version → neue Dateien kommen automatisch über das Netz; VERSION erhöhen räumt alte Caches.
 const VERSION = 'barlagepm-shell-2.7.0';
-const SHELL = ['./', 'index.html', 'css/styles.css', 'css/mobil.css', 'css/ablage.css', 'css/fortschritt.css', 'css/budget.css', 'css/optik.css', 'css/masken.css', 'css/dashboard.css', 'css/cockpit.css', 'css/fertigung-r27.css', 'css/exporte.css', 'css/tickets.css', 'css/glanz.css', 'css/dstil-glas.css', 'css/dstil-leitstand.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/logo.png', 'icons/favicon.ico'];
+const SHELL = ['./', 'index.html', 'css/styles.css', 'css/mobil.css', 'css/ablage.css', 'css/fortschritt.css', 'css/budget.css', 'css/optik.css', 'css/masken.css', 'css/dashboard.css', 'css/cockpit.css', 'css/fertigung-r27.css', 'css/exporte.css', 'css/tickets.css', 'css/glanz.css', 'css/dstil-glas.css', 'css/dstil-leitstand.css', 'css/freigaben.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/logo.png', 'icons/favicon.ico'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));

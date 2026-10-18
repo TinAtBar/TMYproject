@@ -2,6 +2,7 @@
 import { h, icon, clear, fmtDate, isoDate, today, uuid } from '../util.js';
 import { get, post, put, qs } from '../api.js';
 import { store } from '../store.js';
+import { darf as darfR } from '../rechte.js'; // R28-M
 import { setQuery, go } from '../router.js';
 import { toast, toastErr, dialog, field, loading, errorBox } from '../ui.js';
 import { teamsKnopf, teamsBesprechungNeu, istTeamsLink } from '../teams.js';
@@ -11,6 +12,7 @@ import { fertigungsortFeld, antragDialog, antraegeDialog, vertretungDialog } fro
 let kachelCache = null, kachelZeit = 0;
 async function ladeKacheln(force) {
   if (!force && kachelCache && Date.now() - kachelZeit < 15000) return kachelCache;
+  if (!darfR('fertigung')) { kachelCache = []; kachelZeit = Date.now(); return kachelCache; } // R28-M: ohne Fertigungsrecht keine Projektkacheln
   kachelCache = (await get('/fertigung/kacheln')).projekte || []; kachelZeit = Date.now();
   return kachelCache;
 }

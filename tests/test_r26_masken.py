@@ -132,9 +132,10 @@ class AdminSeiteTest(unittest.TestCase):
 
 class RechteTest(unittest.TestCase):
     def test_pm_nur_lesen(self):
+        self.assertTrue(rechte.darf({"rolle": "pm"}, "einstellungen_firma", "lesen"))
         for r in ("pm", "mitarbeiter"):
-            self.assertTrue(rechte.darf({"rolle": r}, "einstellungen_firma", "lesen"))
             self.assertFalse(rechte.darf({"rolle": r}, "einstellungen_firma", "bearbeiten"))
+        self.assertFalse(rechte.darf({"rolle": "mitarbeiter"}, "einstellungen_firma", "lesen"))  # R28-M: nur eigene Aufgaben
         self.assertTrue(rechte.darf({"rolle": "admin"}, "einstellungen_firma", "bearbeiten"))
 
 

@@ -9,6 +9,7 @@ import { store, isPmOrAdmin, isAdmin } from '../store.js';
 import { loading, errorBox, toast, toastErr, menu, dialog, field, select, confirmDlg } from '../ui.js';
 import { getRecent } from '../extras.js';
 import { kachelRaster } from '../projekt-kachel.js';
+import { freigabeHinweis } from '../freigaben-hinweis.js'; // R28-G11
 import { darf } from '../rechte.js';
 import prefs from '../prefs.js';
 import { infoKnopf } from '../infotexte.js';
@@ -32,7 +33,7 @@ export function mount(el) {
   const kopf = h('div', { class: 'db2-kopf' });
   const reiter = h('div', { class: 'db2-reiter' });
   const body = h('div', { class: 'db2-body' }, loading());
-  el.append(kopf, reiter, body);
+  el.append(freigabeHinweis(), kopf, reiter, body); // R28-G11: „N Dateien zur Freigabe“
   let fokusNach = null;
 
   async function load(o = {}) {

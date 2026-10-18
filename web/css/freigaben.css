@@ -1,0 +1,62 @@
+/* R28-M / G11: „Meine Aufgaben“ (Mitarbeiter) und „Dateien zur Freigabe“ (Projektleiter).
+   Auswahl/Aktiv nur neutral (--select*), Rot nur für überfällig/Gefahr, Farbe nie allein (immer Symbol + Text). */
+
+/* ---------- Hinweis-Kachel ---------- */
+.fg-hinweis { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; padding: 14px 16px; border-radius: var(--radius);
+  background: var(--select-bg, var(--accent-soft)); border: 1px solid var(--select-line, var(--accent)); color: var(--text);
+  text-decoration: none; box-shadow: var(--shadow-1); transition: transform .18s ease, box-shadow .18s ease; }
+.fg-hinweis[hidden] { display: none; }
+.fg-hinweis:hover { transform: translateY(-1px); box-shadow: var(--shadow-raised, var(--shadow-1)); }
+.fg-hinweis:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.fg-hinweis-ico { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; flex: none;
+  background: var(--surface); color: var(--select-text, var(--accent-text)); box-shadow: inset 0 0 0 1px var(--select-line, var(--accent)); }
+.fg-hinweis-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.fg-hinweis-pfeil { color: var(--select-text, var(--accent-text)); }
+
+/* ---------- Meine Aufgaben ---------- */
+.ma-seite { display: flex; flex-direction: column; gap: 18px; }
+.ma-kzs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.ma-kz { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
+  padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
+.ma-kz-ico { grid-row: 1 / span 2; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--surface-2, var(--sunken)); color: var(--text-2); }
+.ma-kz-wert { font: 700 1.6rem/1.1 var(--font-num, var(--font)); color: var(--heading, var(--text)); }
+.ma-kz-label { font-size: .85rem; color: var(--text-2); }
+.ma-kz-gefahr .ma-kz-ico { background: var(--danger-bg); color: var(--danger-text); }
+.ma-kz-gefahr .ma-kz-wert { color: var(--danger-text); }
+.ma-liste, .fg-liste, .ma-fg-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ma-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 14px; }
+.ma-titel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; flex: 1 1 280px; min-width: 0; color: var(--text); text-decoration: none; }
+.ma-titel:hover strong { text-decoration: underline; }
+.ma-nr { font: 600 .85rem var(--mono, monospace); color: var(--text-3, var(--text-2)); }
+.ma-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ma-frist { display: inline-flex; align-items: center; gap: 4px; font-size: .9rem; color: var(--text-2); }
+.ma-frist.frist-overdue { color: var(--danger-text); font-weight: 700; }
+.ma-frist.frist-week { color: var(--warn-text); font-weight: 600; }
+.ma-fg h2 { font-size: 1.05rem; margin: 6px 0 10px; }
+.ma-fg-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-radius: var(--radius-sm, 8px);
+  background: var(--surface); border: 1px solid var(--line); }
+.ma-fg-name { font-weight: 600; overflow-wrap: anywhere; }
+.ma-fg-kommentar { flex-basis: 100%; color: var(--text-2); }
+
+/* ---------- Freigabe ---------- */
+.fg-karte { display: flex; gap: 16px; padding: 14px; align-items: flex-start; }
+.fg-vorschau { flex: none; width: 140px; height: 110px; border-radius: 10px; overflow: hidden; display: grid; place-items: center; gap: 4px;
+  background: var(--sunken, var(--surface-2)); border: 1px solid var(--line); color: var(--text-2); text-decoration: none; font-size: .85rem; }
+.fg-vorschau img { width: 100%; height: 100%; object-fit: cover; }
+.fg-vorschau-pdf, .fg-vorschau-datei { align-content: center; }
+.fg-karte-inhalt { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+.fg-karte-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.fg-name { overflow-wrap: anywhere; }
+.fg-bezug { color: var(--text-2); }
+.fg-form { display: grid; grid-template-columns: minmax(160px, 220px) minmax(200px, 1fr) auto; gap: 10px; align-items: end; }
+.fg-form .field { margin: 0; }
+.fg-form input { width: 100%; }
+.fg-knoepfe { display: flex; gap: 8px; padding-bottom: 2px; }
+.fg-dialog input[type=file] { max-width: 100%; }
+@media (max-width: 760px) {
+  .fg-karte { flex-direction: column; }
+  .fg-vorschau { width: 100%; height: 160px; }
+  .fg-form { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .fg-hinweis { transition: none; } .fg-hinweis:hover { transform: none; } }

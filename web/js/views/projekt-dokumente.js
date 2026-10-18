@@ -4,6 +4,7 @@ import { get, post, put, del, api } from '../api.js';
 import { prefs } from '../prefs.js';
 import { loading, errorBox, toast, toastErr, dialog, field, confirmDlg, empty } from '../ui.js';
 import { registerProjektTab } from './projekt-tabs.js';
+import { freigabeHinweis } from '../freigaben-hinweis.js'; // R28-G11
 
 registerProjektTab({ key: 'dokumente', label: 'Dokumente', order: 55, render: (el, ctx) => renderDokumente(el, ctx) });
 
@@ -16,7 +17,7 @@ function renderDokumente(el, ctx) {
   const id = ctx.id;
   let info = null, offen = null, sub = '';
   const box = h('div', { class: 'abl' });
-  clear(el).append(box);
+  clear(el).append(freigabeHinweis({ projektId: id }), box); // R28-G11
 
   async function load() {
     clear(box).append(loading());

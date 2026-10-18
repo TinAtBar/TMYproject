@@ -22,8 +22,8 @@ export async function hochladenDialog(item, nachher) {
   const d = dialog({
     title: `Datei zu #${item.id} hochladen`,
     body: h('div', { class: 'fg-dialog' }, h('p', null, h('strong', null, item.titel)), field('Datei(en)', datei), field('Dokumenttyp (Vorschlag)', typ), info),
-    actions: [{ label: 'Abbrechen' }, {
-      label: 'Hochladen', primary: true, onClick: async () => {
+    actions: [{ label: 'Abbrechen', cls: 'btn-ghost' }, {
+      label: 'Hochladen', cls: 'btn-primary', fn: async () => {
         if (!datei.files.length) { toast('Bitte eine Datei wählen.', 'error'); return false; }
         let ok = 0;
         for (const f of datei.files) {
