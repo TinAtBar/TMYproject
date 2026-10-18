@@ -1,11 +1,11 @@
 # Planung: Gemeinsame Bausteine (G) und Vertriebs-App (V)
 
-Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM 109 ff., Vertrieb V1 ff., Gemeinsam G1 ff.
+Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt** – Ausnahme: G1, G10, G11 sind in Barlage PM 2.8 umgesetzt. Nummernkreise: Barlage PM 109 ff., Vertrieb V1 ff., Gemeinsam G1 ff.
 
 ## Gemeinsam (beide Apps, einmal im „Barlage-Kern“ bauen)
 | Nr | Baustein | Festlegung |
 |---|---|---|
-| G1 | Anmeldung Windows-Domäne | Lokale Domäne BARLAGE, Benutzername + Windows-Passwort, Prüfung per Windows (LogonUser) auf dem Server-PC; kostenlos; KEINE Microsoft-365-Anmeldung; Notfall-Admin lokal; Handys koppeln weiter per QR; SSO (Negotiate) später als Stufe 2 |
+| G1 | Anmeldung Windows-Domäne | Lokale Domäne BARLAGE, Benutzername + Windows-Passwort, Prüfung per Windows (LogonUser) auf dem Server-PC; kostenlos; KEINE Microsoft-365-Anmeldung; Notfall-Admin lokal; Handys koppeln weiter per QR; SSO (Negotiate) später als Stufe 2 **– in Barlage PM 2.8 umgesetzt** (Vertriebs-App folgt später) |
 | G2 | Rollen + Rechte-Matrix | wie Barlage PM; Rollen vergibt der Admin (entschieden, keine Windows-Gruppen) |
 | G3 | Vertretung mit Zeitraum | wie Barlage PM |
 | G4 | Admin-Konsole | Kacheln, Dunkelmodus, Wartung, Änderungspakete |
@@ -14,8 +14,8 @@ Stand 18.10.2026. Gesammelt, **noch nicht umgesetzt**. Nummernkreise: Barlage PM
 | G7 | Optik | gleiches Farb-/Symbolsystem, Designs, Kacheln, ⓘ |
 | G8 | Betrieb | Installer, Updates, Server-Wechsel, Handy-Einrichtung |
 | G9 | Bestandsaufnahme Laufwerke | PowerShell liest Ordnerstruktur (Vertrieb, Verkauf, Projekte); Ergebnis nie ins Repo, nur Muster ohne Namen hinterlegen |
-| G10 | Problem melden / Idee | Knopf: Art, Text, Dringlichkeit, Screenshot (Aufnahme, Strg+V, Datei, Schwärzen), Technikdaten; Hinweis Admin-Konsole + Glocke, optional Outlook-Entwurf; Ticketseite mit Status/Bewertung/Rückmeldung; „Als KI-Auftrag weitergeben“ (Screenshots nur bewusst) |
-| G11 | Hochladen mit Freigabe | Mitarbeiter laden zu zugewiesenen Aufgaben hoch; Datei liegt im Warte-Bereich der App, erst nach Freigabe durch zuständigen Projektleiter/Vertrieb im Server-Ordner gespeichert; Ablehnen mit Kommentar. Beide Apps. Rollenname „Leiter“ noch abstimmen |
+| G10 | Problem melden / Idee | Knopf: Art, Text, Dringlichkeit, Screenshot (Aufnahme, Strg+V, Datei, Schwärzen), Technikdaten; Hinweis Admin-Konsole + Glocke, optional Outlook-Entwurf; Ticketseite mit Status/Bewertung/Rückmeldung; „Als KI-Auftrag weitergeben“ (Screenshots nur bewusst) **– in Barlage PM 2.8 umgesetzt** (Vertriebs-App folgt später) |
+| G11 | Hochladen mit Freigabe | Mitarbeiter laden zu zugewiesenen Aufgaben hoch; Datei liegt im Warte-Bereich der App, erst nach Freigabe durch zuständigen Projektleiter/Vertrieb im Server-Ordner gespeichert; Ablehnen mit Kommentar. Beide Apps. Rollenname „Leiter“ noch abstimmen **– in Barlage PM 2.8 umgesetzt** (Vertriebs-App folgt später) |
 
 ## Vertriebs-App (eigene App, eigene Daten, 2 Nutzer)
 | Nr | Baustein | Inhalt |

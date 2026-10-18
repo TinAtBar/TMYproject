@@ -5,14 +5,14 @@
 (ca. 5–7 Nutzer im Firmen-LAN). Ein Python-Server (nur Standardbibliothek + optional `cryptography`) läuft
 abwechselnd auf einem Projektleiter-PC; Daten (SQLite) liegen auf einem Netzlaufwerk. Oberfläche: Vanilla-JS-SPA
 (PWA, offlinefähig), Windows-Desktop-App (tkinter + Edge-App-Fenster), Admin-Konsole (tkinter), Inno-Setup-Installer,
-Windows-Build über GitHub Actions. Aktuelle Version: **2.7.0**. Sprache überall: **Deutsch**.
+Windows-Build über GitHub Actions. Aktuelle Version: **2.8.0**. Sprache überall: **Deutsch**.
 
 Detaildokumente (zuerst lesen, in dieser Reihenfolge):
 1. `docs/UEBERGABE.md` – Architektur, Module, Datenmodell, Kundeninstallation, Release, Risiken
 2. `docs/PUNKTELISTE.md` – alle nummerierten Anforderungen 1–108, Status, Entscheidungen, offene Fragen, Vorlagen-Liste
 3. `SPEC.md` (Grundvertrag Server ↔ Oberfläche), `server/API_NOTES.md` (alle Endpunkte je Runde),
    `LIESMICH.md` (Nutzersicht, Farben & Symbole), `build/BUILD.md` (Build/Installer), `docs/admin-seiten/*.md`
-4. `docs/PLANUNG-VERTRIEB-GEMEINSAM.md` – Planung G1–G10 und Vertriebs-App V1–V12 (nicht umgesetzt)
+4. `docs/PLANUNG-VERTRIEB-GEMEINSAM.md` – Planung G1–G11 (G1, G10, G11 in Barlage PM 2.8 umgesetzt) und Vertriebs-App V1–V12 (nicht umgesetzt)
 5. `docs/entwuerfe/*.png` – Entwürfe für Dashboard 2 (Punkte 92–100) und Projekt-Cockpit (101), erfundene Daten
 
 ## Arbeitsweise mit dem Nutzer (verbindlich)
@@ -94,6 +94,10 @@ Artefakte: `BarlagePM-Installer` (beide Setups) und `BarlagePM-Programmordner`. 
 Lokal unter Linux entstehen **keine** .exe-Dateien.
 
 ## Stand und nächste Schritte (Kurzfassung, Details in docs/PUNKTELISTE.md)
+- 2.8.0 umgesetzt: G1 Windows-Domänen-Anmeldung (`server/domaene.py`), G10 Problem melden/Tickets (`server/tickets.py`,
+  Admin-Seite „Tickets“), G11 Hochladen mit Freigabe (`server/freigaben.py`), Rolle Mitarbeiter nur eigene Aufgaben
+  (`server/mitarbeiter.py`, Matrix-Bereich `opl_alle`), drei Dashboard-Stile. **Offen:** Mitarbeiter dürfen derzeit keine
+  Punkte anlegen – Nutzerentscheidung steht aus. Windows-Anmeldung noch nicht in echter Domäne getestet.
 - 2.7.0 umgesetzt (Punkte 92–108: Dashboard 2, Projekt-Cockpit, Aufräumen, Fertigungsort/Anträge/Vertretung,
   Kundenbestellung, einfache PDF-Erkennung, Exporte vereinheitlichen). Einschränkungen siehe `docs/PUNKTELISTE.md`
   (PDF-Erkennung ohne echte Kunden-PDFs getestet, Export-Liste E1–E11 noch mit Nutzer durchgehen).

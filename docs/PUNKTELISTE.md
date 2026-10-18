@@ -1,6 +1,6 @@
 # Barlage PM – Punkteliste (alle nummerierten Anforderungen 1–108)
 
-Stand: 17.10.2026, Version 2.7.0. Zeitangaben in Ortszeit (Europe/Berlin).
+Stand: 18.10.2026, Version 2.8.0. Zeitangaben in Ortszeit (Europe/Berlin).
 Der Nutzer nummeriert Wünsche fortlaufend über alle Sammelrunden. Status:
 **erledigt (Version)** · **offen** (gesammelt, noch nicht umgesetzt) · **verworfen** · **vorgemerkt** (später/anderswo).
 
@@ -150,6 +150,7 @@ Ausgabe (z. B. Terminplan als PDF, Meilensteinliste für Kunden, Liste der Nacht
 8. Nach Einsatz von 2.6 prüfen: verschlüsselte Excel in echtem Excel öffnen; „Im Explorer öffnen“ und Dunkelmodus
    unter Windows; Laufwerksrechte der Server-PCs („Pfade prüfen“).
 9. GitHub-Repository umbenennen (Nutzer) – danach Remote-URL anpassen.
+10. 2.8: Dürfen Mitarbeiter doch neue Punkte anlegen? (Umgesetzt: nein – Entscheidung des Nutzers steht aus; lockern über Rechte-Matrix „Alle offenen Punkte“ hebt nur die Sichtbarkeit auf.)
 
 ## Vorlagen-Liste (vom Nutzer bereitzustellen; nichts davon ins Repo)
 **Eingang (zum Erkennen/Einlesen)**
@@ -199,3 +200,4 @@ sie aus, was soll die App automatisch eintragen?
 | 2.5 | – | nicht veröffentlicht (mit 2.6 zusammengelegt) |
 | 2.6 | 16.10.2026 | Punkte 57–90: Optik, Kalender-Wochenzeilen, Dashboard neu, Fortschritt/Prognose/Verlauf, Budget je Abteilung, Meilensteine je Projekt, Dokumentenablage, Rolle Controlling + Rechte-Matrix, Fertigungsbesprechung verschlüsselt verteilen, Admin-Konsole neu (Kacheln, Dunkelmodus, Masken-Editor, Firmenstandard-Ansichten, Wartung/KI-Aufträge), Handy-Einrichtung/Abgleich/Anleitung, vollständige Namensbereinigung, CI-Aktionen aktualisiert, Repository neu ohne alten Verlauf |
 | 2.7 | 17.10.2026 | Punkte 92–108: Dashboard 2 (anpassbar, eigene/geteilte Dashboards, Trends, Diagramme, Termine), Projekt-Cockpit, Aufräumen der Projektseite, Fertigungsort nur Controlling, Änderungsanträge, Vertretung, Kundenbestellung, einfache PDF-Erkennung, einheitliche Exporte |
+| 2.8 | 18.10.2026 | G1 Anmeldung mit Windows-Domäne (LogonUser, Sperre nach Fehlversuchen, Notfall-Admin lokal), G10 Problem melden / Meine Meldungen / Tickets in der Admin-Konsole, G11 Hochladen mit Freigabe, Rolle Mitarbeiter nur eigene Aufgaben (keine neuen Punkte), drei Dashboard-Stile (Glas, Klassik plus, Leitstand), feinere Optik |

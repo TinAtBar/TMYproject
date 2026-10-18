@@ -1,6 +1,32 @@
-# Barlage PM – Version 2.7
+# Barlage PM – Version 2.8
 
 Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispielprojekt“ (Beispieldaten).
+
+## Neu in 2.8
+- **Anmeldung mit Windows-Benutzer**: In der Admin-Konsole → „Anmeldung“ die Domäne **BARLAGE** eintragen und
+  speichern (Änderungspaket wie gewohnt einspielen). Danach unter „Benutzer & Rollen“ bei jeder Person ihren
+  **Windows-Benutzer** eintragen (z. B. `mmuster`). Diese Personen melden sich dann mit Windows-Name und
+  **Windows-Passwort** an (auch `BARLAGE\mmuster` geht). Wer keinen Windows-Benutzer eingetragen hat, nutzt weiter
+  sein App-Passwort. Nach 5 falschen Versuchen ist die Anmeldung von diesem Gerät 5 Minuten gesperrt.
+- **Problem melden / Idee einreichen**: Im Benutzermenü (oben rechts). Kurz beschreiben, auf Wunsch Bildschirmfoto
+  anhängen (Stellen schwärzen möglich). Unter „Meine Meldungen“ sieht jeder den Stand seiner eigenen Meldungen und die
+  Antworten. Der Admin bearbeitet alle Meldungen in der Admin-Konsole → „Tickets“ (Status, Antwort, interne Notiz).
+- **Dateien zur Freigabe**: Wer an einer Aufgabe eine Datei hochlädt, aber nicht selbst in den Projektordner schreiben
+  darf (z. B. Mitarbeiter), legt sie zur Freigabe ab. Der Projektleiter sieht „Dateien zur Freigabe“, schaut die Datei
+  an, wählt Dokumenttyp und Namen und gibt frei – erst dann landet sie im Projektordner. Ablehnen geht mit kurzer
+  Begründung. Programme und Webseiten-Dateien werden nicht angenommen.
+- **Rolle Mitarbeiter: nur eigene Aufgaben**: Mitarbeiter sehen nur Punkte, bei denen sie unter „Zuständig“ stehen
+  (Startseite „Meine Aufgaben“, Liste, Kalender, Suche, Export, Offline-Abgleich). Sie können **keine neuen Punkte
+  anlegen** und keine Punkte löschen. Der Admin kann das in der Admin-Konsole → „Rechte“ lockern (Bereich
+  „Alle offenen Punkte“).
+- **Drei Dashboard-Stile**: Unter „Darstellung“ wählbar: **Glas** (hell, milchig), **Klassik plus** (gewohnt, Standard)
+  und **Leitstand** (dunkel mit Leuchtakzenten); feine Textur an/aus. Gilt nur für das eigene Konto.
+
+### Vor dem Einsatz prüfen
+- Windows-Anmeldung funktioniert nur, wenn der Server-PC ein Windows-PC in der Domäne ist. Zuerst mit einer Person
+  testen. Der Administrator kann sich im Notfall immer mit seinem App-Passwort anmelden.
+- Mitarbeiter sehen ab jetzt weniger – vorher kurz informieren. Ob Mitarbeiter doch Punkte anlegen dürfen, ist noch
+  offen (Entscheidung steht aus).
 
 ## Neu in 2.7
 - **Neue Startseite (Dashboard)**: Kennzahlen mit Trend („+3 seit letzter Woche“), Verlauf offen/erledigt je Woche,
@@ -21,7 +47,7 @@ Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispie
 - **Einheitliche Exporte**: gleicher Kopf (Titel, Projekt, Stand, erstellt von), Dateinamen nach Firmenmuster,
   „Auch im Projektordner ablegen“. Stundenzahlen nur für Projektleiter des Projekts und Admin.
 
-## Anmeldung mit Windows-Benutzer (ab 2.8)
+## Anmeldung mit Windows-Benutzer (Einzelheiten, ab 2.8)
 - In der Admin-Konsole → „Anmeldung“ die Domäne eintragen; bei jeder Person unter „Benutzer & Rollen“ den
   **Windows-Benutzer** hinterlegen. Diese Personen melden sich dann mit Windows-Name und **Windows-Passwort** an
   (auch „DOMÄNE\name“ geht). Wer keinen Windows-Benutzer hat, nutzt weiter sein App-Passwort.

@@ -111,7 +111,9 @@ _lock = threading.Lock()
 
 
 def _schluessel(login, client):
-    return ((login or "").strip().lower(), client or "")
+    # Prüfer-Fix: „DOM\\name“, „name@dom“ und „name“ teilen sich einen Zähler (keine Umgehung per Schreibweise)
+    name, _ = normalisieren(login)
+    return (name.lower(), client or "")
 
 
 def wartezeit(login, client=None):

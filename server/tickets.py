@@ -189,6 +189,8 @@ def holen(conn, tid, intern=True):
     t["verlauf"] = _rows(conn, "SELECT v.*, u.name user_name FROM ticket_verlauf v LEFT JOIN users u ON u.id=v.user_id "
                                "WHERE v.ticket_id=?" + ("" if intern else " AND COALESCE(v.intern,0)=0") + " ORDER BY v.id", (tid,))
     t["zusammengefuehrt"] = _rows(conn, "SELECT id, nr, titel FROM tickets WHERE zusammengefuehrt_in=? ORDER BY nr", (tid,))
+    if not intern:  # Prüfer-Fix: Melder sieht keine Titel fremder Meldungen
+        t["zusammengefuehrt"] = [{"nr": z["nr"]} for z in t["zusammengefuehrt"]]
     return t
 
 

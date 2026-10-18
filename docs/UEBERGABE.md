@@ -1,4 +1,4 @@
-# Barlage PM – Übergabe-Dokumentation für Agenten (Stand 2.6.0, 17.10.2026)
+# Barlage PM – Übergabe-Dokumentation für Agenten (Stand 2.8.0, 18.10.2026)
 
 Ziel: Ein beliebiger Agent kann die Weiterentwicklung ohne den bisherigen Chat übernehmen.
 Arbeitsregeln und Befehle: `CLAUDE.md`. Anforderungs-Historie: `docs/PUNKTELISTE.md`.
@@ -167,6 +167,10 @@ Endpunkt-Details: `server/API_NOTES.md` (nach Runden R3-…, R4-…, R5-…, R26
 | bestellung.py | 2.7: Bestellnummer/-datum an Projekt und Nachtrag, Warnung „keine Bestellnummer“ |
 | pdf_text.py, dokument_erkennung.py | 2.7: Text aus PDFs (nur Standardbibliothek, ohne OCR, Größen-/Zeitgrenzen) + Stichwort-Erkennung |
 | export.py | 2.7: einheitlicher Export-Kopf, Dateinamen-Muster, „im Projektordner ablegen“, Stundenrechte |
+| domaene.py | 2.8 (G1): Windows-Domänen-Anmeldung (`advapi32.LogonUserW` per ctypes, nur unter Windows importiert), Modus lokal/domaene/beides, Fehlversuch-Sperre (5 Versuche → 5 Min. je Login+Gerät), Notfall-Admin lokal; gleiche Prüfung in Server, Desktop und Admin-Konsole; `GET /api/anmeldung/info` |
+| tickets.py | 2.8 (G10): „Problem melden / Idee“ – Meldungen, Bilder (nur PNG/JPEG, ≤5 MB, ≤5 Stück, Datenordner `tickets/`), Verlauf mit internen Admin-Kommentaren, Outlook-Entwurf (.eml), KI-Auftragstext; Melder sieht nur eigene |
+| freigaben.py | 2.8 (G11): Hochladen mit Freigabe – Warte-Bereich `uploads_wartend/` (zufällige Namen), Freigabe/Ablehnung nur PM des Projekts oder Admin, Pfadprüfung wie `ablage.py`, aktive/ausführbare Dateitypen gesperrt |
+| mitarbeiter.py | 2.8: Rolle Mitarbeiter „nur eigene Aufgaben“ (Matrix-Bereich `opl_alle` = aus): Vorab-Filter in `rechte.vorab` für OPL, Dashboard, Kalender, Suche, Dateien, Export, Fertigung, Sync; Anlegen/Löschen/Duplizieren von Punkten gesperrt |
 
 ### web/js/
 | Datei | Zweck |
@@ -216,6 +220,8 @@ Endpunkt-Details: `server/API_NOTES.md` (nach Runden R3-…, R4-…, R5-…, R26
 | seiten/masken.py | Masken & Ansichten (inkl. Firmenstandard-Ansichten der OPL) |
 | seiten/status.py | Status/Verbindung in Klartext |
 | seiten/wartung.py | Versionen, Update-Prüfung (GitHub Releases), KI-Wartungsaufträge (GitHub-Issue mit @claude) |
+| seiten/anmeldung.py | 2.8: Domäne und Anmeldemodus (Windows-Benutzer je Person unter „Benutzer & Rollen“) |
+| seiten/tickets.py | 2.8: Meldungen bearbeiten (Status, Priorität, Rückmeldung, interne Notiz, Zusammenführen, KI-Auftrag) |
 
 ### desktop/ und build/
 | Datei | Zweck |
@@ -245,6 +251,7 @@ Grundschema siehe `SPEC.md`; Erweiterungen per Migration (Spalten in Klammern nu
 | Kontakte/Benachr. | `kontakte`, `benachrichtigungen` |
 | Technik | `activity`, `applied_changes`, `suche` (FTS5) |
 | 2.7 | `dashboards`, `opl_kennzahlen_verlauf`, `fertigung_antraege`, `vertretungen`; Spalten `projekte.fertigungsort/bestellnummer/bestelldatum`, `angebote.bestellnummer/bestelldatum` |
+| 2.8 | `tickets`, `ticket_bilder`, `ticket_verlauf`, `ablage_freigaben`; Spalte `users.windows_login`; Rechte-Bereich `opl_alle` (Mitarbeiter Standard aus) |
 
 Nummern: Auftrag `JJJJ-NNN-NN` (Hauptauftrag `-00`, Baugruppen `-01…`), Angebot `JJJJ NNNN`, Sonderprojekt `ALLGEMEIN`.
 Seriennummer = Baugruppennummer + Trenner + Zusatz (`.A/.B…`, klein, `01…`); Menge erhöhen ergänzt, nie umnummerieren.
@@ -281,6 +288,12 @@ Seriennummer = Baugruppennummer + Trenner + Zusatz (`.A/.B…`, klein, `01…`);
 ---
 
 ## 6. Bekannte Grenzen und Risiken
+- **2.8 Mitarbeiter dürfen keine Punkte anlegen** (auch nicht über den Offline-Abgleich). Das war ein Vorschlag; die
+  **Entscheidung des Nutzers steht noch aus** (Offene Fragen in `docs/PUNKTELISTE.md`). Lockern der Matrix
+  („opl_alle“) hebt nur die Sichtbarkeit auf – das Anlegen ist in `server/mitarbeiter.py` (`_VERBOTEN_POST`) gesperrt.
+- **2.8 Windows-Anmeldung nur auf Windows geprüft per Code, nicht in echter Domäne getestet** (LogonUserW, Typ NETWORK).
+  Fehlversuch-Sperre liegt im Speicher (Neustart setzt zurück) und gilt je Login+Gerät; das Domänenkonto selbst
+  kann zusätzlich durch die Windows-Kontosperre gesperrt werden.
 - **Netzlaufwerksrechte hängen am Server-Konto**: Ablage, Reststunden-Abruf und Verteilung der Fertigungsbesprechung
   greifen mit dem Windows-Konto des PCs zu, der gerade Server ist. Jeder mögliche Server-PC (PM, ggf. Controlling)
   braucht Rechte auf alle eingestellten Pfade. Admin-Konsole → Dokumentenablage → „Pfade prüfen“. Langfristig:

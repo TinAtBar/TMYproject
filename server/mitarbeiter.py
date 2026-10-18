@@ -20,6 +20,8 @@ _RX_PROJEKT = re.compile(r"^/api/projekte/(\d+)$")
 _RX_DATEI = re.compile(r"^/api/dateien/(\d+)$")
 _VERBOTEN_POST = re.compile(r"^/api/(opl|opl/bulk|opl/verschieben|vorlagen/\d+/anwenden)$")
 _VERBOTEN_GET = re.compile(r"^/api/(fortschritt|budget/kurz|dashboard/(daten|kacheln))$")
+# Prüfer-Fix: Fertigungsbesprechung zeigt alle Punkte – auch bei gelockerter Matrix (fertigung lesen) nicht für „nur eigene“
+_VERBOTEN_FERTIGUNG = re.compile(r"^/api/fertigung(/kacheln|/projekt/\d+|/export\.xlsx|/verteilen(/.*)?)?$")
 
 
 def nur_eigene(user, db):
@@ -64,6 +66,8 @@ def vorab(ctx, method, path):
     if m:
         _need_eigen(ctx, m.group(1))
         return None
+    if _VERBOTEN_FERTIGUNG.match(path):
+        _verboten()
     if method == "GET" and _VERBOTEN_GET.match(path):
         _verboten()
     if path == "/api/kalender/verschieben":
@@ -85,6 +89,12 @@ def vorab(ctx, method, path):
         import rechte
         if not rechte.darf(ctx.user, "projekte_details", "lesen", ctx.db) and \
                 int(m.group(1)) not in ctx.r.meine_projekte():
+            _verboten()
+        return None
+    if path == "/api/export/kopf":  # Prüfer-Fix: keine Nummer/Bezeichnung/Kunde fremder Projekte
+        pid = ctx.qp("projekt_id")
+        meine = ctx.r.meine_projekte()
+        if pid not in (None, "") and meine is not None and (not str(pid).isdigit() or int(pid) not in meine):
             _verboten()
         return None
     if method == "GET" and path == "/api/suche":

@@ -4,12 +4,26 @@
 > In der Linux-Entwicklungsumgebung wurden Logik und Oberflächen getestet, aber **keine .exe erzeugt**.
 > Zwei Wege: (A) GitHub baut automatisch – kein Windows-Entwicklungs-PC nötig, oder (B) selbst auf einem Windows-PC bauen.
 
-Ergebnis in beiden Fällen (Version 2.7.0):
+Ergebnis in beiden Fällen (Version 2.8.0):
 
 | Datei | Für wen |
 |---|---|
 | `BarlagePM-Setup.exe` | alle PCs (Projektleiter und Mitarbeiter) – gleicher Installer |
 | `BarlagePM-Admin-Setup.exe` | nur der Administrator-PC |
+
+## Neu in 2.8 (für die Verteilung)
+- Version 2.8.0 in App, Admin-Konsole und beiden Installern. Einfach mit dem neuen `BarlagePM-Setup.exe`
+  überinstallieren; die Datenbank wird beim ersten Serverstart automatisch erweitert (neue Tabellen für Meldungen
+  `tickets`, `ticket_bilder`, `ticket_verlauf` und Freigaben `ablage_freigaben`; neues Feld `users.windows_login`).
+  Keine Daten gehen verloren.
+- Neue Cache-Version der Web-App (`barlagepm-shell-2.8.0`); Browser und Handys laden die neue Oberfläche automatisch.
+- **Windows-Anmeldung einrichten**: Admin-Konsole → „Anmeldung“ → Domäne `BARLAGE` eintragen, Änderungspaket
+  einspielen; dann unter „Benutzer & Rollen“ je Person den Windows-Benutzer eintragen. Die Prüfung läuft auf dem
+  Server-PC über Windows selbst (keine Zusatzpakete) – der Server-PC muss in der Domäne sein.
+- Admin-Konsole: neue Seiten „Anmeldung“ und „Tickets“. Hochgeladene Bilder zu Meldungen liegen im Datenordner unter
+  `tickets\`, Dateien zur Freigabe unter `uploads_wartend\` (in der Sicherung des Datenordners enthalten).
+- Mitarbeiter sehen nur noch eigene Aufgaben und können keine Punkte anlegen (Admin-Konsole → „Rechte“ →
+  „Alle offenen Punkte“ zum Lockern).
 
 ## Neu in 2.7 (für die Verteilung)
 - Version 2.7.0 in App, Admin-Konsole und beiden Installern. Einfach mit dem neuen `BarlagePM-Setup.exe`
