@@ -168,7 +168,7 @@ export function mount(el) {
     let inhalt;
     try { inhalt = inhaltFuer(e); } catch (err) { inhalt = { body: h('div', { class: 'dk-leer muted' }, 'Kachel konnte nicht angezeigt werden.') }; console.warn(err); }
     const karte = h('section', { class: 'dk-karte' + (inhalt.klasse ? ' ' + inhalt.klasse : ''), 'aria-label': titel },
-      h('header', { class: 'dk-kopf' }, h('h2', null, titel), infoKnopf(e.typ === 'ansicht' ? 'dashboard.ansicht' : 'dashboard.' + e.id), h('span', { class: 'dk-kopf-sp' }), inhalt.kopf || null),
+      h('header', { class: 'dk-kopf' }, h('h2', { title: titel }, titel) /* R28-FIX: Tooltip bei gekürztem Titel */, infoKnopf(e.typ === 'ansicht' ? 'dashboard.ansicht' : 'dashboard.' + e.id), h('span', { class: 'dk-kopf-sp' }), inhalt.kopf || null),
       inhalt.body);
     const w = h('div', { class: `dk dk-${g}${e.sichtbar === false ? ' dk-aus' : ''} anim-einblenden-verz`, role: 'listitem', 'data-id': e.id, style: { '--anim-i': String(Math.min(i, 12)) } },
       st.anpassen ? werkzeuge(e, l, titel, g) : null, karte);

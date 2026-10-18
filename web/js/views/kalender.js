@@ -47,12 +47,13 @@ export function mount(el, r) {
   }
   const sync = () => setQuery({ ansicht: view, d: isoDate(ref), projekt_id: pid, alle: alle ? '1' : '' });
   function renderHead() {
-    const ps = select([['', 'Alle Projekte'], ...projekte.map(p => [p.id, `${p.nummer} ${p.bezeichnung || ''}`])], pid, { 'aria-label': 'Projekt', style: { width: 'auto', maxWidth: '240px' } });
+    const ps = select([['', 'Projekt: alle'], // R28-FIX: eindeutig ggü. Schalter
+       ...projekte.map(p => [p.id, `${p.nummer} ${p.bezeichnung || ''}`])], pid, { 'aria-label': 'Projekt', style: { width: 'auto', maxWidth: '240px' } });
     ps.addEventListener('change', () => { pid = ps.value; sync(); load(); });
     clear(head).append(
       h('div', { class: 'row', style: { gap: '4px' } }, h('button', { class: 'icon-btn', 'aria-label': 'Zurück', onclick: () => step(-1) }, icon('chevL')), h('button', { class: 'btn btn-sm', onclick: () => { ref = today(); sync(); load(); } }, 'Heute'), h('button', { class: 'icon-btn', 'aria-label': 'Weiter', onclick: () => step(1) }, icon('chevR'))),
       h('h2', { 'aria-live': 'polite' }, title()), h('span', { style: { flex: 1 } }), ps,
-      store.user.rolle !== 'mitarbeiter' || isAdmin() ? h('button', { class: 'toggle', 'aria-pressed': String(alle), title: 'Auch Projekte zeigen, in denen ich nicht eingetragen bin', onclick: () => { alle = !alle; ls.set('kal.alle', alle); sync(); load(); } }, 'Alle Projekte') : null,
+      store.user.rolle !== 'mitarbeiter' || isAdmin() ? h('button', { class: 'toggle', 'aria-pressed': String(alle), title: 'Auch Projekte zeigen, in denen ich nicht eingetragen bin', onclick: () => { alle = !alle; ls.set('kal.alle', alle); sync(); load(); } }, 'Auch fremde Projekte') : null, // R28-FIX: eindeutige Beschriftung
       segmented([['projekt', 'nach Projekt'], ['status', 'nach Status']], farbe, v => { farbe = v; ls.set('kal.farbe', v); render(); }, 'Farbe'),
       segmented([['monat', 'Monat'], ['wochen', 'Wochenzeilen'], ['woche', 'Woche'], ['liste', 'Liste']], view, v => { view = v; ls.set('kal.view', v); sync(); renderHead(); load(); }, 'Ansicht'));
   }

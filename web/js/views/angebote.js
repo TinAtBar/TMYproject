@@ -148,8 +148,8 @@ export function mount(el, r) {
     betrag.addEventListener('change', () => save({ betrag: betrag.value === '' ? null : +betrag.value }));
     vers.addEventListener('change', () => save({ versendet_am: vers.value || null }));
     bnr.addEventListener('change', () => save({ bestellnummer: bnr.value.trim() || null })); bdat.addEventListener('change', () => save({ bestelldatum: bdat.value || null })); // R27-106
-    const fr = new Set((a.freigaben || []).map(x => x.id ?? x.user_id ?? x));
-    const frBox = h('div', { class: 'chips' }, store.sd.users.filter(u => u.id !== a.eigentuemer_id).map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: fr.has(u.id), disabled: !owner, onchange: async e => { e.target.checked ? fr.add(u.id) : fr.delete(u.id); try { await put(`/angebote/${id}/freigaben`, { user_ids: [...fr] }); toast('Freigaben gespeichert.', 'ok'); } catch (er) { toastErr(er); } } }), u.name)));
+    const fr = new Set((a.freigaben || []).map(x => x.id ?? x.user_id ?? x)); // R28-FIX: Freigabe nur an Benutzer mit Angebots-Leserecht (freigabe_kandidaten)
+    const frBox = h('div', { class: 'chips' }, store.sd.users.filter(u => u.id !== a.eigentuemer_id && u.rolle !== 'admin' && (!Array.isArray(a.freigabe_kandidaten) || a.freigabe_kandidaten.includes(u.id) || fr.has(u.id))).map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: fr.has(u.id), disabled: !owner, onchange: async e => { e.target.checked ? fr.add(u.id) : fr.delete(u.id); try { await put(`/angebote/${id}/freigaben`, { user_ids: [...fr] }); toast('Freigaben gespeichert.', 'ok'); } catch (er) { toastErr(er); } } }), u.name)));
     const s = byId('status_angebot', a.status_id);
     const actions = [{ label: 'Schließen', cls: 'btn-ghost' }];
     if (a.darf_loeschen ?? (store.user.id === a.eigentuemer_id || isAdmin())) actions.unshift({ label: 'Löschen', cls: 'btn-ghost', fn: async (close) => { if (!(await confirmDlg('Angebot löschen?', `${a.nummer} wird gelöscht.`, { ok: 'Löschen', danger: true }))) return false; await del('/angebote/' + id); toast('Angebot gelöscht.', 'ok'); load(); } });

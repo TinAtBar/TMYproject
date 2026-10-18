@@ -105,12 +105,21 @@ def neu(ctx):
     return {"angebot": _deko(ctx, angebot_or_404(ctx, res["angebot"]["id"]))}
 
 
+def _freigabe_kandidaten(db):
+    """R28-FIX: Benutzer-IDs, deren Rolle laut Rechte-Matrix den Bereich „angebote“ lesen darf (Admin nie)."""
+    import rechte
+    m = rechte.matrix(db)
+    return [u["id"] for u in db.q("SELECT id, rolle FROM users")
+            if u["rolle"] != "admin" and rechte._RANG.get(m.get(u["rolle"], {}).get("angebote", "aus"), 0) >= rechte._RANG["lesen"]]
+
+
 @route("GET", "/api/angebote/<id>")
 def detail(ctx):
     a = _deko(ctx, angebot_or_404(ctx, ctx.pid()))
     db = ctx.db
     a["positionen"] = _positionen(db, a["id"])
     a["freigaben"] = [r["user_id"] for r in db.q("SELECT user_id FROM angebot_freigaben WHERE angebot_id=?", (a["id"],))]
+    a["freigabe_kandidaten"] = _freigabe_kandidaten(db)  # R28-FIX: nur Rollen mit Leserecht „Angebote“, nie Admin
     kommentare = db.q("SELECT k.*, u.name user_name FROM kommentare k LEFT JOIN users u ON u.id=k.user_id WHERE angebot_id=? ORDER BY k.id", (a["id"],))
     dateien = db.q("SELECT id,name,mime,groesse,zeit FROM dateien WHERE angebot_id=? ORDER BY id", (a["id"],))
     for d in dateien:
@@ -181,11 +190,12 @@ def freigaben(ctx):
     if not ctx.r.angebot_voll(a):
         raise ApiError(403, "Freigaben darf nur der Eigentümer oder Admin ändern")
     ids = [int(i) for i in ctx.body.get("user_ids") or []]
+    erlaubt = set(_freigabe_kandidaten(ctx.db))  # R28-FIX
 
     def fn(c):
         c.execute("DELETE FROM angebot_freigaben WHERE angebot_id=?", (a["id"],))
         for u in ids:
-            if u != a["eigentuemer_id"]:
+            if u != a["eigentuemer_id"] and u in erlaubt:  # R28-FIX: nur Berechtigte
                 c.execute("INSERT OR IGNORE INTO angebot_freigaben VALUES(?,?)", (a["id"], u))
         ctx.db.activity(c, ctx.user, "angebot", a["id"], a["projekt_id"], "geaendert", {"titel": a["nummer"], "freigaben": ids})
         return {"freigaben": ids}

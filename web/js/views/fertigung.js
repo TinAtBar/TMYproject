@@ -156,7 +156,7 @@ export function mount(el, r) {
     const vertrOk = store.user && ['admin', 'controlling'].includes(store.user.rolle);
     clear(top).append(leiste || '',
       h('div', { class: 'fb-title' }, h('h1', null, 'Fertigungsbesprechung'),
-        h('span', { class: 'fb-stand' }, 'Stand: ', h('strong', null, s ? fmtDate(s.datum) : '–'), info.seit ? h('span', { class: 'muted small' }, ` · rot = geändert seit ${fmtDate(info.seit)}`) : null)),
+        h('span', { class: 'fb-stand' }, 'Stand: ', h('strong', null, fmtDate(s ? s.datum : isoDate(today()))) /* R28-FIX: gleicher Stand wie im Blatt */, !s ? h('span', { class: 'muted small' }, ' (noch keine Besprechung gestartet)') : null, info.seit ? h('span', { class: 'muted small' }, ` · rot = geändert seit ${fmtDate(info.seit)}`) : null)),
       h('div', { class: 'fb-actions' },
         darfStart ? h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: starten, title: 'Stand-Datum auf heute setzen' }, icon('cal', 16), 'Besprechung starten') : null,
         info.teams_link ? teamsKnopf(info.teams_link, 'Fertigungsbesprechung in Teams') : null,
@@ -165,9 +165,10 @@ export function mount(el, r) {
         h('a', { class: 'btn btn-sm', href: exp, download: '' }, icon('download', 16), 'Excel'),
         darfStart ? h('button', { class: 'btn btn-sm', type: 'button', onclick: verteilen, title: 'Verschlüsseltes Excel ablegen und Mail-Entwurf erzeugen' }, icon('send', 16), 'Verteilen') : null, // R26-E
         h('button', { class: 'btn btn-sm', type: 'button', onclick: zeigAntraege, title: info.ist_leiter ? 'Alle Änderungsanträge' : 'Status deiner Anträge' }, icon('hand', 16), info.ist_leiter ? 'Anträge' : 'Meine Anträge', nA ? h('span', { class: 'fa-zahl' }, nA) : null),
+        h('span', { class: 'fb-actions-2' }, // R28-FIX: Nebenknöpfe umbrechen nur gemeinsam (kein einzelnes „OPL“ in Zeile 2)
         vertrOk ? h('button', { class: 'btn btn-sm btn-ghost', type: 'button', onclick: () => vertretungDialog(store.user) }, icon('users', 16), 'Vertretung') : null,
         h('a', { class: 'btn btn-sm btn-ghost', href: '#/fertigung/druck' + qs({ erledigte: erledigte ? 1 : '' }) }, icon('doc', 16), 'Drucken'),
-        h('a', { class: 'btn btn-sm btn-ghost', href: '#/opl' }, 'OPL')));
+        h('a', { class: 'btn btn-sm btn-ghost', href: '#/opl' }, 'OPL'))));
   }
   async function verteilen() { // R26-E: Excel verschlüsselt ablegen + Mail-Entwurf (.eml, Passwort nicht in der Mail)
     const s = info.sitzung;

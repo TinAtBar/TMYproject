@@ -1,5 +1,5 @@
 // R26-C1: Meilensteine je Projekt (frei anpassbar), Fortschritt/Prognose im Projektkopf, Verlaufsdiagramm (SVG)
-import { h, icon, clear, fmtDate, fristState, uuid, parseDate, daysBetween } from '../util.js';
+import { h, icon, clear, fmtDate, fristState, uuid, parseDate, daysBetween, isoDate } from '../util.js';
 import { get, post, put, del } from '../api.js';
 import { toast, toastErr, dialog, field, confirmDlg } from '../ui.js';
 import { balken } from '../fortschritt-balken.js';
@@ -113,8 +113,16 @@ export function verlaufSvg(punkte, prognose) {
   for (let v = 0; v <= yMax; v += 25) {
     svg.append(s('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'fs-grid' + (v === 100 ? ' fs-grid-100' : '') }), s('text', { x: L - 6, y: y(v) + 4, class: 'fs-ax', 'text-anchor': 'end' }, `${v}%`));
   }
-  const ticks = 5;
-  for (let i = 0; i <= ticks; i++) { const t = t0 + (t1 - t0) * i / ticks; const d = new Date(t); svg.append(s('text', { x: x(t), y: H - 10, class: 'fs-ax', 'text-anchor': i === 0 ? 'start' : i === ticks ? 'end' : 'middle' }, `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`)); }
+  { // R28-FIX: Ticks in ganzen Kalendertagen (setDate statt ms-Addition → sommerzeit-sicher), gleichmäßiger Schritt ohne Lücken
+    const d0 = new Date(t0); d0.setHours(0, 0, 0, 0);
+    const tage = Math.max(1, Math.round((t1 - d0.getTime()) / 864e5));
+    const schritt = [1, 2, 7, 14, 28, 56, 91, 182, 364].find(n => tage / n <= 9) || Math.ceil(tage / 9);
+    for (let k = 0; k <= tage; k += schritt) {
+      const d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + k); const t = d.getTime(); if (t < t0 - 864e5 / 2 || t > t1 + 864e5 / 2) continue;
+      const xx = Math.min(W - R, Math.max(L, x(t)));
+      svg.append(s('text', { x: xx, y: H - 10, class: 'fs-ax', 'data-tag': isoDate(d), 'text-anchor': xx < L + 18 ? 'start' : xx > W - R - 18 ? 'end' : 'middle' }, `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`));
+    }
+  }
   const linie = (key, cls) => {
     const p = pts.filter(q => q[key] != null);
     if (!p.length) return;

@@ -267,3 +267,8 @@
 .info-tip[hidden] { display: none; }
 @media (max-width: 760px) { .info-btn { width: 32px; height: 32px; } .db2-titel h1 { font-size: 1.4rem; } }
 @media print { .dk-werkzeuge, .db2-reiter, .db2-aktionen { display: none; } }
+/* R28-FIX: Kennzahl-Kacheln gleich hoch (Masonry misst die Inhaltshöhe): Titel einzeilig mit Ellipsis (+Tooltip),
+   Trendzeile auf schmalen Rastern fest zwei Zeilen hoch */
+.dk-kz .dk-kopf { flex-wrap: nowrap; }
+.dk-kz .dk-kopf h2 { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 559px) { .dk-kz .dk-trend { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 2lh; line-height: 1.3; } }

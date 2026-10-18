@@ -1437,6 +1437,8 @@ a.kpi-chip { text-decoration: none; display: inline-flex; align-items: center; g
 .fb-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
 .fb-title h1 { margin: 0; font-size: 1.35rem; }
 .fb-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fb-actions-2 { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; } /* R28-FIX */
+.fb-top { row-gap: 8px; } .fb-actions { justify-content: flex-end; flex: 1 1 auto; } /* R28-FIX */
 .fb-chk { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
 .fb-prog { display: flex; align-items: center; gap: 10px; position: sticky; top: var(--topbar-h, 0px); z-index: 4; background: var(--bg); padding: 6px 0; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
 .fb-prog-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
