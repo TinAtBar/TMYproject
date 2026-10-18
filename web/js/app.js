@@ -352,6 +352,7 @@ onRoute(async r => {
   const top = r.path.split('/')[1];
   document.querySelectorAll('[data-nav]').forEach(a => { if (a.dataset.nav === top) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (nurEigene() && (r.path === '/start' || r.path === '/projekte')) { go('/meine-aufgaben', true); return; } // R28-M: Mitarbeiter → Meine Aufgaben
+  if ({ angebote: 1, archiv: 1, fertigung: 1 }[top] && (!navErlaubt(top) || (nurEigene() && top === 'fertigung'))) { toast('Kein Zugriff auf diesen Bereich'); go('/start', true); return; } // R28-E2E: Direktaufruf ohne Recht → Start statt Fehlerseite
   if (r.path.startsWith('/projekte/') && r.params && r.params.id && !darf('projekte_details')) { location.replace(projektHref(r.params.id)); return; } // R26-E (vor update/destroy, sonst bleibt die alte View aktiv und die Seite leer): Controlling → OPL des Projekts
   // Gleiche View, nur Parameter geändert → update statt Neuaufbau
   if (activeView && activeView.module === r.view && activeView.update && activeView.update(r) !== false) return;

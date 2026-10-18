@@ -105,6 +105,7 @@
 .ck-zs-linie.is-done { right: auto; background: var(--sem-offen); }
 .ck-zs-monat { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
 .ck-zs-monat span { position: absolute; top: 0; left: 6px; font-size: .74rem; color: var(--text-2); white-space: nowrap; }
+.ck-zs-monat-r span { left: auto; right: 6px; } /* R28-E2E */
 .ck-zs-pt { position: absolute; top: 98px; width: 14px; height: 14px; margin: -7px 0 0 -7px; transform: rotate(45deg); background: var(--surface); border: 2.5px solid var(--sem-offen); border-radius: 2px; z-index: 2; }
 .ck-zs-pt.is-done { background: var(--sem-offen); }
 .ck-zs-pt.is-od { border-color: var(--danger); }

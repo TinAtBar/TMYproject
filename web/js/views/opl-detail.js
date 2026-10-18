@@ -5,6 +5,7 @@ import { store, byId, userName } from '../store.js';
 import { toast, toastErr, dialog, field, select, userOptions, sdOptions, loading, errorBox, confirmDlg, menu } from '../ui.js';
 import { addRecent, attachMentions, mentionText, lightbox, isImage } from '../extras.js';
 import { mark, isNeu, resetVorschlaege } from './markierung.js'; // R3-B
+import { vertretungAktiv } from '../rechte.js'; // R28-E2E
 import { zustFeld, zustFeldField, resetZustVorschlaege } from '../zustaendig-feld.js'; // R5-Z
 import { teamsChat } from '../teams.js'; // R5-D
 import { lbl, ordne, zusatzEditor, pflichtPruefen, sichtbar, abschnitt } from '../formular.js'; // R26-H: Masken
@@ -330,7 +331,7 @@ export function newOplDialog(ctx = {}, onCreated) {
   bgSel.addEventListener('change', fillSn);
   get('/projekte?status=aktiv').then(r => {
     projekte = Array.isArray(r) ? r : (r && r.items) || [];
-    clear(projSel).append(h('option', { value: '' }, '– Projekt wählen –'), ...projekte.map(p => h('option', { value: p.id, selected: p.id == ctx.projekt_id }, `${p.nummer} ${p.bezeichnung || ''}`)));
+    clear(projSel).append(h('option', { value: '' }, '– Projekt wählen –'), ...projekte.map(p => { const lesen = store.user && store.user.rolle === 'pm' && p.ist_pm === false && !vertretungAktiv(); return h('option', { value: p.id, selected: p.id == ctx.projekt_id, disabled: lesen }, `${p.nummer} ${p.bezeichnung || ''}` + (lesen ? ' – nur lesen' : '')); })); // R28-E2E: fremde Projekte nicht wählbar (sonst 403)
     if (!ctx.projekt_id && projekte.length === 1) projSel.value = projekte[0].id;
     fillBg();
   }).catch(() => { });

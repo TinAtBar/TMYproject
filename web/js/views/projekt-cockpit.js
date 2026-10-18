@@ -176,7 +176,7 @@ function zeitstrahl(card, ms, prognose, kopf, ctx) {
   const m0 = new Date(t0); m0.setDate(1); m0.setHours(0, 0, 0, 0); if (m0.getTime() < t0) m0.setMonth(m0.getMonth() + 1);
   for (const d = new Date(m0); d.getTime() <= t1; d.setMonth(d.getMonth() + 1)) {
     const l = x(isoDate(d));
-    bahn.append(h('div', { class: 'ck-zs-monat', style: { left: l + '%' } }, h('span', null, MONATE[d.getMonth()])));
+    bahn.append(h('div', { class: 'ck-zs-monat' + (l > 90 ? ' ck-zs-monat-r' : ''), style: { left: l + '%' } }, h('span', null, MONATE[d.getMonth()]))); // R28-E2E: am rechten Rand nach links (sonst „Dezem“ abgeschnitten)
   }
   const heuteX = x(isoDate(tag));
   const letzterErl = [...mitDatum].reverse().find(m => m.erledigt);

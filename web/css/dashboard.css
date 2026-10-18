@@ -232,14 +232,14 @@
 
 /* ---------- Anpassen-Modus ---------- */
 .dk-anpassen .dk-karte { outline: 1.5px dashed var(--line-strong); outline-offset: 3px; }
-.dk-anpassen .dk { cursor: grab; padding-top: 0; }
+.dk-anpassen .dk { cursor: grab; padding-top: 18px; } /* R28-E2E: Werkzeugleiste verdeckte Kacheltitel */
 .dk-anpassen .dk-karte a, .dk-anpassen .dk-karte button { pointer-events: none; }
 .dk-anpassen .dk-karte .dk-kopf-akt button[data-fokus^="pfilter"] { pointer-events: auto; }
 .dk-aus .dk-karte { opacity: .45; filter: grayscale(.6); }
 .dk-zieht { opacity: .5; }
 .dk-ziel-vor .dk-karte { box-shadow: -4px 0 0 0 var(--select, var(--accent)); }
 .dk-ziel-nach .dk-karte { box-shadow: 4px 0 0 0 var(--select, var(--accent)); }
-.dk-werkzeuge { position: absolute; z-index: 3; top: -13px; right: 10px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px; border-radius: 8px;
+.dk-werkzeuge { position: absolute; z-index: 3; top: 0; /* R28-E2E: war -13px, ragte in die Kachel darüber */ right: 10px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px; border-radius: 8px;
   background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-1); cursor: default; }
 .dk-griff { padding: 0 4px; color: var(--text-3); cursor: grab; letter-spacing: -2px; font-weight: 800; user-select: none; }
 .dk-wz { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 24px; border: 0; border-radius: 5px; background: none; color: var(--text-2); cursor: pointer; }

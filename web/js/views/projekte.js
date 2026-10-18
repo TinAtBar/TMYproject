@@ -62,7 +62,7 @@ export function mount(el, r) {
   const st = select([['aktiv', 'Aktive'], ['abgeschlossen', 'Abgeschlossene'], ['', 'Alle']], f.status, { 'aria-label': 'Status' });
   st.addEventListener('change', () => { f.status = st.value; sync(); load(); });
   const pmIds = () => String(f.pm || '').split(',').filter(Boolean); // R5-L: Projektleiter mehrfach
-  const pm = multiSelect({ label: 'Projektleiter', plural: 'Projektleiter', options: () => store.sd.users.filter(u => u.rolle !== 'mitarbeiter').map(u => ({ v: u.id, l: u.name })), value: pmIds, onChange: v => { f.pm = v.join(','); sync(); render(); } });
+  const pm = multiSelect({ label: 'Projektleiter', plural: 'Projektleiter', options: () => store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'admin').map(u => ({ v: u.id, l: u.name })), value: pmIds, onChange: v => { f.pm = v.join(','); sync(); render(); } }); // R28-E2E: Controlling/Admin nicht als PM
   const meineBtn = h('button', { type: 'button', class: 'toggle', 'aria-pressed': String(!!f.meine), title: store.user.rolle === 'pm' ? 'Nur Projekte, in denen ich Projektleiter bin' : 'Nur Projekte mit Punkten für mich', onclick: () => { f.meine = f.meine ? '' : '1'; meineBtn.setAttribute('aria-pressed', String(!!f.meine)); sync(); load(); } }, icon('user', 16), 'Nur meine');
   const seg = segmented([['kacheln', 'Kacheln', 'grid'], ['liste', 'Liste', 'rows']], mode, v => { mode = v; ls.set('projekte.mode', v); render(); }, 'Ansicht');
   const colsHost = h('span', { class: 'tab-cols-host' });
@@ -110,7 +110,7 @@ export function mount(el, r) {
     const nummer = h('input', { placeholder: 'leer = nächste freie', pattern: '\\d{4}-\\d{3}-00', inputmode: 'numeric' });
     get('/projekte/naechste-nummer').then(r2 => { if (r2 && r2.nummer && !nummer.value) nummer.value = r2.nummer; }).catch(() => { });
     const bez = h('input', { required: true }); const kunde = h('input'); const ort = h('input');
-    const pms = h('div', { class: 'chips' }, store.sd.users.filter(u => u.rolle !== 'mitarbeiter').map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', value: u.id, checked: u.id === store.user.id }), u.name)));
+    const pms = h('div', { class: 'chips' }, store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'admin').map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', value: u.id, checked: u.id === store.user.id }), u.name))); // R28-E2E: Controlling/Admin nicht als PM
     const qipOpt = qipOption(); // R4-P: Standard-QIP
     const zusatz = zusatzEditor('projekt', {}); // R26-H
     dialog({

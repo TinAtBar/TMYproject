@@ -20,9 +20,9 @@ export function gantt(rows, ms, rowOf, opts = {}) {
   if (!dates.length) return h('p', { class: 'muted small' }, 'Noch keine Termine – trage Plan-Daten ein, dann erscheint das Diagramm.');
   dates.push(heute);
   let von = new Date(Math.min(...dates)), bis = new Date(Math.max(...dates));
-  von = new Date(von.getTime() - 7 * DAY); bis = new Date(bis.getTime() + 10 * DAY);
+  von = new Date(von.getFullYear(), von.getMonth(), von.getDate() - 7); bis = new Date(bis.getFullYear(), bis.getMonth(), bis.getDate() + 10); // R28-E2E: Kalendertage statt 24-h-Schritte (Sommerzeit)
   if (zoom === 'monat') { von = new Date(von.getFullYear(), von.getMonth(), 1); bis = new Date(bis.getFullYear(), bis.getMonth() + 1, 1); }
-  else { const n = (von.getDay() + 6) % 7; von = new Date(von.getTime() - n * DAY); }
+  else { const n = (von.getDay() + 6) % 7; von = new Date(von.getFullYear(), von.getMonth(), von.getDate() - n); }
   const pxDay = zoom === 'monat' ? 4 : 16;
   const LW = 0, RH = 30, TOP = 34;
   const days = Math.round((bis - von) / DAY);
@@ -38,7 +38,7 @@ export function gantt(rows, ms, rowOf, opts = {}) {
       ax.append(s('line', { x1: xx, x2: xx, y1: TOP - 6, y2: H, class: 'g-grid' }), s('text', { x: xx + 4, y: TOP - 12, class: 'g-tick' }, `${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`));
     }
   } else {
-    for (let d = new Date(von); d < bis; d = new Date(d.getTime() + 7 * DAY)) {
+    for (let d = new Date(von); d < bis; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)) { // R28-E2E: sonst ab Ende der Sommerzeit Sonntag statt Montag (doppelte KW)
       const xx = LW + Math.round((d - von) / DAY) * pxDay;
       ax.append(s('line', { x1: xx, x2: xx, y1: TOP - 6, y2: H, class: 'g-grid' }), s('text', { x: xx + 4, y: TOP - 20, class: 'g-tick' }, 'KW ' + kw(d)), s('text', { x: xx + 4, y: TOP - 8, class: 'g-tick g-tick-sub' }, de(d).slice(0, 5)));
     }

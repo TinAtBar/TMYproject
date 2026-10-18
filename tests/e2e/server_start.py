@@ -5,7 +5,7 @@ Zusätzliche Benutzer (Passwort opl2026, sofern nicht anders):
   ctl1  Controlling A (controlling)
   neu1  Neuer Benutzer (pm, muss Passwort ändern)
   wma   Mitarbeiter Windows (mitarbeiter, windows_login „wbenutzer“, Windows-Passwort „Win!Pass1“)
-Domäne „FIRMA“ aktiv (Modus „beides“). Nur erfundene Daten.
+Domäne „FIRMA“ aktiv (Modus „beides“), Projektordner unter <temp>/ablage. Nur erfundene Daten.
 """
 import sys
 from pathlib import Path
@@ -40,6 +40,11 @@ def vorbereiten(data):
                   (login, name, rolle, h, s, zwang, win))
     firma.set(c, domaene.K_DOMAENE, "FIRMA")
     firma.set(c, domaene.K_MODUS, "beides")
+    ablage = Path(data).resolve().parent / "ablage"  # Projektordner im Temp-Ordner statt Netzlaufwerk
+    ablage.mkdir(parents=True, exist_ok=True)
+    firma.set(c, "ablage.projektordner_muster", str(ablage / "{nummer}"))
+    firma.set(c, "fertigung_verteilen_passwort", "E2E-geheim")  # Verteilen der Fertigungsbesprechung
+    firma.set(c, "fertigung_verteilen_verteiler", ["team@beispiel.invalid"])
     c.commit()
     db.close()
 

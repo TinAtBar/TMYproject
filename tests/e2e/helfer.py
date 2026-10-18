@@ -111,8 +111,8 @@ class Wache:
             self.fehler.append(f"HTTP {r.status} {r.request.method} {url}")
         elif r.status >= 400:
             pfad = url.split("/api", 1)[-1]
-            if r.status in (401,) and ("/me" in pfad or "/login" in pfad or "/anmeldung" in pfad):
-                return
+            if r.status == 401:
+                return  # nicht angemeldet / gerade abgemeldet – App zeigt die Anmeldung (kein Fehlerbild)
             if any(re.search(m, f"{r.status} {r.request.method} {pfad}") for m in self.erlaubt_4xx):
                 return
             self.fehler.append(f"HTTP {r.status} {r.request.method} {url}")
@@ -134,8 +134,8 @@ def neuer_kontext(browser, base, handy=False, schema="light", dstil=None, design
             d["dstil"] = dstil
         if design:
             d["design"] = design
-        ctx.add_init_script("try{localStorage.setItem('darstellung', JSON.stringify(Object.assign("
-                            "JSON.parse(localStorage.getItem('darstellung')||'{}'), %s)))}catch(e){}" % json.dumps(d))
+        ctx.add_init_script("try{localStorage.setItem('opl.darstellung', JSON.stringify(Object.assign("
+                            "JSON.parse(localStorage.getItem('opl.darstellung')||'{}'), %s)))}catch(e){}" % json.dumps(d))
     return ctx
 
 
@@ -179,11 +179,97 @@ def seite_kaputt(page):
 
 
 def ueberlauf(page):
-    """Horizontales Scrollen der Seite (Handy-Fehler)."""
-    return page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
+    """Horizontales Scrollen der Seite (Handy-Fehler). Zweite Messung nach Ende von Einblend-Animationen."""
+    js = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    v = page.evaluate(js)
+    if v > 2:
+        page.wait_for_timeout(900)
+        v = page.evaluate(js)
+    if v > 2 and os.environ.get("BPM_E2E_DEBUG"):
+        print("UEBERLAUF", page.evaluate("""() => { const W = document.documentElement.clientWidth;
+          return [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > W + 2)
+            .slice(0, 15).map(e => e.tagName + '.' + (e.className.baseVal ?? e.className) + ':' + Math.round(e.getBoundingClientRect().right)); }"""))
+    return v
 
 
 def routen_aus_appjs():
     """Liste aller statischen Routen aus web/js/app.js (route('/x', …))."""
     src = (ROOT / "web" / "js" / "app.js").read_text(encoding="utf-8")
     return sorted(set(re.findall(r"route\('(/[^':]*)'", src)))
+
+
+# ------------------------------------------------------------------ Basisklasse für Testfälle
+import unittest  # noqa: E402
+
+SHOT_DIR = os.environ.get("BPM_E2E_SHOTS")  # optional: Screenshots der Prüfungen ablegen
+
+
+@unittest.skipIf(sync_playwright is None, "Playwright nicht installiert")
+class E2EBasis(unittest.TestCase):
+    """Ein Server + ein Chromium je Testklasse. self.seite(login, …) liefert (page, wache)."""
+    maxDiff = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = Server()
+        cls._pw = sync_playwright().start()
+        try:
+            cls.browser = cls._pw.chromium.launch(executable_path=browser_pfad())
+        except Exception as e:  # noqa: BLE001
+            cls._pw.stop()
+            cls.srv.stop()
+            raise unittest.SkipTest(f"Chromium nicht startbar: {e}")
+        cls.pruefungen = 0
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.environ.get("BPM_E2E_ZAEHLEN"):
+            print(f"\nE2E-Prüfungen {cls.__name__}: {cls.pruefungen}", file=sys.stderr)
+        try:
+            cls.browser.close()
+        finally:
+            cls._pw.stop()
+            cls.srv.stop()
+
+    def setUp(self):
+        self._kontexte = []
+
+    def tearDown(self):
+        for c in self._kontexte:
+            try:
+                c.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+    def kontext(self, **kw):
+        ctx = neuer_kontext(self.browser, self.srv.base, **kw)
+        self._kontexte.append(ctx)
+        return ctx
+
+    def seite(self, login=None, pw=PW, erlaubt_4xx=(), **kw):
+        ctx = self.kontext(**kw)
+        page = ctx.new_page()
+        page.set_default_timeout(15000)
+        w = Wache(page, erlaubt_4xx)
+        if login:
+            anmelden(page, login, pw)
+        return page, w
+
+    def sauber(self, w, was=""):
+        """Prüft: keine JS-Fehler/5xx/unerwarteten 4xx seit dem letzten Aufruf."""
+        type(self).pruefungen += 1
+        f = w.leeren()
+        self.assertEqual(f, [], f"Fehler {was}")
+
+    def ok_seite(self, page, w, was=""):
+        type(self).pruefungen += 1
+        self.assertIsNone(seite_kaputt(page), f"Seite kaputt: {was}")
+        self.sauber(w, was)
+
+    def shot(self, page, name):
+        if SHOT_DIR:
+            Path(SHOT_DIR).mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(Path(SHOT_DIR) / f"{name}.png"))
+
+    def dialog(self, page):
+        return page.locator("dialog[open]").last

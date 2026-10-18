@@ -231,8 +231,9 @@ kbd { font: 600 .72rem var(--font); border: 1px solid var(--line-strong); border
   .profile-btn .pname, .conn span { display: none; }
   .search kbd { display: none; }
   .search input { padding-right: 10px; }
+  .search input::placeholder { color: transparent; } /* R28-E2E: schmales Suchfeld zeigte nur „S“ */
   .search-pop { position: fixed; left: 8px; right: 8px; top: calc(var(--topbar-h) + var(--safe-t)); min-width: 0; }
-  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: var(--safe-b); box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
+  .tabbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; /* R28-E2E: weniger Einträge (Mitarbeiter) gleichmäßig verteilt */ position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: var(--safe-b); box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
   .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--tabbar-h); color: var(--text-3); text-decoration: none; font-size: .7rem; font-weight: 650; }
   .tabbar a[aria-current="page"] { color: var(--accent-text); }
   .tabbar a[aria-current="page"] .ico { stroke-width: 2.4; }
@@ -450,7 +451,7 @@ table.tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size
 @media (max-width: 760px) { .dlg { width: 100vw; max-width: 100vw; max-height: 92dvh; margin: auto 0 0; border-radius: 16px 16px 0 0; padding-bottom: var(--safe-b); } }
 
 /* ---------- Toasts ---------- */
-#toasts { position: fixed; z-index: 200; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
+#toasts { position: fixed; z-index: 200; bottom: 20px; right: 20px; top: auto; left: auto; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; color: inherit; /* R28-E2E: Popover-Grundwerte neutralisieren (Toasts über Dialogen) */ display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 8px; background: var(--text); color: var(--surface); padding: 6px 6px 6px 16px; border-radius: 10px; box-shadow: var(--shadow-2); max-width: min(440px, calc(100vw - 24px)); font-weight: 550; animation: tin .18s ease-out; }
 .toast .icon-btn { color: inherit; }
 .toast .btn-ghost { color: inherit; text-decoration: underline; }
@@ -459,7 +460,7 @@ table.tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size
 .toast-ok { border-left: 5px solid var(--ok); }
 .toast.out { opacity: 0; transition: opacity .2s; }
 @keyframes tin { from { transform: translateY(8px); opacity: 0; } }
-@media (max-width: 760px) { #toasts { left: 12px; right: 12px; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px); align-items: stretch; } }
+@media (max-width: 760px) { #toasts { left: 12px; right: 12px; width: auto; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px); align-items: stretch; } }
 
 /* ---------- Leerzustände ---------- */
 .empty { text-align: center; padding: 40px 20px; color: var(--text-2); display: flex; flex-direction: column; gap: 8px; align-items: center; }
@@ -794,7 +795,7 @@ td.amp-ok { box-shadow: inset 3px 0 0 var(--ok); }
 .notizen-text { white-space: pre-wrap; }
 .ms-tools { gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
 .ms-tools select { width: auto; min-height: 32px; padding: 2px 8px; font-size: .875rem; }
-.ms-wrap { max-width: 640px; overflow-x: auto; }
+.ms-wrap { max-width: 640px; overflow-x: auto; position: relative; } /* R28-E2E: sr-only-Spaltenkopf ließ die Handy-Seite seitlich scrollen */
 .ms-compact { border-collapse: collapse; width: 100%; font-size: .875rem; }
 .ms-compact th, .ms-compact td { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 .ms-compact thead th { color: var(--text-3); font-weight: 600; font-size: .78rem; }

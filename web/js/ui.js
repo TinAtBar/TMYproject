@@ -11,6 +11,7 @@ export function toast(msg, type = 'info', opts = {}) {
     opts.action ? h('button', { class: 'btn btn-ghost btn-sm', onclick: () => { opts.action.fn(); close(); } }, opts.action.label) : null,
     h('button', { class: 'icon-btn', 'aria-label': 'Schließen', onclick: () => close() }, icon('x', 16)));
   host.appendChild(t);
+  try { if (host.showPopover) { if (!host.hasAttribute('popover')) host.setAttribute('popover', 'manual'); if (host.matches(':popover-open')) host.hidePopover(); host.showPopover(); } } catch { } // R28-E2E: Toasts über offenen Dialogen (Top-Layer), sonst unsichtbar
   const close = () => { t.classList.add('out'); setTimeout(() => t.remove(), 200); };
   setTimeout(close, opts.ms || (type === 'error' ? 7000 : 3500));
 }
