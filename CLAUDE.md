@@ -5,7 +5,7 @@
 (ca. 5–7 Nutzer im Firmen-LAN). Ein Python-Server (nur Standardbibliothek + optional `cryptography`) läuft
 abwechselnd auf einem Projektleiter-PC; Daten (SQLite) liegen auf einem Netzlaufwerk. Oberfläche: Vanilla-JS-SPA
 (PWA, offlinefähig), Windows-Desktop-App (tkinter + Edge-App-Fenster), Admin-Konsole (tkinter), Inno-Setup-Installer,
-Windows-Build über GitHub Actions. Aktuelle Version: **2.8.0**. Sprache überall: **Deutsch**.
+Windows-Build über GitHub Actions. Aktuelle Version: **2.8.1**. Sprache überall: **Deutsch**.
 
 Detaildokumente (zuerst lesen, in dieser Reihenfolge):
 1. `docs/UEBERGABE.md` – Architektur, Module, Datenmodell, Kundeninstallation, Release, Risiken

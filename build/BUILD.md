@@ -11,6 +11,10 @@ Ergebnis in beiden Fällen (Version 2.8.0):
 | `BarlagePM-Setup.exe` | alle PCs (Projektleiter und Mitarbeiter) – gleicher Installer |
 | `BarlagePM-Admin-Setup.exe` | nur der Administrator-PC |
 
+## Neu in 2.8.1
+
+- **Notfall: Admin-Passwort zurücksetzen** – auf der Anmeldeseite der Admin-Konsole „Admin-Passwort vergessen …“ (oder `BarlagePM-Admin.exe --notfall`). Nur möglich mit Schreibrecht auf den Datenordner; vorher automatische Sicherung, Eintrag in `notfall.log` (PC, Windows-Benutzer), neues Passwort muss bei der nächsten Anmeldung geändert werden.
+
 ## Neu in 2.8 (für die Verteilung)
 - Version 2.8.0 in App, Admin-Konsole und beiden Installern. Einfach mit dem neuen `BarlagePM-Setup.exe`
   überinstallieren; die Datenbank wird beim ersten Serverstart automatisch erweitert (neue Tabellen für Meldungen

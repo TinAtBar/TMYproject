@@ -23,7 +23,7 @@ from pathlib import Path
 APP_NAME = "Barlage PM"          # Anzeigename
 APP_DIR = "BarlagePM"            # Ordnername unter %LOCALAPPDATA% (Konfiguration, Protokolle, Browserprofil)
 INSTALLER_NAME = "BarlagePM-Setup.exe"
-VERSION = "2.8.0"
+VERSION = "2.8.1"
 DEFAULT_PORT = 8080
 LOCK_TIMEOUT_S = 30
 ITER = 200_000  # wie server/auth.py

@@ -10,6 +10,7 @@ import datetime as _dt
 import http.cookiejar
 import json
 import os
+import secrets
 import shutil
 import socket
 import sqlite3
@@ -781,3 +782,66 @@ def spaltenbreiten(ueberschriften, zeilen, messen, min_breite=50, max_breite=420
                 if t:
                     breiten[i] = max(breiten[i], messen(t.split("\n")[0]))
     return [max(min_breite, min(max_breite, b + rand)) for b in breiten]
+
+
+# ================================================================== R28-NOTFALL: Admin-Passwort zurücksetzen
+NOTFALL_LOG = "notfall.log"
+
+
+def notfall_admins(data_dir):
+    """Liste der Admin-Konten (login, name, aktiv) – für die Auswahl im Notfall-Dialog."""
+    p = Path(data_dir) / "opl.db"
+    if not p.is_file():
+        raise AdminFehler("Im gewählten Ordner liegt keine Barlage-PM-Datenbank (opl.db).")
+    conn = core.ro_connect(p)
+    try:
+        rows = conn.execute("SELECT login, name, aktiv FROM users WHERE rolle='admin' ORDER BY id").fetchall()
+    finally:
+        conn.close()
+    return [{"login": r[0], "name": r[1], "aktiv": bool(r[2])} for r in rows]
+
+
+def notfall_admin_passwort(data_dir, login, neues_pw, host=None, windows_benutzer=None):
+    """Setzt das Passwort eines Admin-Kontos neu – nur wer Schreibrecht auf den Datenordner hat.
+    Vorher Sicherung der Datenbank, danach Eintrag in notfall.log. Das Konto wird aktiviert und muss
+    das Passwort bei der nächsten Anmeldung ändern. Gibt den Pfad der Sicherung zurück."""
+    data_dir = Path(data_dir)
+    pw = neues_pw or ""
+    if len(pw) < 8:
+        raise AdminFehler("Das neue Passwort muss mindestens 8 Zeichen haben.")
+    ok, text = ordner_pruefen(data_dir)
+    if not ok:
+        raise AdminFehler("Kein Schreibrecht auf den Datenordner – Notfall-Zurücksetzen nicht möglich. " + text)
+    admins = {a["login"].lower(): a for a in notfall_admins(data_dir)}
+    if (login or "").strip().lower() not in admins:
+        raise AdminFehler("Dieses Konto ist kein Administrator.")
+    host = host or socket.gethostname()
+    k = Konsole(data_dir, host=host)
+    sicherung = k.sicherung_jetzt("notfall")
+    salt = secrets.token_hex(16)
+    h = core._hash(pw, salt)
+    conn = sqlite3.connect(str(data_dir / "opl.db"), isolation_level=None, timeout=30)
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+        setz = "pw_hash=?, pw_salt=?, aktiv=1" + (", muss_pw_aendern=1" if "muss_pw_aendern" in cols else "")
+        n = conn.execute(f"UPDATE users SET {setz} WHERE login=? COLLATE NOCASE AND rolle='admin'",
+                         (h, salt, login.strip())).rowcount
+        if n != 1:
+            conn.execute("ROLLBACK")
+            raise AdminFehler("Konto nicht eindeutig gefunden – nichts geändert.")
+        try:
+            conn.execute("DELETE FROM sessions WHERE user_id=(SELECT id FROM users WHERE login=? COLLATE NOCASE AND rolle='admin')",
+                         (login.strip(),))
+        except sqlite3.Error:
+            pass
+        conn.execute("COMMIT")
+    finally:
+        conn.close()
+    wer = windows_benutzer or os.environ.get("USERNAME") or os.environ.get("USER") or "?"
+    try:
+        with open(data_dir / NOTFALL_LOG, "a", encoding="utf-8") as f:
+            f.write(f"{jetzt()}\tAdmin-Passwort zurückgesetzt\tKonto={login.strip()}\tPC={host}\tWindows-Benutzer={wer}\tSicherung={sicherung}\n")
+    except OSError:
+        pass
+    return sicherung

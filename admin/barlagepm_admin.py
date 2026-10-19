@@ -1694,6 +1694,8 @@ class Anmeldung:
         self.l = ttk.Label(k, text="", style="Fehler.TLabel", wraplength=260)
         self.l.grid(row=6, column=0, columnspan=2, sticky="w")
         ui.AkzentButton(k, text="Anmelden", command=self.ok).grid(row=7, column=1, sticky="e", pady=(8, 0))
+        ttk.Button(k, text="Admin-Passwort vergessen …",  # R28-NOTFALL
+                   command=lambda: NotfallDialog(root, data_dir)).grid(row=7, column=0, sticky="w", pady=(8, 0))
         root.bind("<Return>", lambda ev: self.ok())
         self.data_dir = data_dir
 
@@ -1708,6 +1710,65 @@ class Anmeldung:
         self.frame.destroy()
         self.ergebnis = (self.v["login"].get(), self.v["pw"].get())
         self.on_ok(*self.ergebnis)
+
+
+class NotfallDialog:
+    """R28-NOTFALL: Admin-Passwort zurücksetzen – nur mit Schreibrecht auf den Datenordner."""
+
+    def __init__(self, root, data_dir):
+        self.root, self.data_dir = root, data_dir
+        try:
+            admins = admin_core.notfall_admins(data_dir)
+        except AdminFehler as e:
+            messagebox.showerror(ADMIN_TITEL, str(e), parent=root)
+            return
+        if not admins:
+            messagebox.showerror(ADMIN_TITEL, "In dieser Datenbank gibt es kein Admin-Konto.", parent=root)
+            return
+        t = self.t = tk.Toplevel(root)
+        t.title("Notfall: Admin-Passwort zurücksetzen")
+        t.transient(root)
+        k = ttk.Frame(t, padding=20, style="Karte.TFrame")
+        k.pack(fill="both", expand=True)
+        ttk.Label(k, text="Admin-Passwort zurücksetzen", style="KTitel.TLabel").grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(k, wraplength=420, style="Karte.TLabel", text=(
+            "Nur möglich, wenn dein Windows-Konto Schreibrecht auf den Datenordner hat:\n" + str(data_dir) +
+            "\n\nVorher wird automatisch eine Sicherung der Datenbank angelegt. Der Vorgang wird mit PC und "
+            "Windows-Benutzer in „notfall.log“ im Datenordner protokolliert. Bei der nächsten Anmeldung muss "
+            "das Passwort erneut geändert werden.")).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 12))
+        self.v = {"konto": tk.StringVar(value=admins[0]["login"]), "pw1": tk.StringVar(), "pw2": tk.StringVar(),
+                  "ok": tk.BooleanVar(value=False)}
+        ttk.Label(k, text="Admin-Konto", style="Karte.TLabel").grid(row=2, column=0, sticky="w")
+        ttk.Combobox(k, textvariable=self.v["konto"], state="readonly", width=26,
+                     values=[a["login"] for a in admins]).grid(row=2, column=1, sticky="w", pady=3)
+        ttk.Label(k, text="Neues Passwort", style="Karte.TLabel").grid(row=3, column=0, sticky="w")
+        ttk.Entry(k, textvariable=self.v["pw1"], show="•", width=28).grid(row=3, column=1, sticky="w", pady=3)
+        ttk.Label(k, text="Wiederholen", style="Karte.TLabel").grid(row=4, column=0, sticky="w")
+        ttk.Entry(k, textvariable=self.v["pw2"], show="•", width=28).grid(row=4, column=1, sticky="w", pady=3)
+        ttk.Checkbutton(k, variable=self.v["ok"], text="Ich bin berechtigt, das Admin-Passwort zurückzusetzen"
+                        ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(8, 4))
+        self.l = ttk.Label(k, text="", style="Fehler.TLabel", wraplength=420)
+        self.l.grid(row=6, column=0, columnspan=2, sticky="w")
+        f = ttk.Frame(k, style="Karte.TFrame")
+        f.grid(row=7, column=0, columnspan=2, sticky="e", pady=(10, 0))
+        ttk.Button(f, text="Abbrechen", command=t.destroy).pack(side="right")
+        ui.AkzentButton(f, text="Zurücksetzen", command=self.ok).pack(side="right", padx=6)
+        t.grab_set()
+
+    def ok(self):
+        if not self.v["ok"].get():
+            return self.l.configure(text="Bitte die Berechtigung bestätigen.")
+        if self.v["pw1"].get() != self.v["pw2"].get():
+            return self.l.configure(text="Die Passwörter stimmen nicht überein.")
+        try:
+            sich = admin_core.notfall_admin_passwort(self.data_dir, self.v["konto"].get(), self.v["pw1"].get())
+        except AdminFehler as e:
+            return self.l.configure(text=str(e))
+        except Exception as e:  # noqa: BLE001 – Notfall-Werkzeug darf nicht abstürzen
+            return self.l.configure(text=f"Fehler: {e}")
+        self.t.destroy()
+        messagebox.showinfo(ADMIN_TITEL, "Passwort zurückgesetzt. Bitte jetzt mit dem neuen Passwort anmelden "
+                            f"und es danach ändern.\n\nSicherung: {sich}", parent=self.root)
 
 
 # ====================================================================== Start
@@ -1820,6 +1881,8 @@ def main(argv=None):
     def anmelden(ordner):
         a = Anmeldung(root, ordner)
         a.on_ok = lambda lg, pw: konsole_starten(ordner, lg, pw)
+        if "--notfall" in argv:  # R28-NOTFALL: direkt den Notfall-Dialog öffnen
+            root.after(200, lambda: NotfallDialog(root, ordner))
 
     def einrichten_neu(ordner):  # R4-I: nach „Datenordner zurücksetzen“
         for w in root.winfo_children():

@@ -2,6 +2,10 @@
 
 Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispielprojekt“ (Beispieldaten).
 
+## Neu in 2.8.1
+
+- **Notfall: Admin-Passwort zurücksetzen** – auf der Anmeldeseite der Admin-Konsole „Admin-Passwort vergessen …“ (oder `BarlagePM-Admin.exe --notfall`). Nur möglich mit Schreibrecht auf den Datenordner; vorher automatische Sicherung, Eintrag in `notfall.log` (PC, Windows-Benutzer), neues Passwort muss bei der nächsten Anmeldung geändert werden.
+
 ## Neu in 2.8
 - **Anmeldung mit Windows-Benutzer**: In der Admin-Konsole → „Anmeldung“ die Domäne **BARLAGE** eintragen und
   speichern (Änderungspaket wie gewohnt einspielen). Danach unter „Benutzer & Rollen“ bei jeder Person ihren
