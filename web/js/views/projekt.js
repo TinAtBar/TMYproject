@@ -11,6 +11,7 @@ import { timeline } from './uebersicht.js';
 import { del } from '../api.js';
 import { isAdmin } from '../store.js';
 import { getProjektTabs } from './projekt-tabs.js';
+import { reiterLeiste } from '../reiter.js'; // R29-G (127)
 import { gantt as ganttSvg } from './projekt-gantt.js';
 import { projektImport, dropTarget } from './projekt-import.js';
 import { ls } from '../util.js';
@@ -19,6 +20,7 @@ import { prefs } from '../prefs.js'; // R4-P: eingeklappte Bereiche je Benutzer
 import { termineZeilen, terminDialog, ausNotizenDialog } from './projekt-termine.js'; // R4-P: freie Termine
 import { projektTeamsKnopf } from './fertigung.js'; // R5-F: Teams-Knopf
 import { meilensteinEditor, verlaufAbschnitt, warnBox } from './projekt-fortschritt.js'; // R26-C1
+import { projektKalender, ohneDatumListe } from './projekt-kalender.js'; // R29-H (129): Projekt-Terminkalender
 import { cockpit, pufferText, kwKurz } from './projekt-cockpit.js'; // R27-101: Cockpit
 import { darf } from '../rechte.js'; // R27-102: Reiter nach Recht
 import { lbl, ordne, zusatzEditor, zusatzAnzeige, pflichtPruefen } from '../formular.js'; // R26-H: Masken
@@ -27,7 +29,7 @@ let budgetFeld = 'stunden', budgetIst = false;
 export function mount(el, r) {
   const id = r.params.id;
   let data = null, tab = r.query.tab || 'uebersicht', list = null, panel = null, canEdit = false, oplFilter = null;
-  const head = h('div'); const tabBar = h('div'); const body = h('div', null, loading());
+  const head = h('div'); const tabBar = h('div', { class: 'ph-reiterzeile' }); const body = h('div', { class: 'ph-reiter-inhalt' }, loading()); // R29-G (127): Karteireiter + Inhaltsfläche
   el.append(head, tabBar, body);
 
   async function load(o = {}) {
@@ -111,13 +113,9 @@ export function mount(el, r) {
     if (vorher !== tab) setQuery(tab === 'uebersicht' ? {} : { tab });
     const haupt = all.filter(x => HAUPT.includes(x[0])).sort((a, b) => HAUPT.indexOf(a[0]) - HAUPT.indexOf(b[0]));
     const rest = all.filter(x => !HAUPT.includes(x[0]));
-    const bar = tabs(haupt.map(x => x.slice(0, 3)), tab, waehle);
-    bar.classList.add('ph-tabs');
-    if (rest.length) {
-      const aktiv = rest.find(x => x[0] === tab);
-      bar.append(h('button', { role: 'tab', class: 'tab ph-mehr-tab', 'aria-selected': String(!!aktiv), 'aria-haspopup': 'menu', onclick: e => menu(e.currentTarget, rest.map(x => ({ label: x[2] != null ? `${x[1]} (${x[2]})` : x[1], fn: () => waehle(x[0]) }))) },
-        aktiv ? aktiv[1] : 'Mehr', icon('chevD', 14)));
-    }
+    // R29-G (127): Karteireiter mit Symbolen; alle Reiter in der Zeile, nur was nicht passt → „Mehr“ (reiter.js, ResizeObserver)
+    const ext = new Map(getProjektTabs(data).map(t => [t.key, t.icon]));
+    const bar = reiterLeiste([...haupt, ...rest].map(x => [x[0], x[1], x[2], ext.get(x[0])]), tab, waehle, { mehrLabel: 'Mehr' });
     clear(tabBar).append(bar);
   }
   // PM-Initialen-Avatare (Name im Tooltip); mit Bearbeitungsrecht: Klick öffnet Menü zum Hinzufügen/Entfernen
@@ -126,7 +124,7 @@ export function mount(el, r) {
     const namen = pms.map(x => x.name || userName(x.id));
     const grp = h('span', { class: 'ph-pms', title: namen.join(', ') || 'keine Projektleitung' }, pms.length ? namen.map(n => avatar(n)) : h('span', { class: 'muted' }, '–'), h('span', { class: 'sr-only' }, namen.join(', ')));
     if (!canEdit) return grp;
-    const cand = store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'admin' && u.rolle !== 'controlling' && u.aktiv !== 0 && u.aktiv !== false && !pms.some(p => p.id === u.id));
+    const cand = store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'admin' && u.rolle !== 'controlling' && u.rolle !== 'leiter' /* R29-F */ && u.aktiv !== 0 && u.aktiv !== false && !pms.some(p => p.id === u.id));
     return h('button', { type: 'button', class: 'ph-pms-btn', 'aria-haspopup': 'menu', 'aria-label': `Projektleitung: ${namen.join(', ')} – ändern`, title: `${namen.join(', ')} – Klick zum Ändern`, onclick: e => menu(e.currentTarget, [
       ...pms.map(pm => ({ label: `${pm.name || userName(pm.id)} entfernen`, icon: 'x', fn: () => savePms(pms.filter(x => x.id !== pm.id).map(x => x.id)) })),
       ...(cand.length ? ['-', ...cand.map(u => ({ label: `${u.name} hinzufügen`, icon: 'plus', fn: () => savePms([...pms.map(p => p.id), u.id]) }))] : [])]) }, grp);
@@ -189,6 +187,8 @@ export function mount(el, r) {
     const name = m => m.frei ? m.name : m.typ_name;
     let t = next ? (() => { const d = daysBetween(heute, parseDate(next.datum)); return `nächster: ${name(next)}${next.baugruppe_nummer ? ' (' + next.baugruppe_nummer.slice(-2) + ')' : ''} ${terminText(next)} (${d === 0 ? 'heute' : d === 1 ? 'morgen' : `in ${d} Tagen`})`; })() : 'keine anstehenden Termine';
     if (ueber) t += ` · ${ueber} überfällig`;
+    const ohneD = (data.meilensteine || []).filter(m => !m.datum && !m.erledigt && m.baugruppe_id == null).length; // R29-H (129): kein stiller Widerspruch zur Übersicht
+    if (ohneD) t += ` · ${ohneD} ohne Datum`;
     return t;
   }
   function zlSumme() {
@@ -254,20 +254,29 @@ export function mount(el, r) {
   let msZoom = (() => { try { return ls.get('projekt.ms.zoom', 'woche'); } catch { return 'woche'; } })();
   function milestones() {
     const typen = [...store.sd.meilenstein_typen].sort((a, b) => (a.pos ?? 0) - (b.pos ?? 0));
-    if (!typen.length && !(data.meilensteine || []).length) return h('p', { class: 'muted' }, 'Keine Meilensteine angelegt.'); // R26-W: eigene Meilensteine auch ohne Standard
+    if (!typen.length && !(data.meilensteine || []).length && msAnsicht !== 'kalender') { // R29-H (129): leerer Zustand mit Aktion
+      const tE = canEdit && !data.projekt.archiviert;
+      return h('div', { class: 'tk-leer' }, icon('diamond', 20), h('div', null, h('p', null, 'Keine Meilensteine angelegt.'), h('p', { class: 'small muted' }, tE ? 'Eigene Meilensteine und Termine lassen sich direkt anlegen.' : 'Meilensteine pflegt die Projektleitung.')),
+        tE ? h('div', { class: 'row tk-leer-knoepfe' }, h('button', { class: 'btn btn-sm btn-primary', onclick: () => terminDialog({ projekt: data.projekt, baugruppen: data.baugruppen || [], onDone: () => load() }) }, icon('plus', 16), 'Termin eintragen')) : null);
+    }
     const bgs = data.baugruppen || [];
     const wrap = h('div', { class: 'stack' });
     const sel = select([['projekt', 'Projekt gesamt'], ...bgs.map(b => [String(b.id), `${b.nummer} ${b.bezeichnung || ''}`])], msMode, { 'aria-label': 'Meilensteine für', style: { width: 'auto' }, onchange: e => { msMode = e.target.value; wrap.replaceWith(milestones()); } });
     const bgid = msMode === 'projekt' ? null : +msMode;
     const ms = (data.meilensteine || []).filter(m => (m.baugruppe_id ?? null) === bgid);
     const save = async (t, m, patch) => { try { await put('/meilensteine', { projekt_id: data.projekt.id, baugruppe_id: bgid, typ_id: t.id, datum: m.datum || null, erledigt: m.erledigt ? 1 : 0, ist_datum: m.ist_datum || null, ...patch, change_id: uuid() }); toast(`${t.name} gespeichert.`, 'ok'); load(); } catch (e) { toastErr(e); } };
-    const ansicht = h('div', { class: 'seg-wrap' }, segmented([['liste', 'Liste'], ['gantt', 'Gantt']], msAnsicht, v => { msAnsicht = v; try { ls.set('projekt.ms.ansicht', v); } catch { } wrap.replaceWith(milestones()); }, 'Ansicht'));
+    const ansicht = h('div', { class: 'seg-wrap' }, segmented([['liste', 'Liste'], ['gantt', 'Gantt'], ['kalender', 'Kalender']], msAnsicht, v => { msAnsicht = v; try { ls.set('projekt.ms.ansicht', v); } catch { } wrap.replaceWith(milestones()); }, 'Ansicht')); // R29-H (129): Kalender
     const frei = (data.termine_frei || []).filter(t => (t.baugruppe_id ?? null) === bgid); // R4-P
     const reloadMs = () => load();
     const tEdit = canEdit && !data.projekt.archiviert; // archiviert → Termine schreibgeschützt
     const neuBtn = tEdit ? h('button', { class: 'btn btn-sm btn-ghost', onclick: () => terminDialog({ projekt: data.projekt, baugruppen: bgs, bgid, onDone: reloadMs }) }, icon('plus', 16), 'Termin') : null;
     const notizBtn = tEdit && (data.projekt.notizen || '').trim() ? h('button', { class: 'btn btn-sm btn-ghost', onclick: () => ausNotizenDialog({ projekt: data.projekt, baugruppen: bgs, bgid, onDone: reloadMs }) }, icon('doc', 16), 'Termine aus Notizen') : null;
-    const tools = h('div', { class: 'row ms-tools' }, h('label', { class: 'small muted' }, 'Für'), sel, ansicht, neuBtn, notizBtn);
+    const tools = h('div', { class: 'row ms-tools tk-leiste' }, h('label', { class: 'small muted' }, 'Für'), sel, ansicht, neuBtn, notizBtn); // R29-H: einheitliche Bedienleiste
+    if (msAnsicht === 'kalender') { // R29-H (129): Projekt-Terminkalender (Monat/Woche)
+      sel.disabled = true; sel.title = 'Der Kalender zeigt immer das ganze Projekt';
+      wrap.append(projektKalender({ projekt: data.projekt, baugruppen: bgs, canEdit: tEdit, onDone: reloadMs, leiste: tools }));
+      return wrap;
+    }
     if (msAnsicht === 'gantt') {
       const zoomSel = segmented([['woche', 'Wochen'], ['monat', 'Monate']], msZoom, v => { msZoom = v; try { ls.set('projekt.ms.zoom', v); } catch { } wrap.replaceWith(milestones()); }, 'Zoom');
       const name = t => (typen.find(x => x.id === t) || {}).name || '';
@@ -281,7 +290,12 @@ export function mount(el, r) {
       } else {
         rowsG = [...typen.map(t => ({ key: t.id, label: t.name })), ...(frei.length ? [{ key: 'f', label: 'Weitere Termine' }] : [])]; msG = [...ms.map(m => ({ ...m, typ_name: name(m.typ_id) })), ...all.filter(m => m.frei && m.baugruppe_id === bgid)]; rowOf = m => m.frei ? 'f' : m.typ_id;
       }
-      wrap.append(h('div', { class: 'row ms-tools' }, tools, zoomSel), ganttSvg(rowsG, msG, rowOf, { zoom: msZoom }));
+      tools.append(zoomSel); // R29-H: Zoom in derselben Leiste (gleiche Höhe)
+      const ohneD = msG.some(m => m.datum || m.ist_datum) ? null : (all.filter(m => !m.frei && !m.datum && (bgid == null ? m.baugruppe_id == null : m.baugruppe_id === bgid)).map(m => ({ id: m.id, titel: m.typ_name || m.name || 'Meilenstein' })));
+      wrap.append(tools, ohneD ? h('div', { class: 'stack' }, // R29-H (129): statt „Noch keine Termine“ – fehlende Daten zeigen
+        h('div', { class: 'tk-leer' }, icon('cal', 20), h('div', null, h('p', null, 'Noch kein Meilenstein mit Plan-Datum.'), h('p', { class: 'small muted' }, 'Das Gantt-Diagramm erscheint, sobald Plan-Daten eingetragen sind.')),
+          tEdit ? h('div', { class: 'row tk-leer-knoepfe' }, h('button', { class: 'btn btn-sm btn-primary', onclick: () => { msAnsicht = 'liste'; try { ls.set('projekt.ms.ansicht', 'liste'); } catch { } wrap.replaceWith(milestones()); } }, icon('edit', 16), 'Plan-Daten eintragen')) : null),
+        ohneDatumListe(ohneD, { canEdit: tEdit, onSetzen: async (m, datum) => { try { await put('/meilensteine/' + m.id, { datum, change_id: uuid() }); toast(`„${m.titel}“: ${fmtDate(datum)}`, 'ok'); load(); } catch (e) { toastErr(e); } } })) : ganttSvg(rowsG, msG, rowOf, { zoom: msZoom }));
       return wrap;
     }
     if (bgid == null) { // R26-C1: Projektebene – Meilensteine je Projekt frei anpassbar

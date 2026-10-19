@@ -1,0 +1,287 @@
+/* =====================================================================
+   R29 Paket G – Design-Stile app-weit (Punkte 114, 117, 118, 121, 126, 127)
+   Wird als LETZTES Stylesheet geladen (nach dstil-*.css), nur Ergänzungen/Überschreibungen.
+
+   117: Je Design-Stil (:root[data-dstil] = klassik | glas | leitstand) EIN Token-Satz für die ganze App
+        (Kopf, Navigation, OPL, Listen, Dialoge, Knöpfe, Auswahl, Überschriften, Zahlen) in hell und dunkel:
+          --st-akzent      Stil-Akzent = Hauptknopf (.btn-primary), Links, Fokus
+          --st-auswahl     Auswahl/aktiv (→ --select*) – nie Ampelfarbe
+          --st-ueberschrift Überschriften-Farbe (→ --heading)
+          --st-zahl        Schrift für Zahlen (→ --font-num)
+          --st-melden      Blau der „Problem melden“-Sprechblase (121)
+          --kachel         Kachelfläche (114), --reiter-flaeche Fläche Karteireiter + Inhalt (127)
+        Ampelfarben (--danger/--warn/--ok, --sem-*) nur mit Bedeutung – nie als Auswahl oder Hauptknopf.
+   118: Glas app-weit: Pastell-Verlauf hinter allen Seiten, Kacheln/Listen/Kopf/Navigation milchig (hell und dunkel).
+   ===================================================================== */
+
+/* ---------- Grundwerte (alle Stile) ---------- */
+:root {
+  --st-melden: #1554b8;
+  --kachel: var(--surface);
+  --kachel-kante: var(--line-strong);
+  --reiter-flaeche: var(--surface-2);
+  --teams: #5b5fc7; --teams-hover: #4f52b3; --on-teams: #ffffff;   /* 126: Teams-Violett (eigenes Symbol, kein Logo) */
+  --glocke: #f2b705; --glocke-strich: #8a5a00;                       /* 121: nur bei Ungelesenem */
+}
+:root[data-scheme="dark"] {
+  --st-melden: #2f6fd8;
+  --kachel: color-mix(in srgb, var(--surface) 86%, #ffffff);
+  --kachel-kante: color-mix(in srgb, var(--line-strong) 80%, #ffffff);
+  --reiter-flaeche: color-mix(in srgb, var(--surface) 94%, #ffffff);
+  --pk-track: #3a4149;
+  --glocke: #f5c542; --glocke-strich: #f5c542;
+}
+/* Werkstatt dunkel: Hauptknopf nicht mehr Signalgelb (117) – Gelb bleibt nur Markierung in der Navigation */
+:root[data-design="werkstatt"][data-scheme="dark"] {
+  --accent: #8fb4ec; --accent-hover: #a9c6f0; --accent-soft: #15233a; --accent-text: #a9c6f0; --on-accent: #0a1a33; --focus: #a9c6f0;
+}
+
+/* ---------- Klassik plus: Navy (hell) / Hellblau (dunkel) ---------- */
+:root[data-dstil="klassik"][data-scheme="light"] { --st-akzent: var(--accent); --heading: #032d6e; }
+:root[data-dstil="klassik"][data-scheme="dark"] { --st-akzent: var(--accent); }
+
+/* ---------- Glas: Indigo-Blau, milchige Flächen über Pastell ---------- */
+:root[data-dstil="glas"][data-scheme="light"] {
+  --bg: #eef1f8; --surface: #ffffff; --surface-2: #f6f8fd; --surface-3: #e6eaf4; --sunken: #e3e8f2;
+  --line: #d3d9e6; --line-strong: #9aa6be;
+  --accent: #2f55d4; --accent-hover: #2446b8; --accent-soft: #e3e9ff; --accent-text: #2446b8; --on-accent: #ffffff; --focus: #2f55d4;
+  --select: #2f55d4; --select-bg: #e1e8ff; --select-text: #1d3a9e; --select-line: #2f55d4; --on-select: #ffffff;
+  --heading: #1d2b55; --st-melden: #2f55d4;
+  --nav-bg: rgba(255, 255, 255, .55); --nav-text: #2c3a55; --nav-text-strong: #1d3a9e; --nav-active: rgba(47, 85, 212, .12);
+  --nav-muted: #56627a; --nav-indicator: #2f55d4; --nav-focus: #2f55d4; --nav-line: rgba(255, 255, 255, .8); --brand-text: #1d2b55;
+  --list-bg: rgba(255, 255, 255, .72); --list-head: rgba(225, 232, 255, .85); --list-zebra: rgba(230, 236, 250, .7); --list-hover: #dfe6fb; --list-sel: #d3ddfb;
+  --kachel: rgba(255, 255, 255, .62); --kachel-kante: rgba(255, 255, 255, .9);
+  --reiter-flaeche: rgba(255, 255, 255, .58);
+  --gl-blob-1: rgba(120, 165, 255, .55); --gl-blob-2: rgba(180, 160, 255, .45); --gl-blob-3: rgba(130, 220, 195, .42); --gl-blob-4: rgba(255, 195, 160, .42);
+}
+:root[data-dstil="glas"][data-scheme="dark"] {
+  --bg: #0c1020; --surface: #1a2036; --surface-2: #1f2640; --surface-3: #2a3252; --sunken: #121729;
+  --line: rgba(255, 255, 255, .12); --line-strong: rgba(255, 255, 255, .26);
+  --text: #eef1fb; --text-2: #c9cfe3; --text-3: #a3abc6;
+  --accent: #9db4ff; --accent-hover: #b8c8ff; --accent-soft: #1c2650; --accent-text: #b8c8ff; --on-accent: #0b1433; --focus: #b8c8ff;
+  --select: #9db4ff; --select-bg: #26315f; --select-text: #d6e0ff; --select-line: #9db4ff; --on-select: #0b1433;
+  --heading: #eef1fb; --st-melden: #4f6ff0;
+  --nav-bg: rgba(16, 20, 40, .55); --nav-text: #c9cfe3; --nav-text-strong: #ffffff; --nav-active: rgba(157, 180, 255, .16);
+  --nav-muted: #a3abc6; --nav-indicator: #9db4ff; --nav-focus: #b8c8ff; --nav-line: rgba(255, 255, 255, .08); --brand-text: #ffffff;
+  --list-bg: rgba(30, 37, 64, .72); --list-head: rgba(44, 54, 92, .85); --list-zebra: rgba(40, 48, 80, .6); --list-hover: #2d3866; --list-sel: #33417a; --list-border: rgba(255, 255, 255, .2);
+  --kachel: rgba(255, 255, 255, .085); --kachel-kante: rgba(255, 255, 255, .16);
+  --reiter-flaeche: rgba(255, 255, 255, .07);
+  --pk-track: rgba(255, 255, 255, .14);
+  --gl-blob-1: rgba(70, 120, 255, .50); --gl-blob-2: rgba(150, 95, 255, .42); --gl-blob-3: rgba(30, 170, 140, .32); --gl-blob-4: rgba(230, 120, 70, .26);
+  --gl-flaeche: rgba(255, 255, 255, .075); --gl-kante: rgba(255, 255, 255, .16);
+}
+/* Pastell-Verlauf hinter ALLEN Seiten (nicht nur Dashboard/Cockpit) */
+:root[data-dstil="glas"] body,
+:root[data-dstil="glas"] .main:has(.db2-kopf),
+:root[data-dstil="glas"] .main:has(.ck) {
+  background:
+    radial-gradient(900px 560px at 6% 0%, var(--gl-blob-1), transparent 62%),
+    radial-gradient(800px 560px at 94% 6%, var(--gl-blob-2), transparent 60%),
+    radial-gradient(860px 620px at 30% 96%, var(--gl-blob-3), transparent 62%),
+    radial-gradient(720px 540px at 98% 88%, var(--gl-blob-4), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root[data-dstil="glas"] .main:has(.db2-kopf), :root[data-dstil="glas"] .main:has(.ck) { background: transparent; }
+:root[data-dstil="glas"] .sidebar, :root[data-dstil="glas"] .topbar, :root[data-dstil="glas"] .tabbar {
+  background: var(--nav-bg); -webkit-backdrop-filter: saturate(1.6) blur(20px); backdrop-filter: saturate(1.6) blur(20px);
+}
+:root[data-dstil="glas"] .topbar { background: color-mix(in srgb, var(--surface) 45%, transparent); border-bottom-color: var(--kachel-kante); }
+:root[data-dstil="glas"] .sidebar { border-right: 1px solid var(--nav-line); }
+/* Glas-Flächen: Kacheln, Karten, Listen, Kopf der Projektseite, Projekt-Chips */
+:root[data-dstil="glas"] :is(.card, .pk, .dk-karte, .ph.card, .fb-tile, .table-wrap.tbx, .filterbar) {
+  background-color: var(--kachel);
+  -webkit-backdrop-filter: saturate(1.8) blur(22px); backdrop-filter: saturate(1.8) blur(22px);
+  border: 1px solid var(--kachel-kante);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 10px 30px -14px rgba(30, 40, 90, .28);
+}
+:root[data-dstil="glas"][data-scheme="dark"] :is(.card, .pk, .dk-karte, .ph.card, .fb-tile, .table-wrap.tbx, .filterbar) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 14px 34px -14px rgba(0, 0, 0, .7);
+}
+:root[data-dstil="glas"] :is(.card, .pk, .ph.card) { border-radius: var(--gl-radius, 20px); }
+:root[data-dstil="glas"] .card .card, :root[data-dstil="glas"] .ph-reiter-inhalt .card .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-dstil="glas"] .dlg { background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(26px); backdrop-filter: saturate(1.6) blur(26px); }
+:root[data-dstil="glas"][data-scheme="dark"] .dlg { background: color-mix(in srgb, #1a2036 90%, transparent); }
+:root[data-dstil="glas"] .btn:not(.btn-primary):not(.btn-danger):not(.btn-ghost):not(.btn-link):not(.teams-btn) { background-color: color-mix(in srgb, var(--surface) 70%, transparent); }
+:root[data-dstil="glas"] .btn-primary { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent); }
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-dstil="glas"] :is(.card, .pk, .dk-karte, .ph.card, .fb-tile, .table-wrap.tbx, .filterbar, .sidebar, .topbar, .dlg) { background-color: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ---------- Leitstand: app-weit (Entscheidung 19.10.) – dunkel = HUD-Cyan, hell = Petrol ---------- */
+:root[data-dstil="leitstand"][data-scheme="dark"] {
+  color-scheme: dark;
+  --ls-cyan: #4fd6ef; --ls-cyan-hell: #8be6f7; --ls-glow: rgba(79, 214, 239, .32); --ls-linie: rgba(79, 214, 239, .22);
+  --bg: #060a10; --surface: #0c1521; --surface-2: #111c2b; --surface-3: #18263a; --sunken: #08101a;
+  --line: #1c2c40; --line-strong: #2f4864;
+  --text: #e8f1fa; --text-2: #b9c9da; --text-3: #94a9bf;
+  --accent: #4fd6ef; --accent-hover: #8be6f7; --accent-soft: #0f2a3a; --accent-text: #8be6f7; --on-accent: #02131b; --focus: #8be6f7;
+  --select: #4fd6ef; --select-bg: #0f2a3a; --select-text: #c4f1fb; --select-line: #4fd6ef; --on-select: #02131b;
+  --heading: #e8f1fa; --st-melden: #1f7fc4;
+  --nav-bg: #070d16; --nav-active: #10233a; --nav-text: #c3d3e4; --nav-text-strong: #ffffff; --nav-muted: #93a8bf; --nav-indicator: #4fd6ef; --nav-focus: #8be6f7; --nav-line: #15263a; --brand-text: #ffffff;
+  --list-bg: #0c1521; --list-border: #2f4864; --list-zebra: #101b2a; --list-line: #1c2c40; --list-head: #111f31; --list-head-text: #c3d3e4;
+  --list-hover: #13283d; --list-sel: #123247; --list-text3: #a6b8cb; --list-grp: #0f1a28;
+  --kachel: #0f1a29; --kachel-kante: #2f4864; --reiter-flaeche: #0c1521;
+  --font-num: var(--mono);
+}
+:root[data-dstil="leitstand"][data-scheme="light"] {
+  color-scheme: light;
+  --ls-cyan: #0a8fab; --ls-cyan-hell: #006f86; --ls-glow: transparent; --ls-linie: rgba(0, 111, 134, .28);
+  --bg: #e9eef2; --surface: #ffffff; --surface-2: #f4f7f9; --surface-3: #dfe6ec; --sunken: #e2e8ed;
+  --line: #c4d0da; --line-strong: #7e93a6;
+  --text: #0d1a26; --text-2: #2f4458; --text-3: #4b6074;
+  --accent: #006f86; --accent-hover: #005a6d; --accent-soft: #d9eff4; --accent-text: #005a6d; --on-accent: #ffffff; --focus: #006f86;
+  --select: #006f86; --select-bg: #d6edf2; --select-text: #004a5a; --select-line: #006f86; --on-select: #ffffff;
+  --heading: #0d2a3a; --st-melden: #0b62b0;
+  --nav-bg: #0a1622; --nav-active: #12304a; --nav-text: #c3d3e4; --nav-text-strong: #ffffff; --nav-muted: #93a8bf; --nav-indicator: #4fd6ef; --nav-focus: #8be6f7; --nav-line: transparent; --brand-text: #ffffff;
+  --list-head: #dde7ee; --list-sel: #cfe7ee; --list-hover: #dcebf0;
+  --kachel: #ffffff; --kachel-kante: #9fb2c2; --reiter-flaeche: #f7fafb;
+  --pk-fortschritt: #0a8fab; --pk-track: #d3dde5;
+  --font-num: var(--mono);
+}
+/* Hell: die alten, nur dunklen Bereichs-Tokens (dstil-leitstand.css) hell überschreiben */
+:root[data-dstil="leitstand"][data-scheme="light"] .app:has(.db2-kopf),
+:root[data-dstil="leitstand"][data-scheme="light"] .app:has(.ck),
+:root[data-dstil="leitstand"][data-scheme="light"] .pk {
+  color-scheme: light;
+  --ls-cyan: #0a8fab; --ls-cyan-hell: #006f86; --ls-glow: transparent; --ls-linie: rgba(0, 111, 134, .28);
+  --bg: #e9eef2; --surface: #ffffff; --surface-2: #f4f7f9; --surface-3: #dfe6ec; --sunken: #e2e8ed;
+  --line: #c4d0da; --line-strong: #7e93a6; --text: #0d1a26; --text-2: #2f4458; --text-3: #4b6074;
+  --accent: #006f86; --accent-hover: #005a6d; --accent-soft: #d9eff4; --accent-text: #005a6d; --on-accent: #ffffff; --focus: #006f86; --signal: #006f86;
+  --danger: #b3261e; --danger-bg: #fbe7e4; --danger-text: #8c1c16; --danger-line: #efb4ad;
+  --warn: #8a5a00; --warn-bg: #fbf0d4; --warn-text: #6b4600; --warn-line: #e9cf86;
+  --ok: #2a6b3f; --ok-bg: #e3f1e6; --ok-text: #1d5530; --ok-line: #acd5b7;
+  --info: #1f5f9e; --info-bg: #e3eef9; --info-text: #174a7c;
+  --select: #006f86; --select-bg: #d6edf2; --select-text: #004a5a; --select-line: #006f86; --on-select: #ffffff;
+  --sem-neutral: #5d6168; --sem-offen: #4d6580; --sem-info: #4d6580; --sem-aktiv: #1f5f9e; --sem-warten: #8a5a00;
+  --sem-erledigt: #2a6b3f; --sem-abgenommen: #1f6f68; --sem-danger: #b3261e; --sem-ueber: #c4140c; --sem-nachtrag: #6b3fa0;
+  --sem-marke: #006f86; --on-danger: #ffffff; --badge-bg: #b3261e; --badge-text: #ffffff;
+  --cat-1: #1f5f9e; --cat-2: #1f6f68; --cat-3: #6b3fa0; --cat-4: #7a6400; --cat-5: #4a4fb0; --cat-6: #4a5666; --cat-7: #2a6b3f; --cat-8: #8a5236;
+  --tint: 14%; --tint-line: 40%; --tint-ico: 40%;
+  --pk-fortschritt: #0a8fab; --pk-stunden: #4a5666; --pk-track: #d3dde5;
+  --glanz: inset 0 1px 0 rgba(255, 255, 255, .9); --glanz-verlauf: none;
+  --ring-fokus: 0 0 0 4px rgba(0, 111, 134, .22);
+  --heading: #0d2a3a;
+  --nav-bg: #0a1622; --nav-active: #12304a; --nav-text: #c3d3e4; --nav-muted: #93a8bf; --nav-indicator: #4fd6ef; --nav-focus: #8be6f7; --nav-line: transparent; --brand-text: #ffffff;
+}
+/* Seitenfläche: feines Raster auf ALLEN Seiten */
+:root[data-dstil="leitstand"] .app,
+:root[data-dstil="leitstand"][data-scheme="dark"] .app:has(.db2-kopf),
+:root[data-dstil="leitstand"][data-scheme="dark"] .app:has(.ck) {
+  background:
+    radial-gradient(1200px 600px at 70% -10%, color-mix(in srgb, var(--ls-cyan) 8%, transparent), transparent 60%),
+    linear-gradient(color-mix(in srgb, var(--ls-cyan) 4%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, color-mix(in srgb, var(--ls-cyan) 4%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bg);
+  min-height: 100dvh; color: var(--text);
+}
+:root[data-dstil="leitstand"][data-scheme="light"] .app:has(.db2-kopf),
+:root[data-dstil="leitstand"][data-scheme="light"] .app:has(.ck) {
+  background:
+    linear-gradient(rgba(0, 111, 134, .05) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(0, 111, 134, .05) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--bg);
+}
+:root[data-dstil="leitstand"] .topbar,
+:root[data-dstil="leitstand"] .app:has(.db2-kopf) .topbar,
+:root[data-dstil="leitstand"] .app:has(.ck) .topbar { background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom-color: var(--ls-linie); }
+/* Karten/Listen/Dialoge: eckig, Leuchtkante oben (ohne clip-path, damit Menüs/Popups nicht abgeschnitten werden) */
+:root[data-dstil="leitstand"] :is(.card, .table-wrap.tbx, .filterbar, .dlg, .menu, .fb-tile, .ph-reiter-inhalt) { border-radius: 2px; }
+:root[data-dstil="leitstand"] .main .card:not(.pk):not(.dk-karte) {
+  border-color: var(--ls-linie);
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--ls-cyan) 55%, transparent);
+}
+:root[data-dstil="leitstand"] .ck .card { box-shadow: inset 0 0 0 1px var(--ls-linie), inset 0 1px 0 color-mix(in srgb, var(--ls-cyan-hell) 18%, transparent); }
+:root[data-dstil="leitstand"] .dlg { box-shadow: 0 0 0 1px var(--ls-linie), 0 24px 60px -12px rgba(0, 0, 0, .6); }
+:root[data-dstil="leitstand"] :is(.btn, .seg, .seg-btn, input, select, textarea, .chip-accent, .icon-btn) { border-radius: 3px; }
+:root[data-dstil="leitstand"][data-scheme="dark"] .btn-primary { box-shadow: 0 0 14px rgba(79, 214, 239, .35); background-image: none; }
+:root[data-dstil="leitstand"][data-scheme="light"] .btn-primary { background-image: none; }
+/* Überschriften einheitlich: Seitentitel normal, Abschnittsköpfe in Karten Versalien (wie Dashboard) */
+:root[data-dstil="leitstand"] .page-head h1 { letter-spacing: .01em; }
+:root[data-dstil="leitstand"] .page-head h1::before { content: "▸ "; color: var(--ls-cyan); }
+:root[data-dstil="leitstand"] .main .card > h2,
+:root[data-dstil="leitstand"] .main .card > header h2,
+:root[data-dstil="leitstand"] .main .card-head h2 { text-transform: uppercase; letter-spacing: .09em; font-size: .8rem; font-weight: 700; color: var(--text-2); }
+/* Zahlen einheitlich Monospace */
+:root[data-dstil="leitstand"] :is(.tab-count, .pn, .pnr, .num, .fb-tile-nr, .fb-tile-z, .tbl td.c-nr, .bell-count) { font-family: var(--mono); }
+/* Projekt-Kacheln im hellen Leitstand: helle Fläche, Petrol-Kante */
+:root[data-dstil="leitstand"][data-scheme="light"] .pk { background: var(--kachel); box-shadow: inset 0 0 0 1px var(--kachel-kante), inset 0 3px 0 #0a8fab; }
+:root[data-dstil="leitstand"][data-scheme="light"] .ck .card { background: var(--surface); }
+:root[data-dstil="leitstand"][data-scheme="light"] .db2-titel h1::before { color: #0a8fab; }
+:root[data-dstil="leitstand"][data-scheme="light"] :is(.dk-kz-wert, .ck-kpi-v) { text-shadow: none; }
+:root[data-dstil="leitstand"][data-scheme="light"] :is(.pk-track, .fb-track, .dk-pers-bar) { background-color: #d3dde5; box-shadow: inset 0 0 0 1px rgba(0, 111, 134, .2); background-image: repeating-linear-gradient(90deg, transparent 0 7px, rgba(255, 255, 255, .9) 7px 9px); }
+:root[data-dstil="leitstand"][data-scheme="light"] :is(.pk-fill, .fb-fill, .dk-pers-bar i) { filter: none; }
+:root[data-dstil="leitstand"][data-scheme="light"] .pk-nr { color: #006f86; }
+
+/* ---------- 117: Hauptknopf überall im Stil-Akzent ---------- */
+.btn-primary { background-color: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* ---------- 114: Kacheln und Projekt-Chips kontrastreich ---------- */
+.pk { background-color: var(--kachel); border: 1px solid var(--kachel-kante); }
+:root:not([data-dstil="leitstand"]) .pk { border-top: 3px solid color-mix(in srgb, var(--select) 70%, var(--kachel-kante)); }
+.pk-kunde { color: var(--text); font-weight: 650; opacity: 1; }
+:root[data-scheme="dark"] .pk-kunde, :root[data-dstil="leitstand"][data-scheme="dark"] .pk .pk-kunde { color: #ffffff; font-weight: 700; }
+.pk-track { background: var(--pk-track); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line-strong) 35%, transparent); }
+.fb-tile { background-color: var(--kachel); border-color: var(--kachel-kante); }
+.fb-tile-sub { color: var(--text); font-weight: 650; }
+:root[data-scheme="dark"] .fb-tile-sub { color: #ffffff; font-weight: 700; }
+.fb-tile.on { background: var(--select-bg); border-color: var(--select-line); box-shadow: inset 0 0 0 1px var(--select-line); }
+.fb-tile.on .fb-tile-nr { color: var(--select-text); }
+
+/* ---------- 121: Kopfzeile – Glocke + „Problem melden“ ---------- */
+.bell-btn .ico { color: var(--text-2); }
+.bell-btn.bell-neu .ico path { fill: var(--glocke); stroke: var(--glocke-strich); }
+.bell-count { top: 4px; right: 3px; min-width: 17px; height: 17px; padding: 0 4px; font-size: .68rem; box-shadow: 0 0 0 2px var(--bg); }
+.tk-btn .ico path.tk-blase { fill: var(--st-melden); stroke: var(--st-melden); }
+.tk-btn .ico path.tk-i { stroke: #ffffff; stroke-width: 2.4; }
+.tk-btn:hover .ico path.tk-blase { fill: color-mix(in srgb, var(--st-melden) 85%, #000); }
+
+/* 121: eingeklappte Seitenleiste – nur Symbole, nie abgeschnittene Beschriftungen (auch während der Animation) */
+.sidebar { container: sb / inline-size; }
+@container sb (max-width: 140px) {
+  .nav a > span, .brand > span, .nav-sec, .sb-toggle > span, .sidebar-foot .keys { display: none; }
+  .nav a, .sb-toggle { justify-content: center; padding: 0; }
+}
+
+/* ---------- 126: Teams-Knopf violett mit Videokamera ---------- */
+.btn.teams-btn, a.btn.teams-btn { background: var(--teams); border-color: var(--teams); color: var(--on-teams); background-image: none; }
+.btn.teams-btn:hover { background: var(--teams-hover); border-color: var(--teams-hover); color: var(--on-teams); }
+.btn.teams-btn .ico { color: var(--on-teams); }
+.ph-teams .btn.teams-btn { font-size: .86rem; gap: 6px; padding: 0 12px; } /* Text „Teams“ sichtbar (vorher nur Symbol) */
+@media (max-width: 760px) { .ph-teams .btn.teams-btn { font-size: 0; gap: 0; padding: 0 9px; } } /* Handy: kompakt, Name im Tooltip/Screenreader */
+
+/* ---------- 127: Projekt-Reiter als Karteireiter ---------- */
+.ph-reiterzeile { margin-top: 14px; }
+.reiter29.tabs { gap: 3px; border-bottom: 0; margin: 0; padding: 0 4px; overflow: hidden; position: relative; z-index: 1; flex-wrap: nowrap; }
+.reiter29 > [hidden] { display: none !important; }
+.reiter29 .tab {
+  flex: 0 0 auto; min-height: 42px; padding: 0 14px; gap: 7px;
+  border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0; margin-bottom: -1px;
+  color: var(--text-3); background: transparent; background-image: none; text-shadow: none;
+}
+.reiter29 .tab .ico { color: currentColor; }
+.reiter29 .tab:hover { color: var(--text); background: color-mix(in srgb, var(--reiter-flaeche) 60%, transparent); }
+.reiter29 .tab[aria-selected="true"] {
+  color: var(--select-text); background: var(--reiter-flaeche);
+  border-color: var(--line); border-bottom-color: transparent;
+  box-shadow: inset 0 3px 0 var(--select);
+  -webkit-backdrop-filter: none; backdrop-filter: none; filter: none;  /* kein Korn/Rauschen (Glas) */
+}
+.reiter29 .tab[aria-selected="true"] .tab-count { background: var(--select-bg); color: var(--select-text); }
+.ph-reiter-inhalt {
+  position: relative; background: var(--reiter-flaeche); border: 1px solid var(--line);
+  border-radius: 0 var(--radius) var(--radius) var(--radius); padding: 16px; min-height: 120px;
+}
+:root[data-dstil="glas"] .ph-reiter-inhalt { border-color: var(--kachel-kante); border-radius: 0 20px 20px 20px; }
+:root[data-dstil="glas"] .reiter29 .tab[aria-selected="true"] { border-color: var(--kachel-kante); border-bottom-color: transparent; }
+:root[data-dstil="leitstand"] .reiter29 .tab { border-radius: 0; }
+:root[data-dstil="leitstand"] .reiter29 .tab[aria-selected="true"] { border-color: var(--ls-linie); border-bottom-color: transparent; }
+:root[data-dstil="leitstand"] .ph-reiter-inhalt { border-color: var(--ls-linie); border-radius: 0; }
+@media (max-width: 760px) {
+  .reiter29 .tab { padding: 0 12px; min-height: 44px; }
+  .reiter29 .tab .tab-lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .reiter29 .tab .tab-count { font-size: .68rem; padding: 0 5px; }
+  .ph-reiter-inhalt { padding: 10px; border-radius: 0 12px 12px 12px; }
+}
+@media print { .reiter29 { display: none; } .ph-reiter-inhalt { border: 0; padding: 0; background: none; } }

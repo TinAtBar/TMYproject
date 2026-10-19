@@ -4,6 +4,7 @@ import { h, icon, clear, fmtDate, fmtDateTime, fmtSize, fristState, uuid } from 
 import { get, put, post, qs } from '../api.js';
 import { store } from '../store.js';
 import { loading, errorBox, toast, toastErr, statusSelect, dialog, field, select, empty } from '../ui.js';
+import { vorschlagDialog, vsStatusChip } from './vorschlaege.js'; // R29-F (109)
 
 const STATUS_FG = { wartend: ['Wartet auf Freigabe', 'clock', ''], freigegeben: ['Freigegeben', 'check', 'chip-ok'], abgelehnt: ['Abgelehnt', 'xc', 'chip-danger'] };
 
@@ -46,8 +47,9 @@ export function mount(el) {
 
   async function load() {
     try {
-      const [d, fg] = await Promise.all([get('/dashboard'), get('/freigaben' + qs({ status: 'alle' })).catch(() => ({ items: [] }))]);
-      render(d, (fg.items || []).filter(x => x.hochgeladen_von === store.user.id));
+      const [d, fg, vs] = await Promise.all([get('/dashboard'), get('/freigaben' + qs({ status: 'alle' })).catch(() => ({ items: [] })),
+        get('/vorschlaege' + qs({ status: 'alle', eigene: 1 })).catch(() => ({ items: [] }))]); // R29-F
+      render(d, (fg.items || []).filter(x => x.hochgeladen_von === store.user.id), vs.items || []);
     } catch (e) { clear(body).append(errorBox(e, load)); }
   }
 
@@ -69,15 +71,17 @@ export function mount(el) {
       h('div', { class: 'ma-meta' },
         it.frist ? h('span', { class: 'ma-frist frist-' + fs.cls, title: fs.title || '' }, icon(fs.cls === 'overdue' ? 'alarm' : 'cal', 14), ' ', fmtDate(it.frist), fs.cls === 'overdue' ? ' – überfällig' : '') : h('span', { class: 'small muted' }, 'ohne Frist'),
         st,
-        h('button', { class: 'btn btn-sm', type: 'button', onclick: () => hochladenDialog(it, load), 'data-testid': 'ma-hochladen' }, icon('upload', 15), ' Datei hochladen')));
+        h('button', { class: 'btn btn-sm', type: 'button', onclick: () => hochladenDialog(it, load), 'data-testid': 'ma-hochladen' }, icon('upload', 15), ' Datei hochladen'),
+        h('button', { class: 'btn btn-sm btn-ghost', type: 'button', onclick: () => vorschlagDialog(it, load), 'data-testid': 'ma-vorschlagen', title: 'Neuen Punkt zu dieser Aufgabe vorschlagen' }, icon('plus', 15), ' Punkt vorschlagen'))); // R29-F
   }
 
-  function render(d, eigeneFg) {
+  function render(d, eigeneFg, eigeneVs = []) {
     const k = d.kennzahlen || {};
     const items = d.meine_opl || [];
     clear(body).append(
       h('div', { class: 'page-head' }, h('div', { class: 'page-title' }, h('h1', null, 'Meine Aufgaben'),
-        h('p', { class: 'sub' }, 'Nur die offenen Punkte, bei denen du unter „Zuständig“ eingetragen bist.'))),
+        h('p', { class: 'sub' }, 'Nur die offenen Punkte, bei denen du unter „Zuständig“ eingetragen bist.')),
+        h('div', { class: 'page-actions' }, h('button', { class: 'btn btn-primary btn-sm', type: 'button', 'data-testid': 'ma-vorschlag-neu', onclick: () => vorschlagDialog(null, load) }, icon('plus', 15), ' Punkt vorschlagen'))), // R29-F
       h('div', { class: 'ma-kzs' }, kz('Offen', k.offen, 'list'), kz('Überfällig', k.ueberfaellig, 'alarm', k.ueberfaellig ? 'ma-kz-gefahr' : ''),
         kz('Diese Woche fällig', k.woche, 'clock'), kz('Erledigt (7 Tage)', k.erledigt_7t, 'check')),
       items.length ? h('ul', { class: 'ma-liste', 'data-testid': 'meine-aufgaben' }, items.map(zeile))
@@ -85,7 +89,12 @@ export function mount(el) {
       eigeneFg.length ? h('section', { class: 'ma-fg' }, h('h2', null, 'Meine hochgeladenen Dateien'),
         h('ul', { class: 'ma-fg-liste' }, eigeneFg.slice(0, 30).map(f => h('li', { class: 'ma-fg-zeile' },
           icon('doc', 16), h('span', { class: 'ma-fg-name' }, f.dateiname), h('span', { class: 'small muted' }, `#${f.opl_id} · ${fmtSize(f.groesse)} · ${fmtDateTime(f.zeit)}`),
-          fgStatusChip(f.status), f.status === 'abgelehnt' && f.kommentar ? h('span', { class: 'small ma-fg-kommentar' }, '„' + f.kommentar + '“') : null)))) : null);
+          fgStatusChip(f.status), f.status === 'abgelehnt' && f.kommentar ? h('span', { class: 'small ma-fg-kommentar' }, '„' + f.kommentar + '“') : null)))) : null,
+      eigeneVs.length ? h('section', { class: 'ma-fg' }, h('h2', null, 'Meine Vorschläge'), // R29-F (109)
+        h('ul', { class: 'ma-fg-liste', 'data-testid': 'ma-vorschlaege' }, eigeneVs.slice(0, 30).map(v => h('li', { class: 'ma-fg-zeile' },
+          icon('plus', 16), h('span', { class: 'ma-fg-name' }, v.titel), h('span', { class: 'small muted' }, `${v.projekt_nummer || ''} · ${fmtDateTime(v.erstellt)}`),
+          vsStatusChip(v.status), v.ergebnis_id ? h('a', { class: 'small', href: '#/opl/' + v.ergebnis_id }, '#' + v.ergebnis_id) : null,
+          v.kommentar ? h('span', { class: 'small ma-fg-kommentar' }, '„' + v.kommentar + '“') : null)))) : null);
   }
   load();
   timer = setInterval(() => { if (!document.hidden && !document.querySelector('dialog[open]')) load(); }, 60000);

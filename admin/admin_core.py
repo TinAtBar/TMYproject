@@ -95,7 +95,7 @@ def db_anlegen(data_dir, admin_login, admin_name, admin_pw, benutzer=(), einstel
                         raise AdminFehler("Benutzer: Login und Name sind Pflicht")
                     if lg.lower() in logins:
                         raise AdminFehler(f"Login {lg} doppelt")
-                    if u.get("rolle") not in ("admin", "pm", "mitarbeiter", "controlling"):
+                    if u.get("rolle") not in ("admin", "pm", "mitarbeiter", "controlling", "leiter"):  # R29-F
                         raise AdminFehler(f"Benutzer {lg}: ungültige Rolle")
                     if len(u.get("passwort") or "") < 6:
                         raise AdminFehler(f"Benutzer {lg}: Startpasswort mindestens 6 Zeichen")
@@ -605,6 +605,69 @@ class Konsole:
             raise AdminFehler("Seit der Datenübernahme wurde ein weiteres Paket eingespielt oder sie ist schon "
                               "rückgängig gemacht – bitte über „Sicherungen“ wiederherstellen.")
         return self.rueckgaengig()
+
+    # ---------------------------------------------------------- R29-D: Abgleich Fertigungsbesprechungs-Excel
+    @staticmethod
+    def fb_lesen(pfad):
+        """Liest die Excel-Datei (nur lesen) → (Pfad, Blätter)."""
+        import fb_import
+        try:
+            return fb_import.datei_lesen(pfad)
+        except fb_import.FbFehler as e:
+            raise AdminFehler(str(e))
+
+    def fb_vorschau(self, blaetter):
+        import fb_import
+        cl = self._server_client() if (self._login and self.server_lock()) else None
+        if cl:
+            st, r = cl.req("POST", "/api/admin/fb_import/vorschau", {"blaetter": blaetter}, timeout=120)
+            if st != 200:
+                raise AdminFehler(r.get("error") or f"Fehler {st}")
+            return r
+        c = core.ro_connect(self.data_dir / "opl.db")
+        try:
+            return fb_import.vorschau(c, blaetter)
+        finally:
+            c.close()
+
+    def fb_einspielen(self, blaetter, auswahl, quelle=None):
+        """Gewählte Zeilen einspielen (über den Server oder lokal unter admin.lock) → {ergebnis, sicherung, historie, via}."""
+        import fb_import
+        if not auswahl:
+            raise AdminFehler("Keine Zeilen ausgewählt.")
+        cl = self._server_client() if self._login else None
+        if self.server_lock() and not cl:
+            raise AdminFehler("Es läuft ein Server – bitte zuerst anmelden.")
+        if cl:
+            st, r = cl.req("POST", "/api/admin/fb_import/einspielen",
+                           {"blaetter": blaetter, "auswahl": list(auswahl), "quelle": quelle}, timeout=180)
+            if st != 200:
+                raise AdminFehler(r.get("error") or f"Fehler {st}")
+            return r
+
+        def fn(conn, sicherung):
+            admin_id = (self.admin or {}).get("id")
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                r = fb_import.anwenden(conn, blaetter, auswahl, admin_id)
+                conn.execute("UPDATE meta SET v = CAST(v AS INTEGER) + 1 WHERE k='rev'")
+                self._protokoll({"change_id": str(uuid.uuid4()), "zeit": jetzt(), "user_id": admin_id,
+                                 "aktion": "fb_abgleich", "via": "konsole",
+                                 "daten": {"quelle": quelle, "auswahl": list(auswahl)[:500]}})
+                conn.execute("COMMIT")
+            except fb_import.FbFehler as e:
+                conn.execute("ROLLBACK")
+                raise AdminFehler(str(e))
+            except BaseException:
+                conn.execute("ROLLBACK")
+                raise
+            n = r["ergebnis"]
+            h = admin_paket.historie_speichern(self.data_dir, fb_import.historie_eintrag(n, quelle, (self.admin or {}).get("login")),
+                                               sicherung, {"auswirkungen": [f"{n['angelegt']} Punkte angelegt, {n['geaendert']} geändert"]},
+                                               "konsole")
+            return {"ergebnis": n, "summe": r["summe"], "via": "konsole", "sicherung": str(sicherung), "historie": h.name}
+        return self._lokal(fn, "vor-fb-abgleich")
+    # ---------------------------------------------------------- /R29-D
 
 
 # ================================================================== R4-I: Datenordner zurücksetzen

@@ -146,10 +146,13 @@ class CockpitBrowser(unittest.TestCase):
         # PM einmal im Kopf: Avatare, kein „PM:“-Text
         self.assertGreaterEqual(pg.locator(".ph-pms .avatar").count(), 1)
         self.assertNotIn("PM:", pg.locator(".ph").inner_text())
-        # „Mehr ▾“ enthält Verlauf
-        pg.locator(".ph-mehr-tab").click()
-        self.assertTrue(pg.locator(".menu").get_by_text("Verlauf").is_visible())
-        pg.keyboard.press("Escape")
+        # „Mehr ▾“ nur bei Platzmangel (R29-G 127): Verlauf entweder direkt als Reiter oder im Menü
+        if pg.locator(".ph-mehr-tab").is_visible():
+            pg.locator(".ph-mehr-tab").click()
+            self.assertTrue(pg.locator(".menu").get_by_text("Verlauf").is_visible() or pg.locator(".ph-tabs .tab", has_text="Verlauf").is_visible())
+            pg.keyboard.press("Escape")
+        else:
+            self.assertTrue(pg.locator(".ph-tabs .tab", has_text="Verlauf").is_visible())
         self.assertEqual(pg.fehler, [])
 
     def test_dateien_in_dokumente(self):

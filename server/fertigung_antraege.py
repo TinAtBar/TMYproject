@@ -15,9 +15,9 @@ import router
 from router import route
 from util import ApiError, now_iso, to_int
 
-ARTEN = ("fertigungsort", "frist", "status", "text", "zustaendig", "neu")
+ARTEN = ("fertigungsort", "frist", "status", "text", "zustaendig", "neu", "termine")  # R29-C: termine
 ART_ANZEIGE = {"fertigungsort": "Fertigungsort", "frist": "Klärung bis", "status": "erledigt", "text": "Thema",
-               "zustaendig": "Zuständig", "neu": "Neuer Punkt"}
+               "zustaendig": "Zuständig", "neu": "Neuer Punkt", "termine": "Termine"}  # R29-C
 STATUS = ("offen", "uebernommen", "abgelehnt")
 
 
@@ -43,7 +43,7 @@ def ist_leiter(db, user):
     if user.get("rolle") == "admin":
         return True
     rollen = {user.get("rolle")} | set(vertretung.rollen_fuer_bereich(db, user, "fertigung"))
-    return "controlling" in rollen and rechte.darf(user, "fertigung", "bearbeiten", db)
+    return bool(rollen & {"controlling", "leiter"}) and rechte.darf(user, "fertigung", "bearbeiten", db)  # R29-F: + leiter
 
 
 def need_leiter(ctx):
@@ -61,7 +61,7 @@ def darf_antrag(ctx, pid):
 
 def leiter_ids(c):
     """Empfänger für „neuer Antrag“: aktive Controlling-Benutzer + aktive Vertreter der Rolle/eines Controllers."""
-    ids = {r[0] for r in c.execute("SELECT id FROM users WHERE rolle='controlling' AND aktiv=1")}
+    ids = {r[0] for r in c.execute("SELECT id FROM users WHERE rolle IN ('controlling','leiter') AND aktiv=1")}  # R29-F
     import vertretung
     for r in c.execute("SELECT DISTINCT vertreter_user_id FROM vertretungen WHERE bereich='fertigung' AND von<=date('now','localtime') "
                        "AND bis>=date('now','localtime')").fetchall():
@@ -92,6 +92,11 @@ def aktuell(c, art, objekt_id, pid=None):
     if art == "fertigungsort":
         r = c.execute("SELECT fertigungsort FROM projekte WHERE id=?", (objekt_id,)).fetchone()
         return {"fertigungsort": r[0] or ""} if r else None
+    if art == "termine":  # R29-C
+        if not c.execute("SELECT 1 FROM projekte WHERE id=?", (objekt_id,)).fetchone():
+            return None
+        import besprechung
+        return {"text": besprechung.termine_text(c, objekt_id)}
     o = _opl(c, objekt_id)
     if not o:
         return None
@@ -116,6 +121,8 @@ def _nachher(art, b):
         return {"fertigungsort": str(n.get("fertigungsort") or "").strip()[:120]}
     if art == "frist":
         return {"text": str(n.get("text") or "").strip()[:80]}
+    if art == "termine":  # R29-C
+        return {"text": "\n".join(z.strip() for z in str(n.get("text") or "").split("\n") if z.strip())[:20000]}
     if art == "status":
         return {"erledigt": bool(n.get("erledigt"))}
     if art == "text":
@@ -235,7 +242,7 @@ def antrag_neu(ctx):
         pid, oid, objekt = to_int(b.get("projekt_id"), "projekt_id", allow_none=False), None, "opl"
         if not db.q1("SELECT 1 x FROM projekte WHERE id=?", (pid,)):
             raise ApiError(404, "Projekt nicht gefunden")
-    elif art == "fertigungsort":
+    elif art in ("fertigungsort", "termine"):  # R29-C: termine wie fertigungsort am Projekt
         pid = oid = to_int(b.get("projekt_id") or b.get("objekt_id"), "projekt_id", allow_none=False)
         objekt = "projekt"
         if not db.q1("SELECT 1 x FROM projekte WHERE id=?", (pid,)):
@@ -288,6 +295,11 @@ def _anwenden(ctx, a):
     if art == "fertigungsort":
         fertigungsort_setzen(_sub_ctx(ctx, {"fertigungsort": n.get("fertigungsort"), "change_id": cid + "ort"},
                                       {"id": str(a["objekt_id"])}, zus))
+        return None
+    if art == "termine":  # R29-C
+        import besprechung
+        ctx.db.write(ctx.user, "fb_termine", lambda c: {"text": besprechung.termine_anwenden(
+            c, ctx.db, {**ctx.user, "_zusatz": zus}, a["objekt_id"], n.get("text") or "")}, cid + "termine", {"id": a["objekt_id"]})
         return None
     if art == "frist":
         fertigung.klaerung(_sub_ctx(ctx, {"text": n.get("text") or "", "change_id": cid + "frist"}, {"id": str(a["objekt_id"])}, zus))

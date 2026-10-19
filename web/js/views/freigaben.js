@@ -37,7 +37,8 @@ export function mount(el, r) {
     const kopfZeile = h('div', { class: 'fg-karte-kopf' },
       h('strong', { class: 'fg-name' }, f.dateiname), fgStatusChip(f.status),
       h('span', { class: 'small muted' }, `${fmtSize(f.groesse)} · ${f.hochgeladen_von_name || '?'} · ${fmtDateTime(f.zeit)}`));
-    const bezug = h('a', { class: 'small fg-bezug', href: '#/opl/' + f.opl_id }, `#${f.opl_id} ${f.opl_titel || ''}`, f.projekt_nummer ? ` · ${f.projekt_nummer}` : '');
+    const bezug = f.opl_id == null ? h('span', { class: 'small fg-bezug' }, 'Import', f.projekt_nummer ? ` · ${f.projekt_nummer}` : '') // R29-B: aus Import (ohne Punkt)
+      : h('a', { class: 'small fg-bezug', href: '#/opl/' + f.opl_id }, `#${f.opl_id} ${f.opl_titel || ''}`, f.projekt_nummer ? ` · ${f.projekt_nummer}` : '');
     const teile = [kopfZeile, bezug];
     if (f.status === 'wartend' && f.darf_entscheiden) {
       const typ = select([['', '– Dokumenttyp wählen –'], ...typen.map(t => [t.key, t.name])], f.vorschlag_dokumenttyp || '', { 'data-testid': 'fg-typ' });

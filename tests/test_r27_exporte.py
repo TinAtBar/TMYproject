@@ -114,12 +114,14 @@ class ExportApiTest(unittest.TestCase):
         pid = self.p["id"]
         body, ct = multipart("datei", "x.xlsx", b"PK-inhalt")
         r = self.call(self.pm, "POST", f"/api/export/ablegen?projekt_id={pid}&art=bericht&titel=Wochenbericht&endung=xlsx", raw=body, ctype=ct)
-        self.assertEqual(r["dokumenttyp"], "Berichte")
-        ordner = next(self.share.iterdir()) / "Berichte"
+        self.assertEqual(r["dokumenttyp"], "Besprechungsprotokolle")  # R29-A: Firmenstruktur 2.1.3_Protokolle_PM
+        ordner = next(self.share.iterdir()) / "2.1_PM" / "2.1.3_Protokolle_PM"
         self.assertEqual([f.name for f in ordner.iterdir()], [r["name"]])
         self.assertTrue(r["name"].startswith("2026-001-00 Wochenbericht "))
         r2 = self.call(self.pm, "POST", f"/api/export/ablegen?projekt_id={pid}&art=bericht&titel=Wochenbericht&endung=xlsx", raw=body, ctype=ct)
-        self.assertNotEqual(r["name"], r2["name"])  # nichts überschreiben
+        # R29-A: Voreinstellung „neue Version“ – alte Fassung liegt unverändert in 00_alt (nichts überschrieben)
+        self.assertEqual((r2["name"], r2["alt"]), (r["name"], "00_alt/" + r["name"][:-5] + "_R01.xlsx"))
+        self.assertEqual((ordner / r2["alt"]).read_bytes(), b"PK-inhalt")
         self.assertEqual(self.call(self.pm, "POST", f"/api/export/ablegen?projekt_id={pid}&art=kickoff&titel=Kick-Off&endung=docx",
                                    raw=body, ctype=ct)["dokumenttyp"], "Kick-Off")
         for q, st in ((f"projekt_id={pid}&art=xyz&titel=a&endung=xlsx", 400), (f"projekt_id={pid}&art=opl&titel=a&endung=exe", 400),

@@ -33,9 +33,12 @@ import { off as offState } from './offline/index.js'; // R26-M: Abgleich-Status 
 import { bellButton, themeButton, paletteButton, renderForcedPw, addRecent } from './extras.js';
 import { ladeAnmeldeInfo, istDomaenenBenutzer } from './anmeldung.js'; // R28-G1: Windows-Domäne
 import * as Archiv from './views/archiv.js';
+import * as ImportView from './views/import.js'; // R29-B (128): Import/Eingangskorb
+import * as Vorschlaege from './views/vorschlaege.js'; // R29-F (109)
 import * as MeineAufgaben from './views/meine-aufgaben.js'; import * as Freigaben from './views/freigaben.js'; import { nurEigene } from './rechte.js'; // R28-M/G11
 import * as Meldungen from './views/meldungen.js'; import { meldenButton, meldenDialog } from './ticket.js'; // R28-G10: Problem melden / Idee
 import * as Fertigung from './views/fertigung.js'; // R5-F: Fertigungsbesprechung + OPL-Projektkacheln
+import * as Praesentation from './views/praesentation.js'; // R29-C (120): Präsentationsfenster
 import { DESIGNS, MODI, SB_MIN, SB_MAX, getPrefs, setPrefs, setDesign, fromUser, apply as applyDarstellung, effectiveScheme, onDarstellung, SYMBOL_MODI, KOPF_MODI, listenOptik, setListenOptik, DSTILE } from './darstellung.js'; // R28-D: + DSTILE
 import { loadRechte, darf, navErlaubt, projektHref, ROLLE_ANZEIGE } from './rechte.js'; // R26-E: Rechte-Matrix
 import { ladeMasken } from './formular.js'; // R26-H: Masken (Beschriftung/Pflicht/Zusatzfelder)
@@ -99,12 +102,13 @@ const NAV = [
   ['start', 'Start', 'home', '/start'],
   ['projekte', 'Projekte', 'folder', '/projekte'],
   ['opl', 'OPL', 'list', '/opl'],
-  ['fertigung', 'Fertigungsbespr.', 'users', '/fertigung'], // R5-F
+  ['fertigung', 'Fertigungsbespr.', 'fertigung', '/fertigung'], // R5-F // R29-G: eigenes Symbol
   ['kalender', 'Kalender', 'cal', '/kalender'],
-  ['angebote', 'Angebote', 'euro', '/angebote'],
+  ['angebote', 'Angebote', 'angebot', '/angebote'], // R29-G: eigenes Symbol
+  ['import', 'Import', 'import', '/import'], // R29-B (128)
   ['archiv', 'Archiv', 'archive', '/archiv'],
 ];
-const TABBAR = NAV.filter(n => n[0] !== 'archiv' && n[0] !== 'fertigung'); // R5-F: fertigung nicht in Tabbar // Handy: 5 Reiter, Archiv über Profil-Menü
+const TABBAR = NAV.filter(n => n[0] !== 'archiv' && n[0] !== 'fertigung' && n[0] !== 'import'); // R29-B: Import nicht in Tabbar // R5-F: fertigung nicht in Tabbar // Handy: 5 Reiter, Archiv über Profil-Menü
 function renderShell() {
   clear(root);
   const nav = h('nav', { class: 'nav', 'aria-label': 'Hauptnavigation' },
@@ -128,6 +132,7 @@ function renderShell() {
   const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Navigation' }, TABBAR.filter(n => navErlaubt(n[0])).map(([k, l, ic, p]) => h('a', { href: '#' + p, dataset: { nav: k } }, icon(ic, 22), l)));
   root.append(h('div', { class: 'app' }, sidebar, topbar, bannerEl, mainEl, tabbar, plus));
   applyDarstellung();
+  if (navErlaubt('import')) ImportView.importZaehlerStarten(); // R29-B: Zähler „noch zuordnen“
 }
 let offDs = null;
 function toggleRail() { setPrefs({ sidebar_eingeklappt: !getPrefs().sidebar_eingeklappt }); }
@@ -332,8 +337,11 @@ route('/angebote/:id', Angebote);
 route('/einstellungen', Einstellungen);
 route('/archiv', Archiv);
 route('/meldungen', Meldungen); // R28-G10
+route('/import', ImportView); // R29-B (128)
 route('/meine-aufgaben', MeineAufgaben); route('/freigaben', Freigaben); // R28-M/G11
+route('/vorschlaege', Vorschlaege); // R29-F (109)
 route('/fertigung', Fertigung); route('/fertigung/druck', Fertigung); // R5-F
+route('/praesentation', Praesentation); // R29-C (120)
 route('/sn/:id', SnDetail);
 route('/uebersicht', Uebersicht);
 route('/protokoll', Protokoll);
@@ -352,7 +360,7 @@ onRoute(async r => {
   const top = r.path.split('/')[1];
   document.querySelectorAll('[data-nav]').forEach(a => { if (a.dataset.nav === top) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (nurEigene() && (r.path === '/start' || r.path === '/projekte')) { go('/meine-aufgaben', true); return; } // R28-M: Mitarbeiter → Meine Aufgaben
-  if ({ angebote: 1, archiv: 1, fertigung: 1 }[top] && (!navErlaubt(top) || (nurEigene() && top === 'fertigung'))) { toast('Kein Zugriff auf diesen Bereich'); go('/start', true); return; } // R28-E2E: Direktaufruf ohne Recht → Start statt Fehlerseite
+  if ({ angebote: 1, archiv: 1, fertigung: 1, import: 1 }[top] && (!navErlaubt(top) || (nurEigene() && top === 'fertigung'))) { toast('Kein Zugriff auf diesen Bereich'); go('/start', true); return; } // R28-E2E: Direktaufruf ohne Recht → Start statt Fehlerseite
   if (r.path.startsWith('/projekte/') && r.params && r.params.id && !darf('projekte_details')) { location.replace(projektHref(r.params.id)); return; } // R26-E (vor update/destroy, sonst bleibt die alte View aktiv und die Seite leer): Controlling → OPL des Projekts
   // Gleiche View, nur Parameter geändert → update statt Neuaufbau
   if (activeView && activeView.module === r.view && activeView.update && activeView.update(r) !== false) return;

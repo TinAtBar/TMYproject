@@ -54,7 +54,11 @@ class AblageTest(unittest.TestCase):
 
     def test_standardtypen_und_muster(self):
         tt = ablage.typen(self.db.conn)
-        self.assertEqual([t["name"] for t in tt], ["Spezifikationen", "SV zu Kunde", "SV von Kunde", "Kick-Off", "Terminpläne", "Besprechungsprotokolle", "Bestellung", "Berichte"])  # R27: + Bestellung, Berichte
+        # R29-A: Voreinstellung = Firmenstruktur (Musterordner), Verkauf 1.x getrennt
+        self.assertEqual([t["name"] for t in tt if t["bereich"] == "doku"],
+                         ["Spezifikationen", "Besprechungsprotokolle", "Kick-Off", "Terminpläne", "SV von Kunde", "SV zu Kunde",
+                          "Entwurfsprüfung", "Zertifizierungsstelle", "Enddoku", "Umstempelbescheinigung"])
+        self.assertIn("Bestellung", [t["name"] for t in tt if t["bereich"] == "verkauf"])
         self.assertTrue(all(t["farbe"] in ablage.PASTELL for t in tt))
         self.assertEqual(ablage.projektordner(self.db.conn, {"nummer": "2026-1", "bezeichnung": "A/B..\\C"}),
                          str(self.share) + os.sep + "2026-1 A-B..-C")
@@ -65,17 +69,18 @@ class AblageTest(unittest.TestCase):
         self.assertTrue(u["darf_hochladen"])
         r = self.upload(self.pm, "typ:spezifikationen", "Spez ä.pdf", b"%PDF-1")
         self.assertEqual(r["name"], "Spez ä.pdf")
-        r2 = self.upload(self.pm, "typ:spezifikationen", "Spez ä.pdf", b"%PDF-2")
-        self.assertEqual(r2["name"], "Spez ä (2).pdf")
+        r2 = self.upload(self.pm, "typ:spezifikationen", "Spez ä.pdf", b"%PDF-2")  # R29-A: Voreinstellung „neue Version“
+        self.assertEqual((r2["name"], r2["alt"]), ("Spez ä.pdf", "00_alt/Spez ä_R01.pdf"))
         u = self.call(self.ma, "GET", f"/api/projekte/{self.p['id']}/dokumente")
         k = next(t for t in u["typen"] if t["key"] == "spezifikationen")
         self.assertEqual(k["anzahl"], 2)
         self.assertTrue(u["ordner_existiert"])
         self.assertFalse(u["darf_hochladen"])
         li = self.call(self.ma, "GET", f"/api/projekte/{self.p['id']}/dokumente/liste?quelle=typ:spezifikationen")
-        self.assertEqual({e["von"] for e in li["eintraege"]}, {self.pm["name"]})
+        self.assertEqual({e["von"] for e in li["eintraege"] if e["typ"] == "datei"}, {self.pm["name"]})
+        self.assertIn("00_alt", [e["name"] for e in li["eintraege"] if e["typ"] == "ordner"])  # R29-A
         d = self.call(self.ma, "GET", f"/api/projekte/{self.p['id']}/dokumente/datei?quelle=typ:spezifikationen&rel=Spez%20%C3%A4.pdf".replace("%20", " ").replace("%C3%A4", "ä"))
-        self.assertEqual(d["_raw"], b"%PDF-1")
+        self.assertEqual(d["_raw"], b"%PDF-2")
         self.assertFalse(d["_inline"])
 
     def test_rechte(self):
@@ -108,7 +113,7 @@ class AblageTest(unittest.TestCase):
             with self.assertRaises(ApiError):
                 self.call(self.pm, "GET", f"/api/projekte/{self.p['id']}/dokumente/datei?quelle=typ:kickoff&rel={rel}")
         # Symlink aus der Ablage heraus wird per realpath abgewiesen
-        ziel = Path(ablage.projektordner(self.db.conn, self.p)) / "Kick-Off" / "link.txt"
+        ziel = Path(ablage.projektordner(self.db.conn, self.p)) / "2.1_PM" / "2.1.3_Protokolle_PM" / "2.1.3.1_Kick-Off" / "link.txt"
         try:
             os.symlink(geheim, ziel)
         except (OSError, NotImplementedError):
@@ -137,10 +142,10 @@ class AblageTest(unittest.TestCase):
         self.assertEqual((e["farbe"], e["anzahl"]), ("flieder", 1))
         self.db.conn.execute("INSERT INTO ablage_eigene(projekt_id,name,pfad,farbe) VALUES(NULL,'Normen',?, 'sand')",
                              (str(Path(self.tmp.name) / "fehlt"),))
-        res = ablage.pfade_pruefen(self.db.conn)
-        self.assertTrue(res[0]["ok"])
-        self.assertEqual({r["name"]: r["ok"] for r in res}["Normen (global)"], False)
-        self.assertEqual(len(self.call(self.admin, "GET", "/api/ablage/pruefen")["pfade"]), 3)
+        res = {r["name"]: r["ok"] for r in ablage.pfade_pruefen(self.db.conn)}
+        self.assertTrue(res["Projektordner-Basis (alt)"])
+        self.assertEqual(res["Normen (global)"], False)
+        self.assertEqual(len(self.call(self.admin, "GET", "/api/ablage/pruefen")["pfade"]), 5)  # R29-A: + 2 Wurzeln
         ablage.start_pruefung(self.db).join(5)
         self.call(self.pm, "DELETE", f"/api/ablagen/{a['id']}")
         self.assertTrue((extra / "z.dwg").exists())
@@ -148,13 +153,14 @@ class AblageTest(unittest.TestCase):
     def test_ordner_anlegen_und_explorer(self):
         self.call(self.pm, "POST", f"/api/projekte/{self.p['id']}/dokumente/ordner-anlegen", {})
         basis = Path(ablage.projektordner(self.db.conn, self.p))
-        self.assertTrue((basis / "Terminpläne").is_dir())
+        self.assertTrue((basis / "2.1_PM" / "2.1.4_Terminpläne_PM").is_dir())
         self.call(self.pm, "POST", f"/api/projekte/{self.p['id']}/dokumente/ordner-anlegen", {"quelle": "typ:kickoff", "name": "Rev 1"})
-        self.assertTrue((basis / "Kick-Off" / "Rev 1").is_dir())
+        kick = basis / "2.1_PM" / "2.1.3_Protokolle_PM" / "2.1.3.1_Kick-Off"
+        self.assertTrue((kick / "Rev 1").is_dir())
         with self.assertRaises(ApiError):
             self.call(self.pm, "POST", f"/api/projekte/{self.p['id']}/dokumente/ordner-anlegen", {"quelle": "typ:kickoff", "sub": "..", "name": "x"})
         r = self.call(self.ma, "GET", f"/api/projekte/{self.p['id']}/dokumente/explorer-pfad?quelle=typ:kickoff")
-        self.assertEqual(r["pfad"], str(basis / "Kick-Off"))
+        self.assertEqual(r["pfad"], str(kick))
 
     def test_upload_grenze(self):
         self.assertTrue(ablage.ist_upload_pfad(f"/api/projekte/{self.p['id']}/dokumente/hochladen"))

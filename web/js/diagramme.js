@@ -29,12 +29,19 @@ export function fugen(cx, cy, r, sw, n = 40) {
 }
 
 /** „Schöne“ Achsenteilung: Obergrenze + Schrittweite (1/2/5 × 10^n). */
+// R29-H (112): nur ganzzahlige Schritte (Anzahlen) → keine doppelten Beschriftungen wie „1, 1“; ohne Daten nur 0.
 export function achse(max, schritte = 4) {
-  if (!(max > 0)) return { max: 4, schritt: 1 };
-  const roh = max / schritte;
+  if (!(max > 0)) return { max: 0, schritt: 1 };
+  const roh = Math.max(1, max / schritte);
   const p = Math.pow(10, Math.floor(Math.log10(roh)));
-  const schritt = [1, 2, 5, 10].map(f => f * p).find(x => x >= roh);
+  const schritt = Math.max(1, [1, 2, 5, 10].map(f => f * p).find(x => x >= roh));
   return { max: Math.ceil(max / schritt) * schritt, schritt };
+}
+/** R29-H (112): Tick-Werte einer Achse (eindeutig, aufsteigend). */
+export function achsenTicks(ax) {
+  const out = [];
+  for (let v = 0; v <= ax.max + 1e-9; v += ax.schritt) out.push(Math.round(v));
+  return [...new Set(out)];
 }
 
 export function sparkline(werte, o = {}) {
@@ -55,15 +62,17 @@ export function linien(o) {
   const labels = o.labels || [];
   const n = labels.length;
   const alle = o.reihen.flatMap(r => r.werte);
-  const ax = achse(Math.max(1, ...alle));
+  const ax = achse(Math.max(0, ...alle));
+  const leer = !(ax.max > 0); // R29-H (112): keine Werte → nur 0-Linie + Hinweis
   const x = i => L + (n <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
-  const y = v => T + (1 - v / ax.max) * (H - T - B);
+  const y = v => leer ? H - B : T + (1 - v / ax.max) * (H - T - B);
   const svg = s('svg', { class: 'dg-linien', viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': o.label || 'Liniendiagramm', preserveAspectRatio: 'xMidYMid meet' });
   const titel = s('title', {}, o.label || ''); svg.append(titel);
-  for (let v = 0; v <= ax.max + 1e-9; v += ax.schritt) {
+  for (const v of achsenTicks(ax)) {
     svg.append(s('line', { class: 'dg-gitter', x1: L, x2: W - R, y1: r1(y(v)), y2: r1(y(v)) }),
-      s('text', { class: 'dg-achse', x: L - 6, y: r1(y(v)) + 4, 'text-anchor': 'end' }, String(Math.round(v))));
+      s('text', { class: 'dg-achse', x: L - 6, y: r1(y(v)) + 4, 'text-anchor': 'end' }, String(v)));
   }
+  if (leer) svg.append(s('text', { class: 'dg-leer', x: r1((W + L - R) / 2), y: r1((H - B) / 2), 'text-anchor': 'middle' }, o.leerText || 'Noch keine Daten im Zeitraum'));
   const jede = n > 9 ? Math.ceil(n / 7) : 1;
   labels.forEach((l, i) => { if (i % jede === 0 || i === n - 1) svg.append(s('text', { class: 'dg-achse', x: r1(x(i)), y: H - 6, 'text-anchor': 'middle' }, l)); });
   for (const r of o.reihen) {
@@ -80,7 +89,11 @@ export function ring(o) {
   const teile = (o.teile || []).filter(t => t.wert > 0);
   const summe = teile.reduce((a, t) => a + t.wert, 0);
   const R = 52, SW = 18, U = 2 * Math.PI * R;
-  const svg = s('svg', { class: 'dg-ring', viewBox: '0 0 140 140', role: 'img', 'aria-label': o.label || 'Ringdiagramm' });
+  const svg = s('svg', { class: 'dg-ring' + (summe ? '' : ' dg-ring-ohne'), viewBox: '0 0 140 140', role: 'img', 'aria-label': o.label || 'Ringdiagramm' });
+  if (!summe) { // R29-H (119): ohne Werte kein leerer Ring – nur Hinweis
+    svg.append(s('text', { class: 'dg-ring-unter', x: 70, y: 74, 'text-anchor': 'middle' }, o.leerText || 'noch keine Daten'));
+    return svg;
+  }
   svg.append(s('circle', { class: 'dg-ring-spur', cx: 70, cy: 70, r: R, 'stroke-width': SW, fill: 'none' }));
   let pos = 0;
   const luecke = teile.length > 1 ? 1.5 : 0;

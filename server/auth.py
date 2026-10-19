@@ -115,7 +115,7 @@ class Rechte:
 
     def kann_opl_schreiben(self, projekt_id):
         # mitarbeiter: OPL anlegen/bearbeiten überall; pm: nur in eigenen Projekten (sonst nur lesen)
-        if self.admin or self.u["rolle"] in ("mitarbeiter", "controlling"):  # R26-E: Controlling pflegt OPL aller Projekte
+        if self.admin or self.u["rolle"] in ("mitarbeiter", "controlling", "leiter"):  # R29-F leiter; R26-E: Controlling pflegt OPL aller Projekte
             return True
         if __import__("fertigung").ist_allgemein(self.db, projekt_id):  # R5-F: Allgemein – alle PMs dürfen
             return True
@@ -140,7 +140,7 @@ class Rechte:
 
     def meine_projekte(self):
         """Projekte für Kalender/Dashboard „meine Projekte“. None = alle."""
-        if self.admin or self.u["rolle"] == "controlling":  # R26-E
+        if self.admin or self.u["rolle"] in ("controlling", "leiter"):  # R26-E, R29-F
             return None
         if self.u["rolle"] == "pm":
             return self.pm_projekte()

@@ -48,9 +48,9 @@ function bgSelect(baugruppen, bgid) {
 }
 
 /** Neuer oder bestehender freier Termin. */
-export function terminDialog({ projekt, baugruppen, bgid = null, termin = null, onDone }) {
+export function terminDialog({ projekt, baugruppen, bgid = null, termin = null, datum = null, onDone }) { // R29-H: datum = Vorbelegung (Doppelklick im Kalender)
   const name = h('input', { value: termin ? termin.name : '', maxlength: 120, placeholder: 'z. B. Beschichtung, Probelauf, Abnahme Kunde' });
-  const ein = terminEingabe(termin);
+  const ein = terminEingabe(termin || (datum ? { datum, kw: 0 } : null));
   const ist = h('input', { type: 'date', value: termin ? termin.ist_datum || '' : '' });
   const menge = h('input', { value: termin ? termin.menge || '' : '', placeholder: 'optional, z. B. 2 Stk.' });
   const fuer = termin ? null : bgSelect(baugruppen, bgid);

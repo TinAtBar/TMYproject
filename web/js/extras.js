@@ -34,6 +34,7 @@ export async function refreshBell() {
 function setUnread(n) {
   unread = n; if (!bellCount) return;
   bellCount.hidden = !n; bellCount.textContent = n > 99 ? '99+' : String(n);
+  bellBtn.classList.toggle('bell-neu', !!n); // R29-G (121): Glocke nur bei Ungelesenem gefüllt
   bellBtn.setAttribute('aria-label', n ? `Benachrichtigungen, ${n} ungelesen` : 'Benachrichtigungen');
 }
 // R5-D: Symbol je Benachrichtigungsart aus semantik.js
@@ -88,7 +89,7 @@ export function openPalette(extraActions = []) {
     { t: 'OPL – überfällige', s: 'Seite', ic: 'alarm', fn: () => go('/opl?status_art=offen&ueberfaellig=1') },
     { t: 'Kalender', s: 'Seite', ic: 'cal', fn: () => go('/kalender') },
     { t: 'Angebote & Nachträge', s: 'Seite', ic: 'euro', fn: () => go('/angebote') },
-    { t: 'Baubesprechung drucken (Protokoll)', s: 'Druck', ic: 'doc', fn: () => go('/protokoll?status_art=offen') },
+    { t: 'Übersicht / Protokoll drucken', /* R29-F */ s: 'Druck', ic: 'doc', fn: () => go('/protokoll?status_art=offen') },
     { t: 'Design wechseln (hell/dunkel)', s: 'Aktion', ic: 'moon', fn: () => toggleTheme() },
     { t: 'Archiv (archivierte Projekte & Angebote)', s: 'Seite', ic: 'archive', fn: () => go('/archiv') },
     { t: 'Seitenleiste ein-/ausklappen', s: 'Aktion · Strg+B', ic: 'sidebar', fn: () => document.querySelector('.sb-toggle')?.click() },

@@ -261,7 +261,7 @@ export function oplList(host, opts = {}) {
     ].filter(Boolean));
   }
   function saveFirmaView() { // R26-H
-    const name = h('input', { placeholder: 'z. B. Baubesprechung' });
+    const name = h('input', { placeholder: 'z. B. Übersicht' } /* R29-F */);
     dialog({
       title: 'Als Firmenstandard speichern', body: field('Name', name, 'Alle Benutzer sehen diese Ansicht in ihrer Ansichtsauswahl (nur lesen, „als eigene kopieren“). Verwalten: Admin-Konsole → Masken & Ansichten.'),
       actions: [{ label: 'Abbrechen', cls: 'btn-ghost' }, { label: 'Speichern', cls: 'btn-primary', fn: async () => { const n = name.value.trim(); if (!n) { toast('Bitte einen Namen eingeben.', 'error'); return false; } await post('/ansichten/firma', { liste: 'opl', name: n, ansicht: { f: { ...f }, group: groupBy, tab: tab.state() }, change_id: uuid() }); toast(`Firmenstandard „${n}“ gespeichert.`, 'ok'); } }]
@@ -294,7 +294,7 @@ export function oplList(host, opts = {}) {
         h('a', { class: 'btn btn-sm', href: exportHref, download: 'opl.xlsx', title: 'Excel-Export (Spalten wie angezeigt)' }, icon('download', 16), 'Excel'),
         h('a', { class: 'btn btn-sm', href: csvHref, download: 'opl.csv', title: 'CSV-Export (Spalten wie angezeigt)' }, icon('download', 16), 'CSV'),
         h('button', { type: 'button', class: 'btn btn-sm', title: 'Liste drucken oder als PDF speichern (Spalten, Reihenfolge und Filter wie angezeigt)', onclick: async () => { const ex = await import('../export.js'); const k = await ex.kopfLaden('Offene Punkte', { projektId: /^\d+$/.test(String(ep.projekt_id || '')) ? ep.projekt_id : null }); tab.drucken('Offene Punkte', { kopf: ex.kopfElement(k.kopf), dateiname: k.dateiname }); } }, icon('doc', 16), 'Drucken'), // R27-108
-        h('a', { class: 'btn btn-sm', href: '#/protokoll' + qs(protoQ), title: 'Druckansicht für die Baubesprechung' }, icon('doc', 16), 'Protokoll'),
+        h('a', { class: 'btn btn-sm', href: '#/protokoll' + qs(protoQ), title: 'Übersicht / Protokoll drucken' /* R29-F */ }, icon('doc', 16), 'Protokoll'),
         /^\d+$/.test(String(ep.projekt_id || '')) ? oplAblegen(ep.projekt_id, exportHref) : null, // R27-108
         h('span', { class: 'kbd-hint hide-phone' }, h('span', null, h('kbd', null, 'j'), h('kbd', null, 'k'), ' bewegen'), h('span', null, h('kbd', null, '↵'), ' öffnen'), h('span', null, h('kbd', null, 'x'), ' wählen'), h('span', null, h('kbd', null, 'n'), ' neu'))));
   }
@@ -379,6 +379,7 @@ export function oplList(host, opts = {}) {
     return out;
   }
   function zustRest(it, chips) {
+    if (typeof it.zustaendig_rest === 'string' && Array.isArray(it.zustaendig_chips)) return it.zustaendig_rest; // R29-F (115): Server entfernt auch „V. Nachname“
     let t = it.zustaendig_text || '';
     for (const c of chips) t = t.replace(new RegExp(c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), '');
     // R27-102: Kurzname/Initialen der erkannten Personen nicht zusätzlich anzeigen (z. B. „P. B“, „PB“, „M.1“)

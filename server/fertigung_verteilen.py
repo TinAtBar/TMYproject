@@ -72,7 +72,7 @@ def dateiname(muster, stand):
 
 
 def _need(ctx):
-    if ctx.user["rolle"] not in ("admin", "pm", "controlling") or not rechte.darf(ctx.user, "fertigung", "bearbeiten", ctx.db):
+    if ctx.user["rolle"] not in ("admin", "pm", "controlling", "leiter") or not rechte.darf(ctx.user, "fertigung", "bearbeiten", ctx.db):
         raise ApiError(403, "Keine Berechtigung: Verteilen nur für Admin, Projektleiter oder Controlling")
 
 

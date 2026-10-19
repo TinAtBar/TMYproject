@@ -215,7 +215,7 @@ class Db106Test(unittest.TestCase):
         keys = [t["key"] for t in ablage.typen(self.db.conn)]
         self.assertIn("bestellung", keys)
         bt = next(t for t in ablage.typen(self.db.conn) if t["key"] == "bestellung")
-        self.assertEqual((bt["ordner"], bt["farbe"]), ("Bestellung", "rosa"))
+        self.assertEqual((bt["ordner"], bt["farbe"], bt["bereich"]), ("1.2_Bestellung und AB/Hauptauftrag", "rosa", "verkauf"))  # R29-A
         # Bestehende Admin-Anpassung: eigene Liste ohne Bestellung → wird ergänzt, Anpassungen bleiben
         c = self.db.conn
         firma.set(c, bestellung.MERKER, None)

@@ -1,4 +1,4 @@
-"""R2.6 Paket C2: Stunden-Budget, Ampel, Ist-Stunden, Reststunden-Abruf (Platzhalter-Parser), Bericht."""
+"""R2.6 Paket C2: Stunden-Budget, Ampel, Ist-Stunden, Reststunden-Abruf, Bericht (Parser: test_r29_reststunden)."""
 import datetime as dt
 import os
 import sys
@@ -131,13 +131,14 @@ class DbTest(unittest.TestCase):
         self.assertEqual(bericht.zeitraum_von_bis("woche", dt.date(2026, 10, 16))[2], "KW 42/2026")
         self.assertEqual(bericht.zeitraum_von_bis("monat", dt.date(2026, 12, 16))[1], dt.date(2026, 12, 31))
 
-    def test_reststunden_abruf_platzhalter(self):
-        with self.assertRaises(NotImplementedError):
-            reststunden.einlesen("x.xlsx")
+    def test_reststunden_abruf_ordner(self):
+        # R29-E: Parser umgesetzt (Details in test_r29_reststunden); hier Ordner-Quelle mit Muster + Dateidatum
+        firma.set(self.c, "reststunden.quelle", "")
         self.assertEqual(reststunden.abrufen(self.db)["ergebnis"], "kein_verzeichnis")
         quelle = Path(self.tmp.name) / "netz"
         quelle.mkdir()
-        firma.set(self.c, "reststunden.verzeichnis", str(quelle))
+        firma.set(self.c, "reststunden.quelle", str(quelle))
+        firma.set(self.c, "reststunden.muster", "Reststunden*.xlsx")
         self.assertEqual(reststunden.abrufen(self.db)["ergebnis"], "keine_datei")
         (quelle / "Reststunden_KW40.xlsx").write_bytes(b"alt")
         (quelle / "andere.xlsx").write_bytes(b"x")
@@ -147,29 +148,12 @@ class DbTest(unittest.TestCase):
         os.utime(quelle / "Reststunden_KW40.xlsx", (t - 86400 * 7, t - 86400 * 7))
         os.utime(neu, (t, t))
         r = reststunden.abrufen(self.db, None, "manuell")
-        self.assertEqual((r["ergebnis"], r["datei"], r["datei_datum"], r["kw"]), ("wartet", "Reststunden_KW41.xlsx", "2026-10-07", "KW 41/2026"))
+        self.assertEqual((r["ergebnis"], r["datei"], r["datei_datum"], r["kw"]), ("fehler", "Reststunden_KW41.xlsx", "2026-10-07", "KW 41/2026"))
         self.assertTrue((Path(self.tmp.name) / "reststunden" / "Reststunden_KW41.xlsx").exists())
-        self.assertEqual(reststunden.abrufen(self.db)["ergebnis"], "unveraendert")
         s = reststunden.status(self.db, {"rolle": "pm"})
-        self.assertFalse(s["parser_bereit"])
-        self.assertEqual(s["parser_meldung"], "Einlesen wartet auf Beispieldatei")
-        self.assertEqual(s["stand_kw"], "KW 41/2026")
-        self.assertTrue(s["hinweis"])  # Stand älter als 7 Tage
+        self.assertTrue(s["parser_bereit"])
+        self.assertTrue(s["hinweis"])  # noch kein gültiger Stand
         self.assertFalse(reststunden.status(self.db, {"rolle": "mitarbeiter"})["hinweis"])
-
-    def test_reststunden_uebernahme_wenn_parser_bereit(self):
-        alt = reststunden.einlesen
-        reststunden.einlesen = lambda p: [{"auftragsnummer": "2026-101-00", "abteilung": "Schweißen", "ist_stunden": 40},
-                                          {"auftragsnummer": "2099-999-00", "abteilung": "QS", "ist_stunden": 1}]
-        try:
-            f = Path(self.tmp.name) / "r.xlsx"
-            f.write_bytes(b"x")
-            r = reststunden.verarbeiten(self.db, None, str(f), "upload", "2026-10-14")
-        finally:
-            reststunden.einlesen = alt
-        self.assertEqual((r["ergebnis"], r["zeilen"]), ("ok", 1))
-        u = {a["name"]: a for a in budget.uebersicht(self.c, 1)}
-        self.assertEqual((u["Schweißen"]["ist"], u["Schweißen"]["ist_stand"]), (40, "2026-10-14"))
 
     def test_kurz_rechte(self):
         for rolle, ok in (("admin", True), ("pm", True), ("controlling", True), ("mitarbeiter", False)):
@@ -209,12 +193,12 @@ class ApiTest(unittest.TestCase):
         self.assertNotIn("soll", e)
         self.assertEqual(ma.get("/api/budget/kurz")[0], 403)
         st, s, _ = pm1.get("/api/reststunden/status")
-        self.assertEqual((st, s["parser_bereit"]), (200, False))
-        self.assertEqual(pm1.post("/api/reststunden/abrufen")[1]["ergebnis"], "kein_verzeichnis")
+        self.assertEqual((st, s["parser_bereit"]), (200, True))
+        self.assertEqual(pm1.post("/api/reststunden/abrufen")[1]["ergebnis"], "fehler")  # R29-E: Standardquelle nicht erreichbar
         self.assertEqual(ma.get("/api/reststunden/status")[0], 403)
         body, ct = test_server.multipart("datei", "Reststunden_KW42.xlsx", b"PK")
         st, u, _ = pm1.req("POST", "/api/reststunden/upload", raw=body, ctype=ct)
-        self.assertEqual((st, u["ergebnis"]), (200, "wartet"), u)
+        self.assertEqual((st, u["ergebnis"]), (200, "fehler"), u)  # R29-E: keine gültige Excel-Datei
         st, data, h = pm1.get(f"/api/bericht.xlsx?projekt_id={p['id']}&zeitraum=monat")
         self.assertEqual(st, 200)
         self.assertIn("Übersicht", xlsx.mappe(data))

@@ -118,6 +118,50 @@ def erkennen(text, us):
     return ids
 
 
+def _alnum(s):
+    return re.sub(r"[^0-9a-zäöüß]", "", (s or "").lower())
+
+
+_ANREDE = {"", "hr", "herr", "fr", "frau"}
+
+
+def rest(text, chips):
+    """R29-F (Punkt 115): Freitext „Zuständig“ ohne die als Chip erkannten Personen (auch Kurzformen wie „A. Muster“,
+    „Muster A.“, Initialen „AM“). Rückgabe: übrig gebliebener Text (Einträge mit „ / “ verbunden) oder ""."""
+    if not text:
+        return ""
+    if not chips:
+        return text.strip()
+    varianten, kurz = set(), set()
+    for c in chips:
+        name = (c or {}).get("name") or ""
+        t = name.split()
+        varianten |= _varianten({"name": name, "login": ""})
+        if len(t) >= 2:
+            kurz.add(_alnum("".join(w[0] for w in t)))
+            if len(t[-1]) >= 4:
+                kurz.add(_alnum(t[-1]))
+    voll = {_alnum(v) for v in varianten} | kurz
+    namensteile = {_alnum(w) for c in chips for w in ((c or {}).get("name") or "").split()} | \
+        {_alnum(w)[:1] for c in chips for w in ((c or {}).get("name") or "").split()[:1]}
+    teile = []
+    for e in eintraege(text):
+        n = _norm(e)
+        if _alnum(n) in voll:
+            continue
+        r = n
+        for v in sorted(varianten, key=len, reverse=True):
+            if " " in v or "." in v:
+                r = re.sub(r"(?<![\w])" + re.escape(v) + r"(?![\w])", " ", r)
+        if r != n:  # Person im Eintrag gefunden – nur echten Zusatz behalten (z. B. „(TB)“)
+            rr = " ".join(w for w in e.split() if _alnum(w) not in _ANREDE and _alnum(w) not in namensteile).strip(" ,;-")
+            if rr:
+                teile.append(rr)
+            continue
+        teile.append(e)
+    return " / ".join(teile)
+
+
 # ---------------------------------------------------------------- Pflege
 def _info_kat(c):
     r = _q(c, "SELECT id FROM kategorien WHERE LOWER(TRIM(name)) IN ('info','information') ORDER BY pos LIMIT 1").fetchone()

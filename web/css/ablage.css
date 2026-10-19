@@ -54,3 +54,51 @@
 .abl-farbe { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--pastell-rand); background: var(--pastell); cursor: pointer; }
 .abl-farbe.active { outline: 3px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 760px) { .abl-grid { grid-template-columns: 1fr 1fr; } .abl-tbl th:nth-child(4), .abl-tbl td:nth-child(4) { display: none; } }
+
+/* R29-A (125/131): Bereiche, eingebauter Explorer (Baum + Liste), Zuordnen, Vorschau. Auswahl immer Navy/neutral (--select*). */
+.abl-bereiche { display: flex; flex-direction: column; gap: 6px; margin: 0 0 12px; }
+.abl-bz { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.abl-bz-leer { border-style: dashed; }
+.abl-bz-name { font-weight: 700; display: inline-flex; align-items: center; gap: 4px; min-width: 140px; }
+.abl-bz-pfad { flex: 1; min-width: 200px; word-break: break-all; color: var(--text-2); display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.abl-bz-pfad code, .abl-kand code, .abl-version-dlg code { font-size: .82rem; }
+.abl-bz-akt { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.abl-hinweis { display: flex; gap: 6px; align-items: center; margin: 0 0 0 4px; }
+.abl-explorer { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 12px; align-items: start; }
+.abl-baum { border: 1px solid var(--line); border-radius: 10px; padding: 8px; max-height: 70vh; overflow: auto; background: var(--surface); }
+.abl-baum ul { list-style: none; margin: 0; padding: 0 0 0 14px; }
+.abl-baum > .abl-baum-b > ul { padding-left: 4px; }
+.abl-baum-b + .abl-baum-b { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.abl-zeile { display: flex; align-items: center; gap: 2px; }
+.abl-pfeil { all: unset; cursor: pointer; width: 18px; text-align: center; color: var(--text-2); transition: transform .12s; flex: none; }
+.abl-pfeil.offen { transform: rotate(90deg); }
+.abl-pfeil.leer { cursor: default; }
+.abl-pfeil:focus-visible { outline: 2px solid var(--focus); }
+.abl-knoten { all: unset; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 6px; font-size: .88rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; border-left: 3px solid transparent; }
+.abl-knoten:hover { background: var(--surface-3); }
+.abl-knoten:focus-visible { outline: 2px solid var(--focus); }
+.abl-knoten.active { background: var(--select-bg); color: var(--select-text); border-left-color: var(--select-line); font-weight: 700; }
+.abl-knoten[disabled] { opacity: .55; cursor: default; }
+.abl-knoten-wurzel { font-weight: 700; width: calc(100% - 12px); }
+.abl-knoten.abl-alt { color: var(--text-2); font-style: italic; }
+.abl-knoten.abl-drop, .abl-rechts.abl-drop { outline: 3px dashed var(--select-line, currentColor); outline-offset: 1px; }
+.abl-rechts { min-width: 0; border-radius: 10px; }
+.abl-leiste { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.abl-krumen { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: .9rem; min-width: 0; word-break: break-all; }
+.abl-krumen-tr { color: var(--text-2); }
+.abl-tipp { margin: 8px 0 0; display: flex; align-items: center; gap: 4px; }
+.abl-tbl tbody tr { cursor: default; }
+.abl-tbl tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.abl-tbl tbody tr:hover { background: var(--surface-2); }
+.abl-kand { max-height: 50vh; overflow: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+.abl-kand-z { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; cursor: pointer; word-break: break-all; }
+.abl-kand-z:has(input:checked) { background: var(--select-bg); color: var(--select-text); }
+.abl-kand-z.passt { font-weight: 600; }
+.abl-vorschau { width: 100%; height: 72vh; border: 0; background: #fff; }
+.abl-vorschau-bild { max-width: 100%; max-height: 72vh; display: block; margin: 0 auto; }
+@media (max-width: 760px) {
+  .abl-explorer { grid-template-columns: 1fr; }
+  .abl-baum { max-height: 40vh; }
+  .abl-tbl th:nth-child(4), .abl-tbl td:nth-child(4) { display: none; }
+}

@@ -161,7 +161,7 @@ def stand(ctx):
             continue
         if meine is None or p["id"] in meine or (pm and p["id"] in pm) or p["id"] in allg:
             ids.append(p["id"])
-    controlling = u["rolle"] == "controlling"  # R26-M: keine Projektdetails offline
+    controlling = u["rolle"] == "controlling"  # R26-M (R29-F: Leiter darf Projektdetails lesen): keine Projektdetails offline
     oids = set()
     for pid in ids:
         if not controlling:

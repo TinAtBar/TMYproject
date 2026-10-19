@@ -4,9 +4,10 @@
 // /projekte/<id>/budget (nur mit Recht budget_stunden + budget_sichtbar), /opl?projekt_id=…&status_art=alle, /projekte/<id>/dokumente.
 import { h, icon, clear, fmtDate, fmtNum, parseDate, today, daysBetween, isoDate } from '../util.js';
 import { get } from '../api.js';
-import { skala, fugen } from '../diagramme.js'; // R28-D
+import { skala, fugen, achse, achsenTicks } from '../diagramme.js'; // R28-D, R29-H
 import { darf } from '../rechte.js';
 import { verlaufSvg } from './projekt-fortschritt.js';
+import { fsLeer, FS_LEER, STD_LEER } from '../leerwerte.js'; // R29-H (119)
 import { info } from './projekt-info.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -87,26 +88,36 @@ export function cockpit(ctx) {
       trend = `${diff >= 0 ? '+' : '−'}${Math.abs(diff)} % seit KW ${kwNr(alt.datum)}`;
     }
     const md = (f.quelle_details || {}).meilensteine || {};
-    clear(kFs).append(ring(pz, 'is-fs', `Fortschritt ${pz} %`),
+    const fsOffen = fsLeer(f.prozent); // R29-H (119): ohne Daten „noch offen“, kein leerer Ring
+    clear(kFs).append(fsOffen ? null : ring(pz, 'is-fs', `Fortschritt ${pz} %`),
       h('div', { class: 'ck-kpi-t' },
         h('div', { class: 'ck-kpi-l' }, 'Fortschritt', info('cockpit.fortschritt', 'Fortschritt aus erledigten Meilensteinen (gewichtet) und erledigten offenen Punkten – Anteile laut Firmeneinstellung.')),
-        h('div', { class: 'ck-kpi-v' }, `${pz} %`),
+        fsOffen ? h('div', { class: 'ck-kpi-v ck-kpi-v-s' }, FS_LEER) : h('div', { class: 'ck-kpi-v' }, `${pz} %`),
         h('div', { class: 'ck-kpi-s' }, trend || (md.gesamt ? `${md.erledigt} von ${md.gesamt} Meilensteinen erledigt` : 'noch kein Verlauf'))));
     kFs.onclick = () => ctx.oeffne('termine'); kFs.classList.add('ck-klick'); kFs.title = 'Termine & Verlauf öffnen';
+  });
+
+  // R29-E: Fertigungsstand laut Reststunden-Analyse neben dem eigenen Fortschritt (nur Abgleich, Prozent)
+  Promise.all([fsP.catch(() => null), verlaufP, get(`/projekte/${id}/reststunden`).catch(() => null)]).then(([f, , r]) => {
+    const t = kFs.querySelector('.ck-kpi-t');
+    if (!f || !t || !r || !r.vorhanden || r.fertigungsstand == null) return;
+    const txt = `RA: ${fmtNum(r.fertigungsstand, 0)} % (${(r.stand_kw || '').split('/')[0]})`;
+    t.append(h('div', { class: 'ck-kpi-s ck-rsa' + (r.hinweis ? ' is-warn' : ''), title: `Fertigungsstand laut Reststunden-Analyse, Stand ${r.stand_kw || 'unbekannt'} – nur zum Abgleich, fließt nicht in den Fortschritt ein` },
+      r.hinweis ? icon('alert', 12) : null, txt, r.hinweis ? ` · Abweichung ${fmtNum(Math.abs(r.abweichung_pp), 0)} Pkt.` : '', r.veraltet ? ' · veraltet' : ''));
   });
 
   // 2) Stunden (nur mit Recht) + 6) Stunden je Abteilung
   budP.then(b => {
     if (!kStd) return;
     if (!b || !b.hat_soll) {
-      clear(kStd).append(ring(0, 'is-leer', 'Keine Stunden'), h('div', { class: 'ck-kpi-t' }, h('div', { class: 'ck-kpi-l' }, 'Stunden'), h('div', { class: 'ck-kpi-v ck-kpi-v-s' }, 'kein Soll'), h('div', { class: 'ck-kpi-s' }, 'Soll kommt aus dem Kalkulations-Import')));
+      clear(kStd).append(h('div', { class: 'ck-kpi-t' }, h('div', { class: 'ck-kpi-l' }, 'Stunden'), h('div', { class: 'ck-kpi-v ck-kpi-v-s' }, 'kein Soll'), h('div', { class: 'ck-kpi-s' }, 'Soll kommt aus dem Kalkulations-Import')));
     } else {
       const sp = Math.round(+b.stunden_prozent || 0);
       const amp = { gruen: ['ok', 'im Rahmen'], neutral: ['neutral', 'im Plan'], bernstein: ['warn', 'Verbrauch vor Fortschritt'], rot: ['danger', 'Budget aufgebraucht'], rot_voll: ['danger', 'deutlich überschritten'] }[b.ampel] || ['neutral', 'im Plan'];
-      clear(kStd).append(ring(sp, 'is-' + amp[0], `Stunden ${sp} % verbraucht`),
+      clear(kStd).append(b.hat_ist && sp > 0 ? ring(sp, 'is-' + amp[0], `Stunden ${sp} % verbraucht`) : null, // R29-H (119): ohne Ist kein leerer Ring
         h('div', { class: 'ck-kpi-t' },
           h('div', { class: 'ck-kpi-l' }, 'Stunden', info('cockpit.stunden', 'Ist-Stunden im Verhältnis zu den Soll-Stunden. Die Ampel vergleicht den Verbrauch mit dem Fortschritt.')),
-          b.hat_ist ? h('div', { class: 'ck-kpi-v' }, `${fmtNum(b.ist)} h`) : h('div', { class: 'ck-kpi-v ck-kpi-v-s' }, 'noch kein Ist'),
+          b.hat_ist ? h('div', { class: 'ck-kpi-v' }, `${fmtNum(b.ist)} h`) : h('div', { class: 'ck-kpi-v ck-kpi-v-s' }, STD_LEER), // R29-H (119)
           h('div', { class: 'ck-kpi-s' }, `${b.hat_ist ? sp + ' % von ' : 'Soll '}${fmtNum(b.soll)} h`),
           b.hat_ist ? h('span', { class: `ck-amp is-${amp[0]}` }, icon(amp[0] === 'danger' ? 'alert' : amp[0] === 'warn' ? 'clock' : 'check', 12), amp[1]) : null));
     }
@@ -272,11 +283,11 @@ function burndown(card, items, f, ms, kopf) {
   let bis = zielIso && parseDate(zielIso) > tag ? parseDate(zielIso) : new Date(tag);
   const W = 560, H = 180, L = 30, R = 10, T = 12, B = 26;
   const t0 = von.getTime(), t1 = Math.max(bis.getTime(), tag.getTime() + 864e5);
-  const yMax = Math.max(4, ...reihe.map(r => r.offen));
+  const bdAx = achse(Math.max(4, ...reihe.map(r => r.offen))); const yMax = bdAx.max; // R29-H (112): ganzzahlige, eindeutige Ticks
   const x = iso => L + (W - L - R) * (parseDate(iso).getTime() - t0) / (t1 - t0);
   const y = v => T + (H - T - B) * (1 - v / yMax);
   const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, class: 'ck-bd-svg', role: 'img', 'aria-label': `Burn-down: heute ${reihe[reihe.length - 1].offen} offene Punkte` });
-  for (const v of [0, Math.round(yMax / 2), yMax]) svg.append(s('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'ck-grid' }), s('text', { x: L - 6, y: y(v) + 4, class: 'ck-ax', 'text-anchor': 'end' }, String(v)));
+  for (const v of achsenTicks(bdAx)) svg.append(s('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'ck-grid' }), s('text', { x: L - 6, y: y(v) + 4, class: 'ck-ax', 'text-anchor': 'end' }, String(v)));
   // Ideal: vom höchsten Stand gleichmäßig auf 0 bis zum Liefertermin (Vertrag) bzw. zur Prognose
   const spitze = reihe.reduce((a, r) => r.offen >= a.offen ? r : a, reihe[0]);
   if (zielIso && parseDate(zielIso) > parseDate(spitze.datum) && spitze.offen) svg.append(s('line', { x1: x(spitze.datum), y1: y(spitze.offen), x2: x(zielIso), y2: y(0), class: 'ck-bd-ideal' }, s('title', {}, `Ideal: 0 offene Punkte bis ${fmtDate(zielIso)}`)));

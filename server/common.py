@@ -57,6 +57,8 @@ def opl_item(r):
     d["zustaendig_chips"] = sorted(({"user_id": int(x.split(":", 1)[0]), "name": x.split(":", 1)[1]}
                                     for x in (zl or "").split("|") if ":" in x), key=lambda c: c["name"])
     d["zustaendig_user_ids"] = [c["user_id"] for c in d["zustaendig_chips"]]
+    if "zustaendig_text" in d:  # R29-F (115): Resttext ohne erkannte Personen (Liste zeigt Chip + Rest, nicht doppelt)
+        d["zustaendig_rest"] = __import__("zustaendig").rest(d.get("zustaendig_text"), d["zustaendig_chips"])
     return d
 
 

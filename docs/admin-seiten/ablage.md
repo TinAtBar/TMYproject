@@ -40,3 +40,15 @@ Serverseitig fertig in `server/ablage.py`; die Admin-Konsole (Paket F) schreibt 
 
 ## Stand 2.6
 Verdrahtet in `admin/seiten/ablage.py` (Admin-Konsole, Seite registriert über `seiten.registrieren`).
+
+## R29-A (2.9): Firmenstruktur, zwei Wurzeln, Versionen
+- Reiter **Wurzeln & Versionen**: `ablage.wurzel_doku` (`\\file01\Dokumentation\Dokumentationen\Auftrag\{jahr}`),
+  `ablage.wurzel_verkauf` (`\\file01\Verkauf\{jahr}`), Laufwerksbuchstaben `ablage.laufwerk_alias` (J: = `\\file01\Dokumentation`),
+  Musterordner (`Dokumentation_MUSTERORDNER` im Elternordner der Jahresordner), Kennzeichen in 00_alt (R/V), Voreinstellung bei
+  gleichem Dateinamen (neue Version / neuer Name).
+- Projektordner werden über die Nummer am Anfang gefunden („JJJJ NNN 00_…“, auch im Unterordner „Archiv“); PM/Admin können im
+  Projekt einen Ordner zuordnen oder aus dem Musterordner anlegen (nur ergänzen). Das alte Projektordner-Muster (Reiter „Altes Muster“)
+  gilt nur noch als Rückfall, wenn es ausgefüllt ist.
+- **Dokumenttypen** haben einen Bereich (Dokumentation/Verkauf) und dürfen verschachtelte Unterordner haben
+  (`2.1_PM/2.1.3_Protokolle_PM`). Knopf **Firmenstruktur übernehmen** setzt die Musterstruktur 2.x/1.x, eigene Typen bleiben.
+- Reiter **Dokumentation**: Häkchen je Benutzer „darf Dokumentation direkt ablegen“ (`ablage.doku_benutzer`, ohne Freigabe).

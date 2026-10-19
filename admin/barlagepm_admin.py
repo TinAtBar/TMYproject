@@ -297,7 +297,7 @@ class Assistent:
         for n, (lab, key, w) in enumerate((("Login", "login", 10), ("Name", "name", 16), ("Startpasswort", "pw", 10))):
             ttk.Label(f, text=lab, style="Karte.TLabel").grid(row=0, column=n * 2, padx=(0, 4))
             ttk.Entry(f, textvariable=self.nb[key], width=w).grid(row=0, column=n * 2 + 1, padx=(0, 10))
-        ttk.Combobox(f, textvariable=self.nb["rolle"], values=("pm", "mitarbeiter", "controlling"), width=12, state="readonly").grid(row=0, column=6, sticky="e")
+        ttk.Combobox(f, textvariable=self.nb["rolle"], values=("pm", "mitarbeiter", "controlling", "leiter"), width=12, state="readonly").grid(row=0, column=6, sticky="e")
         ui.AkzentButton(f, text="Hinzufügen", command=self._b_neu).grid(row=1, column=6, sticky="e", pady=(8, 0))
         ttk.Button(k, text="Ausgewählten entfernen", command=self._b_weg).grid(row=2, column=0, sticky="w", pady=8)
         self.l_b = ttk.Label(k, text="", style="Fehler.TLabel")
@@ -940,7 +940,7 @@ class Konsole:
     def u_dialog(self, u=None):
         d = Dialog(self.root, "Benutzer bearbeiten" if u else "Neuer Benutzer",
                    [("login", "Login", (u or {}).get("login", "")), ("name", "Name", (u or {}).get("name", "")),
-                    ("rolle", "Rolle", (u or {}).get("rolle", "mitarbeiter"), ("pm", "mitarbeiter", "controlling", "admin")),
+                    ("rolle", "Rolle", (u or {}).get("rolle", "mitarbeiter"), ("pm", "mitarbeiter", "controlling", "leiter", "admin")),  # R29-F
                     ("email", "E-Mail", (u or {}).get("email", "")),  # R5-Z
                     ("windows_login", "Windows-Benutzer", (u or {}).get("windows_login", ""))]  # R28-G1: leer = lokales Passwort
                    + ([] if u else [("passwort", "Startpasswort (leer bei Windows-Benutzer)", "", None, "•")]))
@@ -1793,7 +1793,7 @@ def _seiten_standard():
         return lambda k, r: k._einzel(r, k.tab_firma, sid, "Firmeneinstellungen", text)
 
     R("benutzer", "Benutzer & Rollen", _sym("\ue716", "👥"), G[0], lambda k, r: k._einzel(r, k.tab_benutzer),
-      "Anmeldungen, Rollen (PM, Mitarbeiter, Controlling, Admin), Passwörter")
+      "Anmeldungen, Rollen (PM, Mitarbeiter, Controlling, Leiter, Admin), Passwörter")
     R("rechte", "Rechte", _sym("\ue72e", "🔒"), G[0], generisch("rechte"), "Was welche Rolle sehen und ändern darf")
     R("masken", "Masken & Ansichten", _sym("\ue8a9", "▦"), G[0], generisch("masken"), "Spalten, Standardansichten")
     R("nummern", "Nummern", _sym("\ue8ef", "#"), G[0], lambda k, r: k._einzel(r, k.tab_nummern),
@@ -1849,6 +1849,8 @@ from seiten import dashboard as _dashboard_seite  # noqa: E402  R27: Start-Layou
 _dashboard_seite.registrieren()
 from seiten import tickets as _tickets_seite  # noqa: E402  R28-G10: Tickets (Problem melden / Idee)
 _tickets_seite.registrieren()
+from seiten import fb_import as _fb_import_seite  # noqa: E402  R29-D: Abgleich Fertigungsbesprechungs-Excel
+_fb_import_seite.registrieren()
 
 
 def datenordner_finden(argv):

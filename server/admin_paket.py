@@ -34,7 +34,7 @@ LISTEN = {
 LISTEN_NAMEN = {"status_opl": "Status", "prioritaeten": "Priorität", "kategorien": "Kategorie",
                 "meilenstein_typen": "Meilenstein", "budget_kategorien": "Budgetkategorie",
                 "status_angebot": "Angebotsstatus"}
-ROLLEN = ("admin", "pm", "mitarbeiter", "controlling")  # R26: + controlling
+ROLLEN = ("admin", "pm", "mitarbeiter", "controlling", "leiter")  # R26: + controlling, R29-F: + leiter
 # R26-W: Listen, bei denen ein verwendeter Eintrag ohne Ersatz gelöscht werden darf – die Verweise werden gelöst
 # (Projekt-Meilensteine behalten Name/Datum, typ_id wird NULL).
 LOESEN_STATT_ERSETZEN = {"meilenstein_typen"}

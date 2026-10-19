@@ -32,14 +32,19 @@ PLATZHALTER = ("projekt", "bezeichnung", "kunde", "titel", "datum", "zeit", "ben
 PROJEKT_PLATZHALTER = ("projekt", "bezeichnung", "kunde")
 ENDUNGEN = {"xlsx", "csv", "docx", "html", "pdf", "eml", "txt"}
 # Export-Art → Dokumenttyp (Schlüssel aus ablage.typen); erster vorhandener gilt
+# R29-A (125): Firmenstruktur – Protokolle/Fertigungsbesprechung → 2.1.3_Protokolle_PM, Terminpläne/Kalender →
+# 2.1.4_Terminpläne_PM, Kick-Off → 2.1.3.1_Kick-Off; „berichte“ nur, wenn eine Firma diesen Typ (noch) eingerichtet hat.
+# Abweichender Typ: Parameter ?typ=<key> beim Ablegen (Auswahl beim Ablegen).
 ART_TYP = {
     "protokoll": ("protokolle",),
     "kickoff": ("kickoff",),
-    "bericht": ("berichte", "terminplaene"),
+    "bericht": ("berichte", "protokolle"),
     "opl": ("berichte", "protokolle"),
     "fertigung": ("protokolle", "berichte"),
-    "etiketten": ("berichte",),
-    "anleitung": ("berichte",),
+    "terminplan": ("terminplaene", "berichte"),
+    "kalender": ("terminplaene", "berichte"),
+    "etiketten": ("berichte", "protokolle"),
+    "anleitung": ("berichte", "protokolle"),
 }
 
 
@@ -136,8 +141,10 @@ def projekt_lesen(db, pid):
     return p
 
 
-def typ_fuer(conn, art):
+def typ_fuer(conn, art, wunsch=None):
     keys = {t["key"]: t for t in ablage.typen(conn)}
+    if wunsch and wunsch in keys and keys[wunsch]["bereich"] == "doku":  # R29-A: Auswahl beim Ablegen
+        return keys[wunsch]
     for k in ART_TYP.get(art, ()):
         if k in keys:
             return keys[k]
@@ -155,9 +162,12 @@ def api_kopf(ctx):
         name = dateiname(ctx.db.conn, titel, endung, p, ctx.user)
         art = ctx.qp("art") or ""
         t = typ_fuer(ctx.db.conn, art) if art else None
-    darf = bool(p and t and ctx.user.get("rolle") != "controlling" and ablage.darf_schreiben(ctx, p))
+        doku_typen = [{"key": x["key"], "name": x["name"], "ordner": x["ordner"]} for x in ablage.typen(ctx.db.conn)
+                      if x["bereich"] == "doku"]  # R29-A
+    darf = bool(p and t and ctx.user.get("rolle") != "controlling" and ablage.darf_schreiben(ctx, p, t["bereich"]))
     return {"kopf": k, "dateiname": name, "darf_ablegen": darf,
-            "dokumenttyp": {"key": t["key"], "name": t["name"]} if t else None}
+            "dokumenttyp": {"key": t["key"], "name": t["name"], "ordner": t["ordner"]} if t else None,
+            "typen": doku_typen if darf else []}
 
 
 @route("POST", "/api/export/ablegen", raw=True)
@@ -166,7 +176,6 @@ def api_ablegen(ctx):
     if pid in (None, ""):
         raise ApiError(400, "Ablegen nur mit Projekt möglich")
     p = ablage._projekt(ctx, to_int(pid, "projekt_id"))
-    ablage._need_schreiben(ctx, p)
     art = ctx.qp("art") or ""
     if art not in ART_TYP:
         raise ApiError(400, "Unbekannte Export-Art")
@@ -175,10 +184,11 @@ def api_ablegen(ctx):
         raise ApiError(400, "Dateiendung nicht erlaubt")
     titel = (ctx.qp("titel") or "Export").strip()[:80]
     with ctx.db.lock:
-        t = typ_fuer(ctx.db.conn, art)
+        t = typ_fuer(ctx.db.conn, art, ctx.qp("typ"))
         name = dateiname(ctx.db.conn, titel, endung, p, ctx.user)
     if not t:
         raise ApiError(409, "Kein passender Dokumenttyp eingerichtet (Admin-Konsole → Dokumentenablage)")
+    ablage._need_schreiben(ctx, p, t["bereich"])
     wurzel, info = ablage.quelle(ctx, p, "typ:" + t["key"])
     _, files = multipart.parse(ctx.headers.get("content-type"), ctx.raw_body)
     if "datei" not in files:
@@ -190,7 +200,9 @@ def api_ablegen(ctx):
         if not ablage.innerhalb(info["basis"], wurzel):
             raise ApiError(403, "Pfad außerhalb des Projektordners")
         os.makedirs(wurzel, exist_ok=True)
-        gespeichert = ablage.speichern(ctx.db, ctx.user, wurzel, "", name, data)
+        modus = ctx.qp("modus") if ctx.qp("modus") in ("version", "neu") else None  # R29-A
+        gespeichert = ablage.speichern(ctx.db, ctx.user, wurzel, "", name, data, modus=modus, projekt_id=p["id"])
     except OSError as e:
         raise ApiError(409, f"Projektordner nicht beschreibbar: {e.strerror or e}")
-    return {"ok": True, "name": gespeichert, "dokumenttyp": t["name"], "quelle": "typ:" + t["key"]}
+    return {"ok": True, "name": gespeichert["name"], "alt": gespeichert["alt"], "dokumenttyp": t["name"],
+            "ordner": t["ordner"], "quelle": "typ:" + t["key"]}

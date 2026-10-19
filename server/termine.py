@@ -307,3 +307,6 @@ def verschieben_fn(ctx, tid, datum):
                         {"titel": t["name"], "datum": datum, "termin_frei": True})
         return {"termin": _row(c, tid)}
     return fn
+
+
+import projekt_kalender  # noqa: E402,F401  R29-H (129): Route GET /api/projekte/<id>/kalender registrieren

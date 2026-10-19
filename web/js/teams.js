@@ -21,6 +21,6 @@ export function teamsBesprechungNeu(subject, attendees) {
 /** Link-Knopf (<a target=_blank>) */
 export function teamsKnopf(href, label = 'Teams', cls = 'btn btn-sm') {
   if (!istTeamsLink(href)) return null; // nie javascript:/fremde Hosts als href
-  return h('a', { class: cls + ' teams-btn', href, target: '_blank', rel: 'noopener', title: label }, icon('chat', 16), label);
+  return h('a', { class: cls + ' teams-btn', href, target: '_blank', rel: 'noopener', title: label }, icon('video', 16), label); // R29-G (126): Videokamera statt Sprechblase
 }
 export const istTeamsLink = s => /^(https:\/\/teams\.microsoft\.com\/|msteams:)[^\s<>"']*$/i.test(String(s || '').trim());

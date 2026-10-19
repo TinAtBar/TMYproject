@@ -9,6 +9,7 @@
 //   (keine verschachtelten Links, alles per Tab erreichbar).
 import { h, icon, fmtDate, fristState } from './util.js';
 import { darf } from './rechte.js';
+import { prozentText, fsLeer, stdLeer } from './leerwerte.js'; // R29-H (119)
 
 const AMPEL_TEXT = { neutral: 'im Rahmen', bernstein: 'über Fortschritt', rot: 'Budget erreicht', rot_voll: 'Budget deutlich überzogen', gruen: 'abgeschlossen im Budget' };
 const zahl = v => (v == null || v === '' || isNaN(+v)) ? null : +v;
@@ -27,13 +28,14 @@ export function kachelZiele(p, darfDetails = darf('projekte_details')) {
 }
 
 function balkenZeile({ art, wert, ziel, label, klasse, extra }) {
-  const w = zahl(wert);
-  const text = w == null ? '–' : `${Math.round(w)} %`;
+  const w0 = zahl(wert);
+  const w = (art === 'stunden' ? stdLeer(w0) : fsLeer(w0)) ? null : w0; // R29-H (119): ohne Werte kein Balken, Ersatztext
+  const text = prozentText(w0, art);
   const aria = `${label}: ${text}${extra ? ' – ' + extra : ''}`;
   const inner = [
     h('span', { class: 'pk-bl' }, label),
     h('span', { class: 'pk-track', role: 'meter', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(Math.min(w ?? 0, 100))), 'aria-label': aria },
-      h('i', { class: 'anim-balken pk-fill', style: { '--wert': String(Math.max(0, Math.min(100, w ?? 0))) } })),
+      w == null ? null : h('i', { class: 'anim-balken pk-fill', style: { '--wert': String(Math.max(0, Math.min(100, w))) } })),
     h('span', { class: 'pk-bw' }, text),
   ];
   const cls = `pk-balken pk-${art}${klasse ? ' ' + klasse : ''}${w != null && w > 100 ? ' pk-ueber' : ''}${w == null ? ' pk-leer' : ''}`;

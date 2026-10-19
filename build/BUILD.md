@@ -4,12 +4,16 @@
 > In der Linux-Entwicklungsumgebung wurden Logik und Oberflächen getestet, aber **keine .exe erzeugt**.
 > Zwei Wege: (A) GitHub baut automatisch – kein Windows-Entwicklungs-PC nötig, oder (B) selbst auf einem Windows-PC bauen.
 
-Ergebnis in beiden Fällen (Version 2.8.0):
+Ergebnis in beiden Fällen (Version 2.9.0):
 
 | Datei | Für wen |
 |---|---|
 | `BarlagePM-Setup.exe` | alle PCs (Projektleiter und Mitarbeiter) – gleicher Installer |
 | `BarlagePM-Admin-Setup.exe` | nur der Administrator-PC |
+
+## Neu in 2.9 (für die Verteilung)
+- Installer registriert das Link-Protokoll `barlagepm://` (HKCU) für „Im Explorer öffnen“; das Desktop-Programm öffnet damit nur Ordner unter den Ablage-Wurzeln im Windows-Explorer.
+- Neue Server-Module: eingang, besprechung, fb_import, projekt_kalender, vorschlaege; Migrationen additiv.
 
 ## Neu in 2.8.1
 

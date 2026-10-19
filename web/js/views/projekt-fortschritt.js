@@ -67,7 +67,8 @@ export function meilensteinEditor({ pid, canEdit, onDone, extraRows = null, tool
       const verzug = m.datum && m.ist_datum ? daysBetween(parseDate(m.datum), parseDate(m.ist_datum)) : null;
       const nameEl = edit ? h('input', { class: 'fs-name-in', value: m.name, maxlength: 120, 'aria-label': `Name von ${m.name}`, onchange: e => e.target.value.trim() ? save(m, { name: e.target.value.trim() }) : (e.target.value = m.name) }) : m.name;
       return h('tr', { class: od ? 'ms-od' : m.erledigt ? 'ms-done' : '' },
-        h('th', { scope: 'row' }, nameEl, od ? h('span', { class: 'chip chip-danger chip-xs' }, 'überfällig') : null),
+        h('th', { scope: 'row' }, nameEl, od ? h('span', { class: 'chip chip-danger chip-xs' }, 'überfällig') : null,
+          !m.datum && !m.erledigt ? h('span', { class: 'chip chip-outline chip-xs tk-fehlt' }, 'Datum fehlt') : null), // R29-H (129)
         h('td', null, edit ? h('input', { class: 'ms-date', type: 'date', value: m.datum || '', 'aria-label': `Plan ${m.name}`, onchange: e => save(m, { datum: e.target.value || null }) }) : (m.datum ? fmtDate(m.datum) : '–')),
         h('td', null, edit ? h('input', { class: 'ms-date', type: 'date', value: m.ist_datum || '', 'aria-label': `Erledigt am ${m.name}`, onchange: e => save(m, { ist_datum: e.target.value || null, ...(e.target.value ? {} : { erledigt: m.erledigt }) }) }) : (m.ist_datum ? fmtDate(m.ist_datum) : '–'),
           verzug ? h('span', { class: 'ms-verzug ' + (verzug > 0 ? 'danger-text' : 'ok-text') }, verzug > 0 ? `+${verzug} T` : `${verzug} T`) : null),
@@ -81,6 +82,13 @@ export function meilensteinEditor({ pid, canEdit, onDone, extraRows = null, tool
     const knoepfe = edit ? h('div', { class: 'row fs-ms-knoepfe' },
       h('button', { class: 'btn btn-sm btn-ghost', onclick: neu }, icon('plus', 16), 'Meilenstein'),
       h('button', { class: 'btn btn-sm btn-ghost', onclick: standard, title: 'Fehlende Meilensteine aus dem Firmen-Standard ergänzen' }, icon('list', 16), 'Standard übernehmen')) : null;
+    if (!items.length) { // R29-H (129): leerer Zustand mit Aktion statt leerer Tabelle
+      clear(wrap).append(tools, h('div', { class: 'tk-leer' }, icon('diamond', 20), h('div', null, h('p', null, 'Für dieses Projekt sind noch keine Meilensteine angelegt.'),
+        h('p', { class: 'small muted' }, edit ? 'Mit „Meilensteine aus Vorlage“ kommen die Standard-Meilensteine der Firma ins Projekt – danach nur noch Plan-Daten eintragen.' : 'Meilensteine pflegt die Projektleitung.')),
+        edit ? h('div', { class: 'row tk-leer-knoepfe' }, h('button', { class: 'btn btn-sm btn-primary', onclick: standard }, icon('list', 16), 'Meilensteine aus Vorlage'), h('button', { class: 'btn btn-sm btn-ghost', onclick: neu }, icon('plus', 16), 'Meilenstein')) : null),
+        (er => er.length ? h('div', { class: 'ms-wrap' }, h('table', { class: 'ms-compact fs-tab' }, h('tbody', null, er))) : null)(extraRows ? extraRows() || [] : []));
+      return;
+    }
     clear(wrap).append(tools, warnBox(r.warnungen), h('div', { class: 'ms-wrap' }, h('table', { class: 'ms-compact fs-tab' },
       h('thead', null, h('tr', null, h('th', null, 'Meilenstein'), h('th', null, 'Plan'), h('th', null, 'Erledigt am'), h('th', { class: 'num', title: 'Gewicht für den Fortschritt' }, 'Gew.'), h('th', { class: 'ms-ok', title: 'erledigt' }, '✓'), edit ? h('th', null, h('span', { class: 'sr-only' }, 'Aktionen')) : null)),
       h('tbody', null, rows, extraRows ? extraRows() : null))), knoepfe);
@@ -96,11 +104,29 @@ export function verlaufAbschnitt(pid) {
   return box;
 }
 
-export function verlaufSvg(punkte, prognose) {
-  const W = 640, H = 220, L = 38, R = 12, T = 12, B = 30;
+// R29-H (129/119): Diagramm in voller Kartenbreite (SVG-Breite = Containerbreite, linksbündig) statt zentriert/skaliert;
+// ohne echte Werte (nur 0 %) Hinweis statt leerer Achsen.
+export function verlaufLeer(punkte) {
+  return !(punkte || []).some(p => p.datum && ((+p.fortschritt_prozent || 0) > 0 || (+p.stunden_prozent || 0) > 0));
+}
+export function verlaufSvg(punkte, prognose, o = {}) {
+  if (verlaufLeer(punkte)) return h('div', { class: 'fs-leer' }, icon('history', 18), h('div', null,
+    h('p', { class: 'small' }, 'Noch kein Fortschritt erfasst.'),
+    h('p', { class: 'small muted' }, 'Das Diagramm erscheint, sobald Meilensteine erledigt, Punkte abgeschlossen oder Stunden gebucht sind.')), o.aktion || null);
+  const fig = h('figure', { class: 'fs-fig' });
+  let breite = 0;
+  const zeichne = w => { breite = w; clear(fig).append(...verlaufInhalt(punkte, prognose, w)); };
+  zeichne(o.breite || 640);
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(() => { if (!fig.isConnected) return; const w = Math.max(320, Math.round(fig.clientWidth)); if (Math.abs(w - breite) > 8) zeichne(w); });
+    ro.observe(fig);
+  }
+  return fig;
+}
+function verlaufInhalt(punkte, prognose, W) {
+  const H = 220, L = 38, R = 12, T = 12, B = 30;
   const ts = d => parseDate(d).getTime();
   const pts = punkte.filter(p => p.datum);
-  if (!pts.length) return h('p', { class: 'muted small' }, 'Noch kein Verlauf – die erste Momentaufnahme entsteht heute.');
   let t0 = ts(pts[0].datum), t1 = ts(pts[pts.length - 1].datum);
   const progT = prognose && prognose.datum ? ts(prognose.datum) : null;
   const vertT = prognose && prognose.vertrag ? ts(prognose.vertrag) : null;
@@ -109,14 +135,15 @@ export function verlaufSvg(punkte, prognose) {
   const yMax = Math.max(100, ...pts.map(p => +p.stunden_prozent || 0));
   const x = t => L + (W - L - R) * (t - t0) / (t1 - t0);
   const y = v => T + (H - T - B) * (1 - v / yMax);
-  const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, class: 'fs-svg', role: 'img', 'aria-label': 'Verlauf Fortschritt und Stunden über die Zeit' });
+  const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, preserveAspectRatio: 'xMinYMin meet', class: 'fs-svg', role: 'img', 'aria-label': 'Verlauf Fortschritt und Stunden über die Zeit' });
   for (let v = 0; v <= yMax; v += 25) {
     svg.append(s('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'fs-grid' + (v === 100 ? ' fs-grid-100' : '') }), s('text', { x: L - 6, y: y(v) + 4, class: 'fs-ax', 'text-anchor': 'end' }, `${v}%`));
   }
   { // R28-FIX: Ticks in ganzen Kalendertagen (setDate statt ms-Addition → sommerzeit-sicher), gleichmäßiger Schritt ohne Lücken
     const d0 = new Date(t0); d0.setHours(0, 0, 0, 0);
     const tage = Math.max(1, Math.round((t1 - d0.getTime()) / 864e5));
-    const schritt = [1, 2, 7, 14, 28, 56, 91, 182, 364].find(n => tage / n <= 9) || Math.ceil(tage / 9);
+    const maxT = Math.max(3, Math.floor((W - L - R) / 70)); // R29-H: Anzahl Datums-Ticks nach Breite
+    const schritt = [1, 2, 7, 14, 28, 56, 91, 182, 364].find(n => tage / n <= maxT) || Math.ceil(tage / maxT);
     for (let k = 0; k <= tage; k += schritt) {
       const d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + k); const t = d.getTime(); if (t < t0 - 864e5 / 2 || t > t1 + 864e5 / 2) continue;
       const xx = Math.min(W - R, Math.max(L, x(t)));
@@ -139,5 +166,5 @@ export function verlaufSvg(punkte, prognose) {
     h('span', { class: 'fs-lg fs-lg-fs' }, 'Fortschritt'), hatStd ? h('span', { class: 'fs-lg fs-lg-std' }, 'Stunden (Ist/Soll)') : null,
     progT ? h('span', { class: 'fs-lg fs-lg-prog' }, `Prognose ${prognose.kw_text}`) : h('span', { class: 'muted' }, prognose && prognose.grund ? prognose.grund : 'noch keine Prognose'),
     vertT ? h('span', { class: 'fs-lg fs-lg-vertrag' }, `Vertrag ${kw(prognose.vertrag)}`) : null);
-  return h('figure', { class: 'fs-fig' }, svg, legende);
+  return [svg, legende];
 }
