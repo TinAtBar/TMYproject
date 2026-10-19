@@ -108,6 +108,6 @@ Lokal unter Linux entstehen **keine** .exe-Dateien.
 - 2.7.0 umgesetzt (Punkte 92–108: Dashboard 2, Projekt-Cockpit, Aufräumen, Fertigungsort/Anträge/Vertretung,
   Kundenbestellung, einfache PDF-Erkennung, Exporte vereinheitlichen). Einschränkungen siehe `docs/PUNKTELISTE.md`
   (PDF-Erkennung ohne echte Kunden-PDFs getestet, Export-Liste E1–E11 noch mit Nutzer durchgehen).
-  Nächste Nummer für neue Wünsche: **128** (109–127 gesammelt).
+  Nächste Nummer für neue Wünsche: **129** (109–128 gesammelt).
 - Warten auf Unterlagen vom Nutzer: Reststunden-Analyse (Parser vorbereitet), Monats-/Wochenbericht-Vorlage,
   2–3 Kundenbestellungen als Text-PDF u. a. (Vorlagen-Liste in `docs/PUNKTELISTE.md`).
