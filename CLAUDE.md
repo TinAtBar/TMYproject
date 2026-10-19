@@ -100,8 +100,8 @@ Lokal unter Linux entstehen **keine** .exe-Dateien.
 ## Stand und nächste Schritte (Kurzfassung, Details in docs/PUNKTELISTE.md)
 - 2.8.0 umgesetzt: G1 Windows-Domänen-Anmeldung (`server/domaene.py`), G10 Problem melden/Tickets (`server/tickets.py`,
   Admin-Seite „Tickets“), G11 Hochladen mit Freigabe (`server/freigaben.py`), Rolle Mitarbeiter nur eigene Aufgaben
-  (`server/mitarbeiter.py`, Matrix-Bereich `opl_alle`), drei Dashboard-Stile. **Offen:** Mitarbeiter dürfen derzeit keine
-  Punkte anlegen – Nutzerentscheidung steht aus. Windows-Anmeldung noch nicht in echter Domäne getestet.
+  (`server/mitarbeiter.py`, Matrix-Bereich `opl_alle`), drei Dashboard-Stile. Entschieden: Mitarbeiter legen keine Punkte an
+  (stattdessen Vorschlag, Punkt 109). Windows-Anmeldung noch nicht in echter Domäne getestet.
 - 2.7.0 umgesetzt (Punkte 92–108: Dashboard 2, Projekt-Cockpit, Aufräumen, Fertigungsort/Anträge/Vertretung,
   Kundenbestellung, einfache PDF-Erkennung, Exporte vereinheitlichen). Einschränkungen siehe `docs/PUNKTELISTE.md`
   (PDF-Erkennung ohne echte Kunden-PDFs getestet, Export-Liste E1–E11 noch mit Nutzer durchgehen).
