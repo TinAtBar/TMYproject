@@ -62,8 +62,9 @@ Detaildokumente (zuerst lesen, in dieser Reihenfolge):
   Überschriften/„Neu in x.y“ in `LIESMICH.md` und `build/BUILD.md`. Tests prüfen gegen `core.VERSION` (keine festen Nummern).
 - `.iss`-Dateien sind **UTF-8 mit BOM** – beim Bearbeiten erhalten. Inno-Pascal-Code kann nur die CI kompilieren:
   konservativ ändern, bestehende Muster kopieren.
-- **Netzlaufwerk/Projektordner: nie überschreiben, nie löschen, nie verschieben/umbenennen.** Neue Dateien exklusiv anlegen
-  (gleicher Name → „Name (2).ext“), Ordner nur ergänzen (Nutzerentscheidung 19.10.2026).
+- **Netzlaufwerk/Projektordner: nie überschreiben, nie löschen.** Neue Dateien exklusiv anlegen
+  (gleicher Name → „Name (2).ext“), Ordner nur ergänzen. Einzige erlaubte Verschiebung: alte Fassung nach „00_alt“
+  mit Zeitstempel bei „Als neue Version ablegen“ (Punkt 125) (Nutzerentscheidung 19.10.2026).
 - Git: normaler Push auf `main`, **kein force-push**. Commit-Texte deutsch.
 
 ## Befehle
