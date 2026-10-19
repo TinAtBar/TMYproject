@@ -26,7 +26,8 @@ Detaildokumente (zuerst lesen, in dieser Reihenfolge):
      gemeinsame Dateien wie `app.js`, `db.py`, `opl_server.py`, `styles.css` nur mit kleinen, markierten Zusätzen).
   2. **Unabhängige Prüfung** durch einen Agenten, der den Code nicht geschrieben hat (Sicherheit, Rechte, XSS,
      Migration einer bestehenden Kunden-DB, Inno-Syntax), Fehler minimal beheben.
-  3. **Volle Testsuite** grün (siehe unten), inkl. Tk-Tests unter xvfb.
+  3. **Volle Testsuite** grün (siehe unten), inkl. Tk-Tests unter xvfb. Den **Klicktest** (E2E) nur, wenn der Nutzer
+     ihn ausdrücklich verlangt (Nutzerentscheidung 19.10.2026).
   4. Version erhöhen (alle Stellen, siehe unten), Commit, Push auf `main` → **CI-Build** (Windows) abwarten.
   5. **Installer liefern** (`BarlagePM-Setup.exe`, `BarlagePM-Admin-Setup.exe` aus dem CI-Artefakt) und eine kurze,
      nutzerverständliche Zusammenfassung „Was ist neu / Was vor dem Einsatz prüfen“.
@@ -81,6 +82,9 @@ python3.12 -m unittest tests.test_mobile_e2e -q                   # Playwright (
 # Server lokal mit Beispieldaten (Logins admin, pm1, pm2, ma1, ma2 – Passwort opl2026)
 python3.12 server/opl_server.py --data /tmp/bpm-daten --http --port 8080 --seed --force-server
 # ohne --http: HTTPS auf 8443 + Hilfsport 8080 (braucht Paket cryptography), --no-mdns schaltet opl.local ab
+
+# Klicktest (Playwright, ~8 Min.) NUR auf ausdrücklichen Wunsch des Nutzers, nicht routinemäßig:
+BPM_KLICKTEST=1 python3 -m unittest tests.test_r28_e2e -v
 
 # Vor jedem Commit
 git grep -i "t[m]y\|pro\.file"      # muss leer sein
