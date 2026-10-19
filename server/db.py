@@ -18,7 +18,7 @@ SCHEMA_VERSION = "1"
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY, login TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
-  rolle TEXT NOT NULL CHECK (rolle IN ('admin','pm','mitarbeiter','controlling')),
+  rolle TEXT NOT NULL CHECK (rolle IN ('admin','pm','mitarbeiter','controlling','leiter')),  -- R29-F: + leiter
   pw_hash TEXT, pw_salt TEXT, muss_pw_aendern INTEGER DEFAULT 0, aktiv INTEGER DEFAULT 1,
   urlaub INTEGER DEFAULT 0, letzte_anmeldung TEXT, vorletzte_anmeldung TEXT);
 CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -169,6 +169,8 @@ CREATE TABLE IF NOT EXISTS kopplungen(token TEXT PRIMARY KEY, user_id INTEGER, e
         import bestellung; bestellung.migration(self.conn)  # R27-106: Kundenbestellung + Dokumenttyp „Bestellung“
         import freigaben; freigaben.migration(self.conn)  # R28-G11: Hochladen mit Freigabe (ablage_freigaben)
         import tickets; tickets.migration(self.conn)  # R28-G10: Problem melden / Idee (Tickets)
+        import eingang; eingang.migration(self.conn)  # R29-B (128): Import/Eingangskorb
+        import vorschlaege; vorschlaege.migration(self.conn)  # R29-F (109): Punkt vorschlagen (nach freigaben)
 
     # ---------------------------------------------------------------- Suche-Index
     def _init_fts(self):

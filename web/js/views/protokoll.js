@@ -1,4 +1,4 @@
-// Druckansicht „Baubesprechung“: offene Punkte gruppiert nach Projekt/Baugruppe mit Abhakfeldern und Unterschriftszeile
+// Druckansicht „Übersicht / Protokoll“ (R29-F, Punkt 124): offene Punkte gruppiert nach Projekt/Baugruppe mit Abhakfeldern und Unterschriftszeile
 import { h, icon, clear, fmtDate, isoDate, today } from '../util.js';
 import { get, qs } from '../api.js';
 import { store } from '../store.js';
@@ -19,7 +19,7 @@ export function mount(el, r) {
       if (!markOn()) p.markierung = '0';
       // R4-T: meine=1 wertet der Server aus
       const pid = /^\d+$/.test(String(f.projekt_id || '')) ? f.projekt_id : null; // R27-108: Kopf/Ablage nur bei genau einem Projekt
-      const [d, k] = await Promise.all([get('/opl' + qs(p)), kopfLaden('Protokoll Baubesprechung', { projektId: pid, art: 'protokoll', endung: 'html' })]);
+      const [d, k] = await Promise.all([get('/opl' + qs(p)), kopfLaden('Übersicht / Protokoll', { projektId: pid, art: 'protokoll', endung: 'html' })]);
       tage = d.markierung_tage ?? 7; render(d.items || [], k, pid);
     } catch (e) { clear(body).append(errorBox(e, load)); }
   }
@@ -32,7 +32,7 @@ export function mount(el, r) {
       const g = groups.get(k); if (!g.has(bk)) g.set(bk, []); g.get(bk).push(it);
     }
     clear(body).append(
-      druckLeiste({ drucken: () => druckenMitName(k.dateiname), extra: [pid ? ablegenKnopf({ projektId: pid, art: 'protokoll', titel: 'Protokoll Baubesprechung', endung: 'html', holen: () => druckHtml(body.querySelector('article.protokoll'), k.dateiname) }) : null] }), // R27-108
+      druckLeiste({ drucken: () => druckenMitName(k.dateiname), extra: [pid ? ablegenKnopf({ projektId: pid, art: 'protokoll', titel: 'Übersicht / Protokoll', endung: 'html', holen: () => druckHtml(body.querySelector('article.protokoll'), k.dateiname) }) : null] }), // R27-108
       h('article', { class: 'protokoll' },
         kopfElement(k.kopf, { untertitel: `${FIRMA} · ${items.length} Punkte` }), // R27-108: einheitlicher Kopf
         h('header', { class: 'pk-head' }, h('div', null, legend(tage)),

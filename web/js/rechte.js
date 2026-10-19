@@ -16,10 +16,10 @@ export function darf(bereich, stufe = 'lesen') {
   return (RANG[rechte.bereiche[bereich]] ?? 0) >= (RANG[stufe] ?? 1);
 }
 // Navigationseintrag → Bereich
-export const NAV_BEREICH = { start: 'dashboard', projekte: 'dashboard', opl: 'opl', fertigung: 'fertigung', kalender: 'kalender', angebote: 'angebote', archiv: 'berichte' };
+export const NAV_BEREICH = { start: 'dashboard', projekte: 'dashboard', opl: 'opl', fertigung: 'fertigung', kalender: 'kalender', angebote: 'angebote', archiv: 'berichte', import: 'import' }; // R29-B: + import
 export const vertretungAktiv = () => !!(rechte && Array.isArray(rechte.vertretungen) && rechte.vertretungen.length); // R28-E2E
 export const nurEigene = () => !!(rechte && rechte.nur_eigene); // R28-M: nur eigene Aufgaben (Mitarbeiter)
 export const navErlaubt = key => (key === 'projekte' && nurEigene() ? false : !NAV_BEREICH[key] || darf(NAV_BEREICH[key])); // R28-M
 // Ziel einer Projekt-Kachel: ohne Projektdetails → OPL gefiltert auf das Projekt
 export const projektHref = id => darf('projekte_details') ? '#/projekte/' + id : '#/opl?projekt_id=' + id;
-export const ROLLE_ANZEIGE = { admin: 'Administrator', pm: 'Projektleiter', mitarbeiter: 'Mitarbeiter', controlling: 'Controlling' };
+export const ROLLE_ANZEIGE = { admin: 'Administrator', pm: 'Projektleiter', mitarbeiter: 'Mitarbeiter', controlling: 'Controlling', leiter: 'Leiter' }; // R29-F

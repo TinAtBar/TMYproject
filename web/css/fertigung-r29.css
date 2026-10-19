@@ -1,0 +1,96 @@
+/* R29-C (Punkte 120/122/123): Projekt-Galerie, Besprechungs-Modus, Präsentationsfenster, Termine bearbeiten */
+
+/* ---------------------------------------------------------------- 122 Projekt-Galerie */
+.pg { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.pg.fb-tiles { overflow: visible; padding: 6px 0 8px; }
+.pg-rahmen { flex: 1; min-width: 0; position: relative; }
+.pg-track { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 40%;
+  padding: 6px 4px; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
+.pg-track::-webkit-scrollbar { display: none; }
+/* Randverlauf statt Scrollbalken – nur dort, wo noch mehr Projekte folgen */
+.pg.pg-mehr-r .pg-track { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
+.pg.pg-mehr-l .pg-track { -webkit-mask-image: linear-gradient(to right, transparent, #000 48px); mask-image: linear-gradient(to right, transparent, #000 48px); }
+.pg.pg-mehr-l.pg-mehr-r .pg-track { -webkit-mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+.pg-track > .fb-tile { scroll-snap-align: center; transition: transform var(--anim-dauer, .18s) ease, box-shadow var(--anim-dauer, .18s) ease; transform-origin: center; }
+.pg-auswahl .pg-track > .fb-tile.on { transform: scale(1.08); box-shadow: 0 2px 10px rgba(0, 0, 0, .14), inset 0 0 0 1px var(--select-line); z-index: 1; }
+.pg-auswahl .pg-track { padding-block: 9px; }
+.pg-tile .pg-kunde { color: var(--text); font-weight: 700; }           /* Kundenname kräftig (Punkt 114) */
+.pg-tile.on .pg-kunde { color: var(--select-text); }
+.pg-tile .fb-od { display: inline-flex; gap: 1px; }
+.pg-pfeil { flex: 0 0 auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; padding: 0; }
+.pg-pfeil:hover:not(:disabled) { border-color: var(--line-strong); }
+.pg-pfeil:disabled { opacity: .35; cursor: default; }
+.pg-pfeil:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fb-prog.fb-prog-galerie { display: block; padding: 2px 0; }
+.fb-prog-galerie .pg-track > .fb-tile { min-width: 96px; }
+@media (max-width: 700px) { .pg-pfeil { display: none; } }
+/* „Animationen aus“ bzw. reduzierte Bewegung: kein Zoom, kein weiches Scrollen */
+@media (prefers-reduced-motion: reduce) {
+  .pg-track { scroll-behavior: auto; }
+  .pg-track > .fb-tile { transition: none; }
+  .pg-auswahl .pg-track > .fb-tile.on { transform: none; }
+}
+html[data-anim="aus"] .pg-track > .fb-tile { transition: none; }
+html[data-anim="aus"] .pg-auswahl .pg-track > .fb-tile.on { transform: none; }
+
+/* ---------------------------------------------------------------- 120 Besprechungs-Modus */
+.bs-leiste { flex-basis: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--select-line); background: var(--select-bg); color: var(--select-text); font-size: .9rem; }
+.bs-punkt { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: 0 0 auto; animation: bs-puls 1.6s ease-in-out infinite; }
+@keyframes bs-puls { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .bs-punkt { animation: none; } }
+html[data-anim="aus"] .bs-punkt { animation: none; }
+.bs-tn { overflow-wrap: anywhere; }
+.bs-akt { margin-left: auto; display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.bs-dlg .bs-tn-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 12px; margin-bottom: 8px; }
+.bs-tn-wahl { display: flex; align-items: center; gap: 6px; }
+.bs-tn-feld textarea { width: 100%; }
+.bs-protokoll { max-height: 50vh; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 12px; margin: 8px 0; }
+.bs-protokoll h3 { font-size: .95rem; margin: 8px 0 4px; }
+.bs-protokoll ul { margin: 0; padding-left: 18px; }
+.bs-art { display: inline-block; font-size: .75rem; padding: 0 6px; border-radius: 8px; background: var(--surface-3); color: var(--text-2); }
+/* Punkte, die in der laufenden Besprechung geändert wurden (zusätzlich zur Rot-Markierung) */
+.fb-tbl tr.fb-sitzung > td:first-child { box-shadow: inset 3px 0 0 var(--select-line); }
+.fa-vn dd { white-space: pre-line; }
+
+/* ---------------------------------------------------------------- 123 Termine per Doppelklick */
+.fb-termine-edit { position: relative; border-radius: var(--radius-sm); padding: 2px 26px 2px 4px; margin-left: -4px; cursor: text; }
+.fb-termine-edit:hover, .fb-termine-edit:focus-visible { background: var(--surface-2); outline: 1px dashed var(--line-strong); }
+.fb-termine-edit:focus-visible { outline: 2px solid var(--focus); }
+.fb-stift { position: absolute; top: 4px; right: 6px; color: var(--text-3); opacity: 0; transition: opacity var(--anim-dauer, .15s); }
+.fb-termine-edit:hover .fb-stift, .fb-termine-edit:focus-visible .fb-stift { opacity: 1; }
+.fb-termine-ta { display: block; width: 100%; margin-top: 4px; font: inherit; line-height: 1.45; resize: vertical; }
+.fb-termine-hilfe { margin-top: 2px; }
+.fb-termine.fb-rot li, .fb-termine.fb-rot li.notiz { color: var(--danger); }
+
+/* ---------------------------------------------------------------- 120 Präsentationsfenster (#/praesentation) */
+html.praes-modus .sidebar, html.praes-modus .topbar, html.praes-modus .tabbar, html.praes-modus .fab-new,
+html.praes-modus .vt-banner, html.praes-modus .banner { display: none !important; }
+html.praes-modus .app { display: block; }
+html.praes-modus .main { max-width: none; padding: 0; margin: 0; }
+.pr { min-height: 100vh; display: flex; flex-direction: column; padding: 24px 36px 12px; font-size: 1.35rem; background: var(--bg); color: var(--text); }
+.pr-kopf { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 24px; border-bottom: 3px solid var(--select-line); padding-bottom: 12px; margin-bottom: 16px; }
+.pr-nr { font-size: 2.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pr-kb { font-size: 1.6rem; font-weight: 600; flex: 1; min-width: 0; }
+.pr-stand { color: var(--text-2); font-size: 1.1rem; }
+.pr-body { flex: 1; }
+.pr-termine { margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.pr-termin { white-space: nowrap; }
+.pr-tbl { width: 100%; border-collapse: collapse; }
+.pr-tbl th { text-align: left; font-size: 1rem; color: var(--text-2); border-bottom: 2px solid var(--line-strong); padding: 6px 10px; }
+.pr-tbl td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pr-tbl tr.done td { color: var(--text-3); text-decoration: line-through; }
+.pr-c-nr { width: 3em; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.pr-c-ok { width: 5em; }
+.pr-tbl tr.pr-neu td { background: var(--info-bg); }
+.pr-tbl tr.pr-neu td:first-child { box-shadow: inset 5px 0 0 var(--select-line); }
+.pr-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; padding: 0 8px; border-radius: 10px; font-size: .8rem;
+  vertical-align: middle; background: var(--select-bg); color: var(--select-text); border: 1px solid var(--select-line); }
+.pr-leer { font-size: 1.5rem; color: var(--text-2); margin-top: 20vh; text-align: center; }
+.pr-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .9rem; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 16px; }
+.pr-legende { margin-left: auto; }
+.pr-fuss .pr-tag { margin-left: 0; }
+@media (max-width: 800px) { .pr { padding: 12px; font-size: 1.05rem; } .pr-nr { font-size: 1.8rem; } .pr-kb { font-size: 1.2rem; } }
+@media print { .bs-leiste, .pg-pfeil, .fb-stift { display: none !important; } }
+.bs-start { display: flex; flex-direction: column; gap: 10px; }

@@ -23,7 +23,7 @@ from pathlib import Path
 APP_NAME = "Barlage PM"          # Anzeigename
 APP_DIR = "BarlagePM"            # Ordnername unter %LOCALAPPDATA% (Konfiguration, Protokolle, Browserprofil)
 INSTALLER_NAME = "BarlagePM-Setup.exe"
-VERSION = "2.8.1"
+VERSION = "2.9.0"
 DEFAULT_PORT = 8080
 LOCK_TIMEOUT_S = 30
 ITER = 200_000  # wie server/auth.py
@@ -321,7 +321,7 @@ KEIN_SERVER_TEXT = ("Es läuft noch kein Server. Bitte zuerst als Projektleiter 
 
 def darf_server_starten(user):
     """Nur Projektleiter und Controlling starten einen Server (admin über die Konsole nie)."""
-    return bool(user) and user.get("rolle") in ("pm", "controlling")  # R26-E
+    return bool(user) and user.get("rolle") in ("pm", "controlling", "leiter")  # R26-E, R29-F
 
 
 # ------------------------------------------------------------------ Startentscheidung
@@ -843,3 +843,141 @@ class UebernahmeWaechter(threading.Thread):
                             return
             except Exception as e:
                 log.warning("Übernahmeprüfung: %s", e)
+
+
+# ------------------------------------------------------------------ R29-A (131a): Link barlagepm://ordner?pfad=…
+# Der Installer registriert das Link-Protokoll „barlagepm“ (HKCU\Software\Classes\barlagepm). Ein Klick in der
+# Oberfläche ruft „BarlagePM.exe barlagepm://ordner?pfad=<urlencoded>“ auf. Geöffnet wird nur ein Ordner bzw. die
+# Markierung einer Datei im Windows-Explorer – nie wird eine Datei ausgeführt – und nur unter erlaubten Ablage-Wurzeln
+# (Firmeneinstellungen aus der DB, nur lesend; sonst zuletzt zwischengespeicherte Liste).
+PROTOKOLL = "barlagepm"
+_WURZEL_KEYS = ("ablage.wurzel_doku", "ablage.wurzel_verkauf", "ablage.projektordner_muster")
+
+
+def ist_protokoll_aufruf(argv):
+    return bool(argv) and str(argv[0]).lower().startswith(PROTOKOLL + ":")
+
+
+def protokoll_pfad(url):
+    """„barlagepm://ordner?pfad=%5C%5Cfile01%5C…“ → Pfad oder None."""
+    from urllib.parse import urlsplit, parse_qs
+    try:
+        u = urlsplit(str(url or "").strip())
+    except ValueError:
+        return None
+    if u.scheme.lower() != PROTOKOLL:
+        return None
+    aktion = (u.netloc or u.path.strip("/")).lower()
+    if aktion != "ordner":
+        return None
+    werte = parse_qs(u.query).get("pfad") or []
+    return werte[0] if werte else None
+
+
+def _vergleich(p):
+    p = str(p).replace("/", "\\")
+    unc = p.startswith("\\\\")
+    teile = [t for t in p.split("\\") if t]
+    return ("\\\\" if unc else "") + "\\".join(teile).lower()
+
+
+def _alias_aufloesen(p, aliase):
+    import re
+    m = re.match(r"^([A-Za-z]:)(?:[\\/](.*))?$", str(p or ""))
+    if not m:
+        return p
+    for lw, unc in aliase:
+        if m.group(1).upper() == lw.upper():
+            rest = [t for t in re.split(r"[\\/]+", m.group(2) or "") if t]
+            return "\\".join([unc.rstrip("\\/"), *rest])
+    return p
+
+
+def ordner_pfad_pruefen(pfad, wurzeln, aliase=()):
+    """True, wenn pfad ein UNC- oder Laufwerkspfad ohne „..“ unterhalb einer erlaubten Wurzel ist (plattformunabhängig).
+    wurzeln: Pfade (Platzhalter wie {jahr} schneiden die Wurzel dort ab); aliase: [(„J:“, „\\\\file01\\Dokumentation“)]."""
+    import re
+    if not pfad or not isinstance(pfad, str) or any(ord(ch) < 32 for ch in pfad) or len(pfad) > 1000:
+        return False
+    if not (pfad.startswith("\\\\") or re.match(r"^[A-Za-z]:[\\/]", pfad)):
+        return False
+    teile = re.split(r"[\\/]+", pfad)
+    if any(t in ("..", ".") for t in teile) or any(re.search(r'[<>"|?*]', t) for t in teile):
+        return False
+    if pfad.startswith("\\\\") and len([t for t in teile if t]) < 2:
+        return False
+    ziel = _vergleich(_alias_aufloesen(pfad, aliase))
+    for w in wurzeln or []:
+        w = str(w or "").split("{")[0].rstrip("\\/ ")
+        if not w or not (w.startswith("\\\\") or re.match(r"^[A-Za-z]:", w)):
+            continue
+        if len(w) <= 3 and re.match(r"^[A-Za-z]:", w):  # ganzes Laufwerk nie als Wurzel
+            continue
+        basis = _vergleich(_alias_aufloesen(w, aliase))
+        if ziel == basis or ziel.startswith(basis + "\\"):
+            return True
+    return False
+
+
+def ablage_wurzeln_lesen(data_dir):
+    """Erlaubte Wurzeln + Aliase aus der DB (nur lesend); bei Erfolg lokal zwischenspeichern, sonst Zwischenspeicher."""
+    try:
+        con = ro_connect(db_pfad(data_dir))
+        try:
+            werte = {}
+            for k, w in con.execute("SELECT key, wert FROM firma_einstellungen WHERE key IN (?,?,?,?)",
+                                    (*_WURZEL_KEYS, "ablage.laufwerk_alias")):
+                try:
+                    werte[k] = json.loads(w)
+                except ValueError:
+                    pass
+            wurzeln = [werte.get(k) for k in _WURZEL_KEYS if isinstance(werte.get(k), str)]
+            if "ablage.wurzel_doku" not in werte:
+                wurzeln.append("\\\\file01\\Dokumentation\\Dokumentationen\\Auftrag\\{jahr}")
+            if "ablage.wurzel_verkauf" not in werte:
+                wurzeln.append("\\\\file01\\Verkauf\\{jahr}")
+            for tab, sql in (("ablage_eigene", "SELECT pfad FROM ablage_eigene"),
+                             ("projekt_ablage_ordner", "SELECT pfad FROM projekt_ablage_ordner")):
+                try:
+                    wurzeln += [r[0] for r in con.execute(sql) if r[0]]
+                except sqlite3.Error:
+                    pass
+            al = werte.get("ablage.laufwerk_alias", [{"laufwerk": "J:", "unc": "\\\\file01\\Dokumentation"}])
+            aliase = [[a.get("laufwerk"), a.get("unc")] for a in al if isinstance(a, dict) and a.get("laufwerk") and a.get("unc")]
+        finally:
+            con.close()
+        cache_schreiben(ablage_wurzeln=wurzeln, ablage_aliase=aliase)
+        return wurzeln, [tuple(a) for a in aliase]
+    except (sqlite3.Error, OSError, TypeError) as e:
+        log.warning("Ablage-Wurzeln nicht lesbar (%s) – nutze Zwischenspeicher", e)
+        c = cache_lesen()
+        return list(c.get("ablage_wurzeln") or []), [tuple(a) for a in c.get("ablage_aliase") or []]
+
+
+def explorer_befehl(pfad, ist_datei):
+    """Nur explorer.exe – Ordner öffnen bzw. Datei markieren (nie ausführen)."""
+    if ist_datei:  # explorer erwartet /select,"Pfad" (Anführungszeichen nur um den Pfad; „"“ ist im Pfad ausgeschlossen)
+        return f'explorer.exe /select,"{pfad}"'
+    return ["explorer.exe", pfad]
+
+
+def protokoll_oeffnen(url, data_dir=None, wurzeln=None, aliase=None, runner=None):
+    """Behandelt einen Link barlagepm://ordner?pfad=…; → (ok, meldung). runner(befehl) für Tests."""
+    pfad = protokoll_pfad(url)
+    if not pfad:
+        return False, "Ungültiger Link"
+    if wurzeln is None:
+        wurzeln, aliase = ablage_wurzeln_lesen(data_dir) if data_dir else ([], [])
+    if not ordner_pfad_pruefen(pfad, wurzeln, aliase or ()):
+        log.warning("Explorer-Link abgewiesen: %s", pfad)
+        return False, "Ordner liegt nicht in einer Ablage von Barlage PM"
+    pfad = pfad.replace("/", "\\")
+    try:
+        ist_datei = os.path.isfile(pfad)
+        if not ist_datei and not os.path.isdir(pfad):
+            return False, f"Ordner nicht erreichbar: {pfad}"
+    except OSError as e:
+        return False, f"Ordner nicht erreichbar: {e}"
+    befehl = explorer_befehl(pfad, ist_datei)
+    (runner or (lambda b: subprocess.Popen(b, close_fds=True)))(befehl)
+    return True, pfad

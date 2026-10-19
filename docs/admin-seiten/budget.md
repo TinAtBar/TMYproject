@@ -14,22 +14,22 @@ Regeln (`server/budget.py: ampel`):
 - Projekt fertig (Status „abgeschlossen“): Budget ≤ 100 % → grün; ≤ Schwelle → bernstein; darüber → voll rot.
 - sonst: Fortschritt 100 % → grün; Budget ≥ 100 % → rot; Budget > Fortschritt + Toleranz → bernstein; sonst neutral.
 
-## Reststunden-Analyse (Excel)
+## Reststunden-Analyse (Excel) – ab 2.9 (Punkt 113)
 
 | Key | Typ | Default | Bedeutung |
 |---|---|---|---|
-| `reststunden.verzeichnis` | Text (Pfad, z. B. UNC `\\server\controlling\Reststunden`) | `""` | Ordner, in dem die Reststunden-Analyse abgelegt wird. Leer = kein automatischer Abruf. |
-| `reststunden.muster` | Text (Platzhalter `*`, `?`) | `Reststunden*.xlsx` | Dateinamensmuster; die **neueste** passende Datei (Änderungsdatum) wird geholt. |
-| `reststunden.auto` | Ja/Nein | `true` | Automatischer Abruf beim Serverstart und danach täglich. |
-| `reststunden.max_alter_tage` | Ganzzahl | `7` | Ist der Stand älter, sehen PM/Admin den Hinweis „Ist-Stunden ggf. veraltet – Stand: KW xx“. |
-| `reststunden.hinweis_wochentag` | Ganzzahl 0–7 (ISO, 1 = Montag) | `3` (Mittwoch) | An diesem Wochentag erscheint der Hinweis immer; 0 = aus. |
+| `reststunden.quelle` | Pfad (Datei oder Ordner) | `\\file01\disposition\Reststundenanalyse\Reststundenanalyse_aktuell.xlsm` | Aktuelle Reststunden-Analyse; wird nur gelesen. Ordner → neueste Datei nach Muster, Unterordner werden ignoriert. Leer = kein Abruf. |
+| `reststunden.muster` | Text (`*`, `?`) | `Reststunden*.xls*` | Nur bei Ordner als Quelle. |
+| `reststunden.auto` | Ja/Nein | `true` | Laufender Server prüft alle 15 Min. die Änderungszeit, liest bei Änderung, sonst täglich. |
+| `reststunden.hinweis_wochentag` | 0–7 (1 = Montag) | `3` | Ab diesem Wochentag Hinweis „veraltet“, wenn der Stand vor dem Montag der laufenden Woche liegt; älter als die Vorwoche → immer. |
+| `reststunden.abweichung_pp` | Zahl | `15` | Abgleich: Hinweis, wenn Fertigungsstand (RA) und eigener Fortschritt um mehr Prozentpunkte abweichen. |
+| `reststunden.zuordnung` | JSON `{RSA-Abteilung: "Kategorie" \| "Eltern/Unterkategorie" \| ""}` | AV/Konstruktion/Dokumentation → Engineering/…, Logistik + Montage → Zusammenbau, Oberflächenbehandlung → OT, QS-Eigen → QS, ZfP → ZFP | Reiter „Zuordnung Reststunden“; `""` = nicht übernehmen. |
+| `reststunden.verzeichnis`, `.max_alter_tage` | – | – | Altbestand (2.6); `verzeichnis` gilt nur, wenn keine Quelle gesetzt ist. |
 
-Abrufe werden in Tabelle `reststunden_abrufe` protokolliert (nur lesen, z. B. als Liste „letzte Abrufe“ auf der Seite anzeigen:
-Zeit, Datei, Quelle auto/manuell/upload, Dateidatum, Ergebnis ok/wartet/fehler, Meldung, Zeilen).
-Kopien der Dateien liegen im Datenordner unter `reststunden/`.
-
-Hinweis: Der Parser (`server/reststunden.py: einlesen`) ist ein Platzhalter, bis eine Beispieldatei vorliegt
-(„Einlesen wartet auf Beispieldatei“). Ist-Stunden landen später in `stunden_ist` mit `quelle='reststunden'`.
+Reiter „Abrufe & Bericht“: Protokoll (`reststunden_abrufe`), Knopf „Jetzt einlesen“ (über den laufenden Server,
+`POST /api/reststunden/abrufen`) und Liste der Auftragsnummern aus der Datei ohne Projekt in Barlage PM.
+Ist-Stunden (bereits mit Azubi-Gewichtung) landen in `stunden_ist` (`quelle='reststunden'`, Stand = Datum aus „Auswahl“ B1).
+Soll bleibt aus der Kalkulation; der Fertigungsstand fließt nicht in den Fortschritt ein.
 
 ## Stand 2.6
 Verdrahtet in `admin/seiten/budget.py` (Admin-Konsole, Seite registriert über `seiten.registrieren`).

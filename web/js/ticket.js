@@ -256,8 +256,11 @@ export async function meldenDialog() {
 
 // ---------------- Knopf + Tastenkürzel ----------------
 function meldenIcon() {
-  const s = icon('question', 20); // Sprechblase mit Ausrufezeichen
-  s.firstChild.setAttribute('d', 'M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4zM12 7.5v5M12 16h.01');
+  // R29-G (121): gefüllte Sprechblase im Stil-Akzent mit weißem „i“ (Farben in design29.css)
+  const s = icon('question', 20);
+  s.firstChild.setAttribute('d', 'M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z'); s.firstChild.setAttribute('class', 'tk-blase');
+  const i = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  i.setAttribute('d', 'M12 11v5M12 8h.01'); i.setAttribute('class', 'tk-i'); s.appendChild(i);
   return s;
 }
 export function meldenButton() {

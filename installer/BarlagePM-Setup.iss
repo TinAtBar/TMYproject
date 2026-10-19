@@ -14,7 +14,7 @@
 ;   Der Datenordner auf dem NAS wird nie angefasst.
 
 #define AppName "Barlage PM"
-#define AppVersion "2.8.1"
+#define AppVersion "2.9.0"
 #define AppExe "BarlagePM.exe"
 #define Dist "..\dist\BarlagePM"
 ; R4-I: eigene AppId (ohne doppelte Klammer) für den Registry-Schlüssel ...\Uninstall\<AppId>_is1
@@ -56,6 +56,13 @@ Source: "{#Dist}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs creat
 [Icons]
 Name: "{userprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+
+[Registry]
+; R29-A (131a): Link-Protokoll barlagepm://ordner?pfad=… öffnet den Ordner im Windows-Explorer dieses PCs
+Root: HKCU; Subkey: "Software\Classes\barlagepm"; ValueType: string; ValueName: ""; ValueData: "URL:Barlage PM Ordner"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\barlagepm"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\barlagepm\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"",0"
+Root: HKCU; Subkey: "Software\Classes\barlagepm\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "Barlage PM jetzt starten"; Flags: nowait postinstall skipifsilent

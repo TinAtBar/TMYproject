@@ -153,7 +153,7 @@ Neue Tabellen: `fertigungsstatus(id,name,farbe,pos)` (Start: geplant, in Fertigu
   `{projekte[{…, pms[], gesamt, offen, erledigt, ueberfaellig, ms_ueberfaellig}], pms[{user{id,name}, projekte[ids], kpi{projekte,offen,ueberfaellig,ms_ueberfaellig}}], meilensteine[{…, typ_name, projekt_nummer, baugruppe_nummer, ueberfaellig}], von, bis}`.
 
 ## Oberfläche – neue Routen
-`#/sn/<id>` (SN-Akte, Ziel der QR-Codes), `#/etiketten?projekt_id=&baugruppe_id=|sn_id=` (QR-Etikettenbogen, Druck), `#/protokoll?<OPL-Filter>` (Baubesprechung, Druck),
+`#/sn/<id>` (SN-Akte, Ziel der QR-Codes), `#/etiketten?projekt_id=&baugruppe_id=|sn_id=` (QR-Etikettenbogen, Druck), `#/protokoll?<OPL-Filter>` (Übersicht / Protokoll, Druck),
 `#/uebersicht` (Admin), `#/einstellungen?liste=users|vorlagen|fertigungsstatus`. QR-Encoder: `web/js/vendor/qrcode.js` (eigene Implementierung, Byte-Modus, ECC M, V1–20).
 
 ## Mobil/Offline
@@ -489,3 +489,118 @@ Alle Rollen melden; Melder sieht nur eigene Meldungen, Bearbeiten nur Admin (Web
 - `GET /api/freigaben?status=wartend|freigegeben|abgelehnt|alle&projekt_id=&opl_id=` → `{items, typen}`; `GET /api/freigaben/anzahl`;
   `GET /api/freigaben/<id>/datei` (Bilder/PDF inline); `POST /api/freigaben/<id>/freigeben {dokumenttyp, dateiname}` (PM des Projekts/Admin,
   schreibt in den Typ-Ordner des Projektordners, OPL-Verlauf, Glocke an Melder); `POST /api/freigaben/<id>/ablehnen {kommentar}` (Datei gelöscht).
+
+## Runde 2.9 – Paket D: Abgleich Fertigungsbesprechungs-Excel (Punkt 116, `server/fb_import.py`)
+Die Admin-Konsole liest die Excel lokal (nur lesen, `fb_import.datei_lesen`, stdlib) und schickt die erkannten Blätter
+(`[{blatt, nummer, allgemein, kopf, kunde_bez, punkte:[{zeile, nr, titel, beschreibung, zustaendig_text, frist, klaerung_text, erledigt}]}]`).
+Beide Endpunkte nur Admin (`/api/admin/.*` in `rechte.FREI`, Prüfung im Endpunkt).
+- `POST /api/admin/fb_import/vorschau` `{blaetter}` → `{ok, fehler, warnungen, summe:{neu, geaendert, unveraendert, erledigt_neu, projekte_neu, blaetter}, zeilen:[{key, blatt, nummer, projekt_neu, nr, titel, art, opl_id, aehnlichkeit, aenderungen:{text|zustaendig|frist|status:{alt,neu}}, vorgewaehlt}]}` – ändert nichts.
+- `POST /api/admin/fb_import/einspielen` `{blaetter, auswahl:[key], quelle}` → `{ergebnis:{angelegt, geaendert, projekte}, summe, sicherung, historie, via}`.
+  Vorschau wird serverseitig neu berechnet, nur gewählte und weiterhin neue/geänderte Zeilen werden geschrieben (db.write, Aktion `fb_abgleich`);
+  Sicherung `vor-fb-abgleich` + Eintrag in der Paket-Historie (Rückgängig wie Datenpaket). Firmeneinstellung `fb_import_pfad` (Datei oder Ordner).
+
+## Runde 2.9 – Paket B (Import & Erkennung, Punkte 128/130)
+- Neuer Rechte-Bereich `import` (Default: PM bearbeiten, Mitarbeiter bearbeiten → Ablage nur über Freigabe G11,
+  Controlling/Leiter aus; Admin immer). Navigation „Import“ mit Zähler „noch zuordnen“ (eigener Eingangskorb).
+- Eingangskorb im App-Datenordner (`<data>/eingang/<zufällig>`, Tabelle `eingang`), nie auf dem Netzlaufwerk; Limit wie Ablage (200 MB).
+  - `GET /api/eingang/start` → `{typen (Verkauf-Typen nur PM/Admin), projekte [{…, direkt}], max_upload, nur_freigabe}`
+  - `GET /api/eingang` → `{items, anzahl}` (eigene; Admin mit `?alle=1` alle) · `GET /api/eingang/anzahl` → `{offen}`
+  - `POST /api/eingang/hochladen?typ=&projekt_id=` multipart `datei` → `{eintrag}` inkl. `erkennung`, `vorschlag_typ`,
+    `vorschlag_projekt_id`, `vorschlag_grund` (Auftragsnr. → `projekte.nummer`, Bestellnr. → `projekte.bestellnummer`,
+    Angebotsnr. → `projekte.angebot_ref` bzw. `angebote.nummer`; Vergleich nur über Ziffern, nur eindeutige Treffer)
+  - `GET /api/eingang/<id>/datei` (PDF/Bild inline, sonst Download)
+  - `GET /api/eingang/ziel?projekt_id=&typ=&namen=a|b` → `{direkt, pfad, unterordner, vorhanden}` (Namensgleichheit vorab)
+  - `POST /api/eingang/<id>/ablegen {projekt_id, typ, sub, modus: version|neu}` → direkt (`ablage.typ_ziel` + `ablage.speichern`)
+    für PM des Projekts/Admin (`ablage.darf_bereich`), sonst Freigabe (`ablage_freigaben` mit `opl_id` NULL). Danach Datei aus dem Eingangskorb entfernt.
+  - `DELETE /api/eingang/<id>` → nur aus dem Eingangskorb entfernen.
+- Erkennung (`dokument_erkennung.erkennen`): neue Felder `angebotsnummer` („JJJJ NNNN“) und `auftragsnummer` („JJJJ NNN 00“);
+  englische Stichwörter (Order/Order number/Order date/PO), Seite 1 zählt stark, Folgeseiten/AGB schwach (`pdf_text` trennt Seiten mit `\f`);
+  Wert neben/unter dem Etikett (z. B. „Bestellnummer/Datum“ ↵ Nummer ↵ „/ Datum“); Datumsformat „20-AUG-2026“.
+
+## Runde 2.9 – Paket H (Termine & Diagramme, Punkte 112/119/129)
+- `GET /api/projekte/<id>/kalender?von=JJJJ-MM-TT&bis=JJJJ-MM-TT` (Bereich „termine“ lesen; Standard −6/+12 Wochen, max. 400 Tage)
+  → `{items:[{typ: meilenstein|termin|opl|qip|kickoff|fertigung, id, datum, titel, erledigt, ueberfaellig, liefertermin?, projekt_id}], ohne_datum:[{typ, id, titel, erledigt}], von, bis}`.
+  OPL-Fälligkeiten nur mit Recht „opl“ lesen, QIP/Kick-Off nur mit „dokumente“, Fertigungsbesprechungen nur mit „fertigung“. Nur lesend (Modul `server/projekt_kalender.py`, registriert über `termine.py`).
+
+## Runde 2.9 – Paket F (Rollen & Kleinkram)
+- **110 Rolle `leiter`** (Anzeige „Leiter“, Kurz „L“): Matrix-Standard dashboard/projekte_details/kalender/termine/dokumente/berichte
+  lesen, opl/opl_alle/fertigung bearbeiten, budget_stunden/angebote/kalkulation/einstellungen_firma aus. Stunden nur als Prozent/Ampel
+  (wie Controlling), Exporte ohne Stundenzahlen (`export.stunden_erlaubt` = nein); `GET /api/bericht.xlsx` für Leiter: alle aktiven
+  Projekte ohne „Soll h/Ist h“. Leitet Fertigungsbesprechung, entscheidet Anträge, Freigaben (G11) und Vorschläge. Migration:
+  `rechte.migration` erweitert users.rolle-CHECK (alte DB ohne bzw. mit controlling), idempotent. Leiter ist als Person wählbar,
+  aber nicht als Projektleiter (PM-Auswahl nur Rolle pm).
+- **109 Vorschläge** (`server/vorschlaege.py`, Tabelle `opl_vorschlaege`, Spalte `ablage_freigaben.vorschlag_id`):
+  `GET /api/vorschlaege?status=offen|uebernommen|selbst|abgelehnt|alle&projekt_id=&eigene=1`, `GET /api/vorschlaege/anzahl`
+  → `{offen, eigene_offen}`, `GET /api/vorschlaege/projekte`, `POST /api/vorschlaege {projekt_id|opl_id, titel, beschreibung}`,
+  `POST /api/vorschlaege/<id>/uebernehmen {titel?, beschreibung?, zustaendig_text?, frist?, kommentar?}`,
+  `POST /api/vorschlaege/<id>/selbst {…}` (Entscheider wird zuständig), `POST /api/vorschlaege/<id>/ablehnen {kommentar}` (Pflicht),
+  `POST /api/vorschlaege/<id>/datei` (multipart, nur Melder; landet als Freigabe G11, hängt nach Übernahme am neuen Punkt).
+  Entscheider: PM des Projekts (inkl. Vertretung), Leiter, Admin. Glocke-Art `vorschlag`. Neuer Punkt enthält „Gemeldet von: …“.
+- **111** Jede JSON-Antwort trägt `X-BarlagePM-Version`; `GET /api/server` liefert `version`. Web (`web/js/update-check.js`):
+  bei Wechsel Shell-Caches leeren, Service Worker aktualisieren, einmal neu laden (Schleifenschutz je Version/Sitzung,
+  wartet, solange ein Dialog offen ist).
+- **115** OPL-Items haben `zustaendig_rest` (Freitext ohne erkannte Personen, auch „V. Nachname“, „Nachname V.“, Initialen).
+- **124** Druckansicht heißt „Übersicht / Protokoll“ (Titel, Dateiname, Schnellsuche, Knopf-Tooltip).
+
+## Runde 2.9 – Paket C (Fertigungsbesprechung: Punkte 120/122/123)
+Modul `server/besprechung.py` (Routen unter `/api/fertigung/…`, Rechte-Regel `fertigung`). Leitung = Admin, Controlling,
+Leiter oder aktive Vertretung (`fertigung_antraege.ist_leiter`). Migration additiv: `fb_sitzungen` + `modus, beendet_am,
+beendet_von, teilnehmer (JSON), projekt_id, protokoll_datei`.
+- `GET /api/fertigung/besprechung` → `{aktiv, letzte, darf_leiten, aenderungen}` (auch Präsentation/Mitlaufen).
+- `POST /api/fertigung/besprechung/start` `{teilnehmer?, projekt_id?}` (Leitung) → laufende Sitzung (Stand heute; läuft schon eine → dieselbe).
+- `PUT /api/fertigung/besprechung/teilnehmer` `{teilnehmer:[…]}`, `PUT /api/fertigung/besprechung/projekt` `{projekt_id}` (Leitung; 409 ohne laufende Sitzung).
+- `POST /api/fertigung/besprechung/beenden` `{ablegen?=true}` → `{sitzung, aenderungen, datei, eml_url}`. Kurzprotokoll (.xlsx,
+  verschlüsselt, wenn Verteil-Passwort gesetzt) über `ablage.speichern(..., modus="neu")` in `<Verteil-Verzeichnis>/Protokolle` – nie überschrieben.
+- `GET /api/fertigung/besprechung/<id>/protokoll` → Änderungen der Sitzung (activity zu opl/projekt/antrag zwischen Start und Ende).
+- `GET /api/fertigung/besprechung/<id>/protokoll.eml` (Leitung) → Mail-Entwurf (X-Unsent), Text ohne Punktinhalte, Anhang verschlüsselt; nie gesendet.
+- `PUT /api/fertigung/projekt/<id>/termine` `{text, base?}` (Leitung oder PM des Projekts; sonst 403 → Antrag Art `termine`):
+  Zeilen mit Datum/KW → `termine_frei`, sonst Notizzeilen; weggelassene freie Termine → erledigt; Meilensteine unverändert; 409 bei veraltetem `base`.
+- `GET /api/fertigung/projekt/<id>` zusätzlich: `sitzung_aktiv, sitzung_opl_ids, darf_termine, termine_rot`.
+- Anträge: neue Art `termine` (`nachher.text`).
+Web: `#/praesentation` (eigenes Fenster, `?mitlaufen=1` folgt über den Server, sonst BroadcastChannel `bpm-praesentation`),
+`web/js/projekt-galerie.js` (Projektleiste OPL + Fertigungsbesprechung), `web/js/views/besprechung.js`, `web/css/fertigung-r29.css`.
+
+## Runde 2.9 – Paket E (Reststunden-Analyse, Punkt 113)
+- Parser `reststunden.einlesen(pfad)` für die echte Struktur (Blätter „Auswahl“, „Auslastungsplan“, „JJ NNN 00 Ges.“), tolerant
+  gegenüber fehlenden Blättern/Spalten, Text-Zahlen, Fehlerwerten. Firmeneinstellungen siehe `docs/admin-seiten/budget.md`.
+- `POST /api/reststunden/abrufen` (PM/Admin): liest die Quelle sofort → `{ergebnis ok|fehler|keine_datei|kein_verzeichnis|unveraendert,
+  datei, datei_datum, kw, zeilen, projekte, unbekannt:[nummer], meldung, status}`. Auch von der Admin-Konsole („Jetzt einlesen“).
+- `GET /api/reststunden/status` (PM/Admin): wie bisher + `veraltet`, `einstellungen.quelle_aktiv`; nur Admin zusätzlich
+  `bericht {projekte, zugeordnet, unbekannt:[{nummer, stand_datum, fertigungsstand}]}`.
+- **Neu** `GET /api/projekte/<id>/reststunden` (Admin, PM, Controlling, Leiter; Bereich `dashboard` lesen):
+  `{vorhanden, nummer, stand_datum, stand_kw, veraltet, fertigungsstand, fortschritt, abweichung_pp, schwelle_pp, hinweis,
+  mit_stunden, abteilungen:[{abteilung, kategorie, fertigungsstand, (vorgabe, ist, hochrechnung, rest – nur PM des Projekts/Admin)}]}`.
+- Neue Tabelle `reststunden_projekte` (letzter Stand je Auftragsnummer), Spalten `datei_mtime, stand_kw, projekte, unbekannt` in
+  `reststunden_abrufe` (additiv).
+
+## Runde 2.9 – Paket A (Ablage, Punkte 125/131)
+- Firmeneinstellungen (Admin-Konsole → Dokumentenablage → „Wurzeln & Versionen“, „Dokumentation“): `ablage.wurzel_doku`
+  (`\\file01\Dokumentation\Dokumentationen\Auftrag\{jahr}`), `ablage.wurzel_verkauf` (`\\file01\Verkauf\{jahr}`),
+  `ablage.laufwerk_alias` ([{laufwerk:"J:", unc:"\\file01\Dokumentation"}] – beide Schreibweisen gleichwertig),
+  `ablage.musterordner` / `ablage.musterordner_verkauf`, `ablage.revision_kennzeichen` („R“), `ablage.standard_modus`
+  („version“|„neu“), `ablage.doku_benutzer` ([user_id] – legen Dokumentation 2.x direkt ab, ohne Freigabe).
+  `ablage.projektordner_muster` bleibt Rückfall (nur wenn gesetzt und nichts gefunden).
+- `ablage.typen`: zusätzlich `bereich` (doku|verkauf), `ordner` verschachtelt („2.1_PM/2.1.3_Protokolle_PM“). Voreinstellung =
+  Firmenstruktur; gespeicherte (alte, flache) Listen gelten unverändert weiter; Admin-Knopf „Firmenstruktur übernehmen“.
+- Neue Tabelle `projekt_ablage_ordner(projekt_id, bereich, pfad, art, gesetzt_von, gesetzt_am)` – Zuordnung hat Vorrang vor der
+  Suche über die Nummer („JJJJ NNN 00_…“, auch im Unterordner „Archiv“). Gefundene Ordner werden beim Öffnen gespeichert (art „suche“).
+- `GET /api/projekte/<id>/dokumente` zusätzlich `bereiche:{doku, verkauf?}` je `{pfad, art: zuordnung|suche|muster|null, existiert,
+  hinweis, jahr_ordner, musterordner, muster_vorhanden, darf_hochladen, darf_zuordnen}`, `vorschlag_name`, `standard_modus`;
+  Typen mit `bereich`, `darf`. Verkauf (Bereich + Typen) nur für PM des Projekts/Admin.
+- Quellen zusätzlich `bereich:doku` / `bereich:verkauf` (mit `sub` = relativer Pfad) für liste/datei/hochladen/explorer-pfad/ordner-anlegen.
+- **Neu** `GET …/dokumente/baum?bereich=` (nur Ordner, Zahlen natürlich sortiert), `GET …/dokumente/kandidaten?bereich=` (PM/Admin),
+  `POST …/dokumente/zuordnen {bereich, pfad|null}` (PM/Admin, Pfad muss unter der Wurzel liegen, J:-Schreibweise erlaubt),
+  `POST …/dokumente/aus-muster {bereich, name}` (PM/Admin; Musterordner nur ergänzen, nie überschreiben, danach zuordnen),
+  `GET …/dokumente/existiert?quelle=&sub=&name=` → `{existiert, alt_name, neu_name, standard_modus}`.
+- `POST …/dokumente/hochladen?…&modus=version|neu` → `{name, alt}`; „version“: alte Fassung → `00_alt/Name_R01.ext`
+  (kopieren, Größe prüfen, dann Original entfernen; sonst 409, nichts verändert), Verlaufseintrag am Projekt.
+  `GET …/dokumente/datei?…&vorschau=1` liefert PDF/Bilder inline.
+- `POST /api/export/ablegen` zusätzlich `typ=<key>` (Auswahl, nur Bereich doku) und `modus`; Antwort mit `ordner`, `alt`.
+  Zuordnung: Protokoll/OPL/Fertigung → 2.1.3_Protokolle_PM, Kick-Off → 2.1.3.1_Kick-Off, terminplan/kalender → 2.1.4_Terminpläne_PM.
+  `GET /api/export/kopf` zusätzlich `typen` (Doku-Typen zur Auswahl).
+- Schnittstelle für andere Pakete (`server/ablage.py`): `typen(conn)`, `projekt_wurzel(conn, p, bereich)`, `typ_ziel(conn, p, key)`,
+  `speichern(db, user, wurzel, rel, name, data, modus=None, projekt_id=None) → {name, alt}`, `darf_bereich(ctx|user, p, bereich)`,
+  `automatisch_zuordnen(db, user, p)`.
+- 131a: Link `barlagepm://ordner?pfad=<urlencoded>` – Installer registriert HKCU\Software\Classes\barlagepm; BarlagePM.exe prüft den
+  Pfad (`barlagepm_core.ordner_pfad_pruefen`: nur UNC/Laufwerk, kein „..“, unter Wurzeln aus der DB bzw. Zwischenspeicher) und startet
+  nur explorer.exe (Datei → `/select,`). Web: Versuch über unsichtbaren Rahmen, nach 1,5 s Rückfall Kopier-Dialog.

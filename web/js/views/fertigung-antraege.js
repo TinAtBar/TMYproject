@@ -41,6 +41,11 @@ export function antragDialog(opts, onDone) {
     const i = h('input', { value: opts.vorher.fertigungsort || '', maxlength: 120 });
     felder.push(['fertigungsort', () => ({ fertigungsort: i.value.trim() }), opts.vorher]);
     body = [field('Neuer Fertigungsort', i, `Bisher: ${opts.vorher.fertigungsort || '–'}`)];
+  } else if (opts.art === 'termine') { // R29-C (123): Termine/Notizen im Projektkopf
+    const norm = v => String(v || '').split('\n').map(z => z.trim()).filter(Boolean).join('\n');
+    const t = h('textarea', { rows: 6, maxlength: 20000 }); t.value = opts.vorher.text || '';
+    felder.push(['termine', () => ({ text: norm(t.value) }), { text: norm(opts.vorher.text) }]);
+    body = [field('Termine', t, 'Eine Zeile je Eintrag – Zeilen mit Datum oder KW werden als Termine übernommen')];
   } else if (opts.art === 'neu') {
     const t = h('textarea', { rows: 2, maxlength: 500 }), z = h('input', { list: 'fb-zust-liste', maxlength: 200 }), k = h('input', { placeholder: 'TT.MM.JJJJ / KW', maxlength: 80 });
     if (opts.titel) t.value = opts.titel;
@@ -60,7 +65,7 @@ export function antragDialog(opts, onDone) {
       field('Thema', t), field('Zuständig', z), field('Klärung bis', k), h('label', { class: 'fb-chk' }, e, ' erledigt')];
   }
   dialog({
-    title: opts.art === 'neu' ? 'Neuen Punkt vorschlagen' : 'Änderung vorschlagen',
+    title: opts.art === 'neu' ? 'Neuen Punkt vorschlagen' : opts.art === 'termine' ? 'Änderung der Termine vorschlagen' : 'Änderung vorschlagen', // R29-C
     body: h('div', { class: 'form-grid' }, ...body, field('Begründung', begr)),
     actions: [{ label: 'Abbrechen', cls: 'btn-ghost' }, {
       label: 'Antrag stellen', cls: 'btn-primary', fn: async () => {

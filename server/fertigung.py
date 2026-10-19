@@ -33,6 +33,7 @@ def migration(c):
         c.execute("ALTER TABLE opl ADD COLUMN klaerung_text TEXT")
     c.execute("CREATE TABLE IF NOT EXISTS fb_sitzungen(id INTEGER PRIMARY KEY, datum TEXT NOT NULL, "
               "gestartet_von INTEGER, gestartet_am TEXT)")
+    import besprechung; besprechung.migration(c)  # R29-C: Besprechungs-Modus (Spalten additiv)
     # Sonderprojekt Allgemein: in bestehenden Datenbanken sofort, in einer frischen (leeren) DB beim ersten Bedarf
     if c.execute("SELECT 1 FROM projekte WHERE COALESCE(ist_allgemein,0)=0 LIMIT 1").fetchone():
         allgemein_anlegen(c)
@@ -260,7 +261,7 @@ def projekt_blatt(ctx):
             "pm_emails": _pm_emails(db, pid), "termine": [{**t, "anzeige": _termin_text(t)} for t in _termine(db, p)],
             "punkte": _punkte(db, pid, ctx.qp("erledigte") in ("1", "true"), _tage_seit(seit)),
             "seit": seit, "darf_schreiben": ctx.r.kann_opl_schreiben(pid), "darf_bearbeiten": ctx.r.kann_projekt_bearbeiten(pid),
-            **_r27(ctx, pid)}
+            **_r27(ctx, pid), **__import__("besprechung").blatt_zusatz(ctx, pid, seit)}  # R29-C
 
 
 def _r27(ctx, pid):
@@ -274,7 +275,7 @@ def _r27(ctx, pid):
 @route("POST", "/api/fertigung/sitzung")
 def sitzung_starten(ctx):
     """„Besprechung starten“: legt eine Sitzung mit Datum (Standard heute) an – je Datum nur einmal."""
-    if ctx.user["rolle"] not in ("admin", "pm", "controlling") and not __import__("fertigung_antraege").ist_leiter(ctx.db, ctx.user):  # R26-E/R27-105
+    if ctx.user["rolle"] not in ("admin", "pm", "controlling", "leiter") and not __import__("fertigung_antraege").ist_leiter(ctx.db, ctx.user):  # R26-E/R27-105
         raise ApiError(403, "Keine Berechtigung: nur Admin, Projektleiter oder Controlling")
     datum = (ctx.body.get("datum") or today_iso())[:10]
     try:
@@ -412,3 +413,6 @@ def export(ctx):
     with ctx.db.lock:
         name = _ex.dateiname(ctx.db.conn, "Fertigungsbesprechung", "xlsx", None, ctx.user)
     return {"_raw": data, "_filename": name, "_mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "_inline": False}
+
+
+import besprechung  # noqa: E402,F401  R29-C: Routen Besprechungs-Modus/Termine registrieren

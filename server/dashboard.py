@@ -15,7 +15,7 @@ import math
 
 from router import route
 
-STUNDEN_ROLLEN = ("admin", "pm", "controlling")
+STUNDEN_ROLLEN = ("admin", "pm", "controlling", "leiter")  # R29-F: Leiter nur %/Ampel
 
 
 def groessen(werte):
@@ -149,11 +149,11 @@ KATALOG = [
     ("meine_punkte", "Meine offenen Punkte", "meine", "M", True, ("opl",), None),
     ("verlauf", "Offene Punkte – Verlauf", "diagramm", "M", True, ("opl",), None),
     ("status", "Status-Verteilung", "diagramm", "M", True, ("opl",), None),
-    ("personen", "Offene Punkte je Person", "diagramm", "M", True, ("opl",), ("admin", "pm")),
-    ("stunden_ampel", "Stunden-Ampel", "kennzahl", "K", True, ("dashboard",), ("admin", "pm", "controlling")),
+    ("personen", "Offene Punkte je Person", "diagramm", "M", True, ("opl",), ("admin", "pm", "leiter")),  # R29-F
+    ("stunden_ampel", "Stunden-Ampel", "kennzahl", "K", True, ("dashboard",), ("admin", "pm", "controlling", "leiter")),
     ("projekte", "Projekte", "projekte", "G", True, ("dashboard",), None),
     ("zuletzt", "Zuletzt angesehen", "liste", "M", False, (), None),
-    ("steuerung", "Steuerung (ohne Zuständig / ohne Frist / liegengeblieben)", "liste", "M", False, ("opl",), ("admin", "pm")),
+    ("steuerung", "Steuerung (ohne Zuständig / ohne Frist / liegengeblieben)", "liste", "M", False, ("opl",), ("admin", "pm", "leiter")),  # R29-F
 ]
 _KAT = {k[0]: k for k in KATALOG}
 FIRMA_PREFIX = "dashboard.standard."
@@ -437,7 +437,7 @@ def termine_liste(ctx, c, ids, tage=30):
 
 
 def personen(ctx, c, ids):
-    if ctx.user["rolle"] not in ("admin", "pm"):
+    if ctx.user["rolle"] not in ("admin", "pm", "leiter"):  # R29-F
         return None
     h = dt.date.today().isoformat()
     inid = ",".join(str(int(i)) for i in ids) or "NULL"

@@ -368,7 +368,7 @@ def _pruef_user(c, d, uid=None):
             raise ApiError(409, f"Login „{d['login']}“ ist bereits vergeben")
     if "name" in d and not (d["name"] or "").strip():
         raise ApiError(400, "Name darf nicht leer sein")
-    if "rolle" in d and d["rolle"] not in ("admin", "pm", "mitarbeiter", "controlling"):
+    if "rolle" in d and d["rolle"] not in ("admin", "pm", "mitarbeiter", "controlling", "leiter"):
         raise ApiError(400, "Ungültige Rolle")
 
 

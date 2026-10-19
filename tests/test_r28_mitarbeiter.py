@@ -211,7 +211,7 @@ class R28MitarbeiterTest(unittest.TestCase):
         self.assertEqual(st, 200, d)
         dateien = [p for p in self.ablage.rglob("*") if p.is_file()]
         self.assertEqual(len(dateien), 1, dateien)
-        self.assertEqual(dateien[0].parent.name, "Bestellung")
+        self.assertEqual(dateien[0].parent.parent.name, "1.2_Bestellung und AB")  # R29-A: Verkauf 1.2 …/Hauptauftrag
         self.assertTrue(dateien[0].name.endswith(".jpg"))
         self.assertEqual(list((self.data / "uploads_wartend").iterdir()), [])
         self.assertEqual(pm.post(f"/api/freigaben/{fid}/freigeben", {"dokumenttyp": "bestellung"})[0], 409)

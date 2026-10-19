@@ -182,7 +182,7 @@ def starte_timer(db, intervall=3600, erste=5):
 
 # ------------------------------------------------------------------ API
 def _stunden_sichtbar(ctx, pid):
-    return ctx.user["rolle"] in ("admin", "controlling") or ctx.r.ist_pm(pid)
+    return ctx.user["rolle"] in ("admin", "controlling", "leiter") or ctx.r.ist_pm(pid)
 
 
 @route("GET", "/api/projekte/<id>/fortschritt")
@@ -205,7 +205,7 @@ def api_alle(ctx):
     import budget
     import rechte
     # R26-W: Stundenbalken nur als Prozent + Ampel; Controlling ja, sonst nur mit Recht „Budget / Stunden“
-    mit_stunden = ctx.user["rolle"] in ("admin", "controlling") or rechte.darf(ctx.user, "budget_stunden", "lesen", ctx.db)
+    mit_stunden = ctx.user["rolle"] in ("admin", "controlling", "leiter") or rechte.darf(ctx.user, "budget_stunden", "lesen", ctx.db)
     with ctx.db.lock:
         c = ctx.db.conn
         for pid in _aktive(c):

@@ -1,6 +1,23 @@
-# Barlage PM – Version 2.8
+# Barlage PM – Version 2.9
 
 Barlage PM, lauffähiger Kern: Server + Web-Oberfläche, Pilotprojekt „Beispielprojekt“ (Beispieldaten).
+
+## Neu in 2.9
+- **Dokumentenablage nach Firmenstruktur:** Projektordner werden über die Nummer gefunden (Dokumentation `J:\Dokumentationen\Auftrag\JJJJ\…` und Verkauf `\\file01\Verkauf\JJJJ\…`, auch im „Archiv“); Dokumenttypen zeigen auf die Unterordner 2.x/1.x; „Ordner ändern …“, „Aus Musterordner anlegen“; gleiche Dateinamen → alte Fassung nach `00_alt` als `_R01`, nichts wird überschrieben oder gelöscht. Verkaufsordner nur für PM/Admin.
+- **Eingebauter Explorer** (Ordnerbaum, Vorschau, Ziehen & Ablegen) und **„Im Explorer öffnen“ auf jedem PC** (Link `barlagepm://`).
+- **Import** in der Navigation: Dateien auf Dokumenttyp-Kacheln ziehen, sofort zuordnen oder später aus dem Eingangskorb; PDF-Erkennung für Bestellungen (auch englisch), Angebots- und Auftragsnummer.
+- **Fertigungsbesprechung:** Besprechungs-Modus mit Teilnehmern, Kurzprotokoll und Präsentationsfenster; Projektleiste als Galerie (auch in der OPL); „Termine:“ per Doppelklick bearbeiten.
+- **Abgleich mit der Fertigungsbesprechungs-Excel** in der Admin-Konsole (Datenübernahme): Vorschau neu/geändert/unverändert, gezielt einspielen, rückgängig.
+- **Reststunden-Analyse** automatisch einlesen (Ist-Stunden je Abteilung, Fertigungsstand als Abgleich, Veraltet-Hinweis).
+- **Rolle „Leiter“** (Abteilungs-/Geschäftsleitung, ohne Stundenzahlen); Mitarbeiter können **Punkte vorschlagen**.
+- **Termine-Reiter** mit Kalender-Ansicht; „noch offen“ statt 0 %; Diagramme ohne doppelte Achsenwerte.
+- **Design:** ein Farbsatz je Stil für die ganze App (Leitstand überall), Glas sichtbar gläsern, kontrastreichere Kacheln, schärfere Symbole, Glocke mit Zähler, Teams-Knopf, Karteireiter (Mehr nur bei Platzmangel).
+- App lädt nach einem Update **automatisch neu**; Protokoll heißt „Übersicht / Protokoll“; Zuständig nicht mehr doppelt.
+
+### Vor dem Einsatz prüfen (2.9)
+- Admin-Konsole → Ablage: Wurzeln prüfen, bei Bedarf „Firmenstruktur übernehmen“; Doku-Benutzer anhaken.
+- Admin-Konsole → Budget: Quelle und Zuordnung der Reststunden-Analyse prüfen (Logistik/Montage zählen vorerst zu Zusammenbau).
+- Einmal „Im Explorer öffnen“ an einem Arbeitsplatz-PC testen; Leiter-Benutzer in der Admin-Konsole zuweisen.
 
 ## Neu in 2.8.1
 

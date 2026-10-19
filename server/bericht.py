@@ -111,7 +111,9 @@ def vorlage_befuellen(d, vorlage_bytes=None):
 @route("GET", "/api/bericht.xlsx", raw=True)
 def ep_bericht(ctx):
     """?projekt_id=<id> (leer = alle aktiven eigenen bzw. für Admin alle aktiven) &zeitraum=woche|monat"""
-    ctx.r.need_pm_or_admin()
+    leiter = ctx.user.get("rolle") == "leiter"  # R29-F: Leiter – alle aktiven Projekte, ohne Stundenzahlen
+    if not leiter:
+        ctx.r.need_pm_or_admin()
     zr = ctx.qp("zeitraum") or "woche"
     if zr not in ("woche", "monat"):
         raise ApiError(400, "Zeitraum muss „woche“ oder „monat“ sein")
@@ -119,13 +121,13 @@ def ep_bericht(ctx):
     if pid:
         if not ctx.db.q1("SELECT 1 x FROM projekte WHERE id=?", (pid,)):
             raise ApiError(404, "Projekt nicht gefunden")
-        if not ctx.r.budget_sichtbar(pid):
+        if not leiter and not ctx.r.budget_sichtbar(pid):  # R29-F
             raise ApiError(403, "Keine Berechtigung: nur Admin oder Projektleiter dieses Projekts")
         ids = [pid]
     else:
         ids = [r["id"] for r in ctx.db.q("SELECT id FROM projekte WHERE status='aktiv' AND COALESCE(ist_allgemein,0)=0 ORDER BY nummer")] \
             if _hat_allgemein(ctx.db) else [r["id"] for r in ctx.db.q("SELECT id FROM projekte WHERE status='aktiv' ORDER BY nummer")]
-        if not ctx.r.admin:
+        if not ctx.r.admin and not leiter:  # R29-F
             eigene = ctx.r.pm_projekte()
             ids = [i for i in ids if i in eigene]
     import export  # R27-108: einheitlicher Kopf, Dateiname, Stundenrechte

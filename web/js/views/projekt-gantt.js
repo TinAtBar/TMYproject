@@ -17,7 +17,7 @@ export function gantt(rows, ms, rowOf, opts = {}) {
   const zoom = opts.zoom || 'woche';
   const heute = opts.heute || new Date(new Date().toDateString());
   const dates = ms.flatMap(m => [m.datum, m.ist_datum]).filter(Boolean).map(parseDate).filter(Boolean);
-  if (!dates.length) return h('p', { class: 'muted small' }, 'Noch keine Termine – trage Plan-Daten ein, dann erscheint das Diagramm.');
+  if (!dates.length) return h('p', { class: 'muted small' }, 'Noch keine Plan-Daten – Meilensteine ohne Datum stehen in der Liste mit „Datum fehlt“. Mit Plan-Daten erscheint hier das Diagramm.');
   dates.push(heute);
   let von = new Date(Math.min(...dates)), bis = new Date(Math.max(...dates));
   von = new Date(von.getFullYear(), von.getMonth(), von.getDate() - 7); bis = new Date(bis.getFullYear(), bis.getMonth(), bis.getDate() + 10); // R28-E2E: Kalendertage statt 24-h-Schritte (Sommerzeit)

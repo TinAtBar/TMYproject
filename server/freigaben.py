@@ -70,7 +70,7 @@ def _pfad(db, speicher):
 
 
 def _darf_entscheiden(ctx, f):
-    return ctx.r.admin or ctx.r.ist_pm(f["projekt_id"])
+    return ctx.r.admin or ctx.r.ist_pm(f["projekt_id"]) or ctx.user.get("rolle") == "leiter"  # R29-F: Leiter wie PM
 
 
 def _entscheider(c, projekt_id):
@@ -150,7 +150,7 @@ def hochladen(ctx):
 
 # ------------------------------------------------------------------ Liste / Vorschau
 def _sichtbar_sql(ctx):
-    if ctx.r.admin:
+    if ctx.r.admin or ctx.user.get("rolle") == "leiter":  # R29-F
         return "1=1", []
     pids = sorted(ctx.r.pm_projekte())
     return (f"(f.hochgeladen_von=? OR f.projekt_id IN ({','.join('?' * len(pids)) or 'NULL'}))", [ctx.user["id"], *pids])
@@ -197,7 +197,7 @@ def liste(ctx):
 
 @route("GET", "/api/freigaben/anzahl")
 def anzahl(ctx):
-    if ctx.r.admin:
+    if ctx.r.admin or ctx.user.get("rolle") == "leiter":  # R29-F
         n = ctx.db.q1("SELECT COUNT(*) n FROM ablage_freigaben WHERE status='wartend'")["n"]
     else:
         pids = sorted(ctx.r.pm_projekte())
@@ -282,7 +282,7 @@ def freigeben(ctx):
         ctx.db.activity(c, ctx.user, "opl", f["opl_id"], f["projekt_id"], "Datei freigegeben",
                         {"text": f"{endname} → {info['name']}", "freigabe_id": f["id"]})
         _notify(c, f["hochgeladen_von"], ctx.user, f"Deine Datei „{f['dateiname']}“ wurde freigegeben ({info['name']})",
-                f"#/opl/{f['opl_id']}", f["opl_id"])
+                (f"#/opl/{f['opl_id']}" if f["opl_id"] else "#/import"), f["opl_id"])  # R29-B: Import ohne Punkt
         return {"ok": True, "name": endname, "dokumenttyp": info["name"]}
     try:
         res = ctx.db.write(ctx.user, "freigabe_freigeben", fn, b.get("change_id"), {"id": f["id"], "dokumenttyp": key, "name": name})
@@ -324,7 +324,7 @@ def ablehnen(ctx):
         ctx.db.activity(c, ctx.user, "opl", f["opl_id"], f["projekt_id"], "Datei abgelehnt",
                         {"text": f"{f['dateiname']}: {kommentar}", "freigabe_id": f["id"]})
         _notify(c, f["hochgeladen_von"], ctx.user, f"Deine Datei „{f['dateiname']}“ wurde abgelehnt: {kommentar}",
-                f"#/opl/{f['opl_id']}", f["opl_id"])
+                (f"#/opl/{f['opl_id']}" if f["opl_id"] else "#/import"), f["opl_id"])  # R29-B: Import ohne Punkt
         return {"ok": True}
     res = ctx.db.write(ctx.user, "freigabe_ablehnen", fn, b.get("change_id"), {"id": f["id"], "kommentar": kommentar})
     try:

@@ -4,7 +4,7 @@ Matrix Rollen × Bereiche (aus / lesen / bearbeiten). Gespeichert werden nur Abw
 Firmeneinstellung „rechte_matrix“ (Op firma_setzen); keine Abweichung = Eintrag entfernt. Admin darf immer alles.
 """
 FIRMA_KEY = "rechte_matrix"
-SPALTEN = ("pm", "mitarbeiter", "controlling")
+SPALTEN = ("pm", "mitarbeiter", "controlling", "leiter")  # R29-F
 
 
 def _r():

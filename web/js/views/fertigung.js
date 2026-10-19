@@ -7,6 +7,8 @@ import { setQuery, go } from '../router.js';
 import { toast, toastErr, dialog, field, loading, errorBox } from '../ui.js';
 import { teamsKnopf, teamsBesprechungNeu, istTeamsLink } from '../teams.js';
 import { fertigungsortFeld, antragDialog, antraegeDialog, vertretungDialog } from './fertigung-antraege.js'; // R27-103–105
+import { projektGalerie, projektKachel } from '../projekt-galerie.js'; // R29-C (122)
+import { besprechungLeiste, sendePraesentation, termineBereich } from './besprechung.js'; // R29-C (120/123)
 
 // ======================================================================= Kacheln (OPL)
 let kachelCache = null, kachelZeit = 0;
@@ -17,52 +19,34 @@ async function ladeKacheln(force) {
   return kachelCache;
 }
 
-/** Rendert die Kachelleiste in den Container (#opl-vorbereich). */
+/** Rendert die Kachelleiste in den Container (#opl-vorbereich). R29-C (122): als Galerie. */
 export function projektKacheln(host) {
   if (host.dataset.fKacheln) return; host.dataset.fKacheln = '1';
-  const bar = h('div', { class: 'fb-tiles', role: 'toolbar', 'aria-label': 'Projekte filtern' });
-  host.append(bar);
   let aktiv = new Set(), projekte = [];
   const setFilter = async ids => {
     try { const m = await import('./opl-list.js'); if (m.setOplProjektFilter) { m.setOplProjektFilter(ids); return; } } catch { }
     go('/opl' + qs({ projekt_id: ids.join(','), status_art: 'offen' }));
   };
-  function kachel(p, label, sub) {
-    const id = p ? String(p.id) : '';
-    const an = p ? aktiv.has(id) : aktiv.size === 0;
-    return h('button', {
-      type: 'button', class: 'fb-tile' + (an ? ' on' : '') + (p && p.ist_allgemein ? ' allg' : ''), 'aria-pressed': String(an), dataset: { id },
-      title: p ? `${p.nummer} ${p.bezeichnung || ''}\n${p.offen} offen · ${p.ueberfaellig} überfällig · ${p.geaendert} geändert (7 Tage)` : 'Alle Projekte',
-      onclick: e => {
-        if (!p) { aktiv = new Set(); }
-        else if (e.ctrlKey || e.metaKey || e.shiftKey) { aktiv.has(id) ? aktiv.delete(id) : aktiv.add(id); }
-        else aktiv = (aktiv.size === 1 && aktiv.has(id)) ? new Set() : new Set([id]);
-        render(); setFilter([...aktiv]);
-      },
-      onkeydown: e => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        e.preventDefault(); const all = [...bar.querySelectorAll('.fb-tile')]; const i = all.indexOf(e.currentTarget);
-        const n = all[i + (e.key === 'ArrowRight' ? 1 : -1)]; if (n) { n.focus(); n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
-      },
-    }, h('span', { class: 'fb-tile-nr' }, label), sub != null ? h('span', { class: 'fb-tile-sub' }, sub) : null,
-      p ? h('span', { class: 'fb-tile-z' }, h('span', { class: 'fb-n', title: 'offen' }, p.offen),
-        p.ueberfaellig ? h('span', { class: 'fb-od', title: 'überfällig' }, p.ueberfaellig) : null,
-        p.geaendert ? h('span', { class: 'fb-ch', title: 'geändert in den letzten 7 Tagen' }, icon('edit', 12), p.geaendert) : null) : null);
-  }
-  function render() {
-    const fokus = document.activeElement && bar.contains(document.activeElement) ? document.activeElement.dataset.id : null;
-    clear(bar).append(kachel(null, 'Alle', null),
-      ...projekte.map(p => kachel(p, p.ist_allgemein ? 'Allgemein' : p.nummer.replace(/-00$/, ''), p.ist_allgemein ? 'Firma' : p.kunde_kurz)),
-      h('a', { class: 'fb-tile fb-tile-go', href: '#/fertigung', title: 'Fertigungsbesprechung starten' }, icon('users', 16), h('span', { class: 'fb-tile-sub' }, 'Besprechung')));
-    if (fokus != null) { const b = bar.querySelector(`.fb-tile[data-id="${fokus}"]`); b && b.focus(); }
-  }
+  const gal = projektGalerie({
+    label: 'Projekte filtern',
+    hinten: [h('a', { class: 'fb-tile fb-tile-go', href: '#/fertigung', title: 'Fertigungsbesprechung starten' }, icon('users', 16), h('span', { class: 'fb-tile-sub' }, 'Besprechung'))],
+    onWaehle: (id, e) => {
+      if (id === '') aktiv = new Set();
+      else if (e.ctrlKey || e.metaKey || e.shiftKey) { aktiv.has(id) ? aktiv.delete(id) : aktiv.add(id); }
+      else aktiv = (aktiv.size === 1 && aktiv.has(id)) ? new Set() : new Set([id]);
+      render(); setFilter([...aktiv]);
+    },
+  });
+  gal.el.classList.add('fb-tiles');
+  host.append(gal.el);
+  const render = () => gal.setze([{ id: '', nr: 'Alle', sub: null, title: 'Alle Projekte' }, ...projekte.map(projektKachel)], aktiv);
   const onFilter = e => {
     if (!host.isConnected) { document.removeEventListener('opl:filter', onFilter); return; }
     const ids = (e.detail && e.detail.projekt_ids) || [];
     aktiv = new Set(ids.map(String)); render();
   };
   document.addEventListener('opl:filter', onFilter);
-  ladeKacheln(true).then(p => { projekte = p; render(); }).catch(() => { bar.remove(); });
+  ladeKacheln(true).then(p => { projekte = p; render(); }).catch(() => { gal.el.remove(); });
   render();
 }
 
@@ -87,9 +71,9 @@ export function teamsEinstellung() {
 // ======================================================================= Teams im Projektkopf
 /** Knopf „Teams öffnen“ für den Projektkopf (projekt.js). onSaved() nach Link-Speichern. */
 export function projektTeamsKnopf(p, canEdit, onSaved) {
-  if (istTeamsLink(p.teams_link)) return teamsKnopf(p.teams_link, 'Teams öffnen', 'btn btn-sm btn-ghost');
+  if (istTeamsLink(p.teams_link)) { const k = teamsKnopf(p.teams_link, 'Teams', 'btn btn-sm'); k.title = 'Teams-Besprechung des Projekts öffnen'; return k; } // R29-G (126)
   return h('button', {
-    class: 'btn btn-sm btn-ghost teams-btn', type: 'button', title: 'Teams-Besprechung des Projekts',
+    class: 'btn btn-sm teams-btn', type: 'button', title: 'Teams-Besprechung des Projekts', // R29-G (126)
     onclick: async () => {
       let mails = [];
       try { mails = (await get('/fertigung/projekt/' + p.id)).pm_emails || []; } catch { }
@@ -110,7 +94,7 @@ export function projektTeamsKnopf(p, canEdit, onSaved) {
       });
       return d;
     }
-  }, icon('chat', 16), 'Teams');
+  }, icon('video', 16), 'Teams'); // R29-G (126)
 }
 
 // ======================================================================= Besprechungsmodus
@@ -129,16 +113,19 @@ function klaerungText(it) { return it.klaerung_text || (it.frist ? fmtDate(it.fr
 
 export function mount(el, r) {
   if (r.path === '/fertigung/druck') return druck(el, r);
-  let reihe = [], idx = 0, info = null, blatt = null, nurOffen = r.query.nur_offen === '1', erledigte = r.query.erledigte === '1';
+  let reihe = [], idx = 0, info = null, blatt = null, bs = null, nurOffen = r.query.nur_offen === '1', erledigte = r.query.erledigte === '1';
   const top = h('div', { class: 'fb-top no-print' });
-  const prog = h('div', { class: 'fb-prog' });
+  const prog = h('div', { class: 'fb-prog fb-prog-galerie' });
+  // R29-C (122): Projektleiste als Galerie statt „Projekt x von N“ + Auswahlliste
+  const gal = projektGalerie({ label: 'Projekt wählen', auswahl: true, onWaehle: id => { const i = reihe.findIndex(x => String(x.id) === String(id)); if (i >= 0) nav(i - idx); } });
+  prog.append(gal.el);
   const body = h('div', { class: 'fb-body' }, loading());
   el.append(top, prog, body);
   zustDatalist();
 
   async function init() {
     try {
-      info = await get('/fertigung' + qs({ nur_offen: nurOffen ? 1 : '' }));
+      [info, bs] = await Promise.all([get('/fertigung' + qs({ nur_offen: nurOffen ? 1 : '' })), get('/fertigung/besprechung').catch(() => null)]); // R29-C
       reihe = info.projekte || [];
       const want = r.query.p && reihe.findIndex(p => String(p.id) === String(r.query.p));
       idx = want > 0 ? want : 0;
@@ -149,16 +136,18 @@ export function mount(el, r) {
   function renderTop() {
     const s = info.sitzung;
     const exp = '/api/fertigung/export.xlsx' + qs({ stand: s ? s.datum : '', erledigte: erledigte ? 1 : '' });
-    const darfStart = store.user && (['admin', 'pm', 'controlling'].includes(store.user.rolle) || info.ist_leiter); // R26-E: Controlling leitet; R27: Vertretung
+    const darfStart = store.user && (['admin', 'pm', 'controlling', 'leiter'].includes(store.user.rolle) || info.ist_leiter); // R26-E: Controlling leitet; R27: Vertretung
+    const bsEl = besprechungLeiste(bs, { onChange: init, projekt: () => reihe[idx], verteilen }); // R29-C (120)
     const nA = info.antraege_offen || 0; // R27-104: Leiste „n Anträge offen“ / eigene Anträge
     const zeigAntraege = () => antraegeDialog({ leiter: info.ist_leiter, projekt_id: reihe[idx] && reihe[idx].id, onChange: async () => { try { const i2 = await get('/fertigung' + qs({ nur_offen: nurOffen ? 1 : '' })); info.antraege_offen = i2.antraege_offen; renderTop(); await zeige(); } catch { } } }); // R27: Blatt nach Übernahme neu laden
     const leiste = info.ist_leiter && nA ? h('button', { class: 'fa-leiste', type: 'button', onclick: zeigAntraege }, icon('hand', 16), h('strong', null, `${nA} ${nA === 1 ? 'Antrag' : 'Anträge'} offen`), h('span', { class: 'muted' }, ' – prüfen und übernehmen oder ablehnen')) : null;
     const vertrOk = store.user && ['admin', 'controlling'].includes(store.user.rolle);
-    clear(top).append(leiste || '',
+    clear(top).append(leiste || '', bsEl && bsEl.classList.contains('bs-leiste') ? bsEl : '',
       h('div', { class: 'fb-title' }, h('h1', null, 'Fertigungsbesprechung'),
         h('span', { class: 'fb-stand' }, 'Stand: ', h('strong', null, fmtDate(s ? s.datum : isoDate(today()))) /* R28-FIX: gleicher Stand wie im Blatt */, !s ? h('span', { class: 'muted small' }, ' (noch keine Besprechung gestartet)') : null, info.seit ? h('span', { class: 'muted small' }, ` · rot = geändert seit ${fmtDate(info.seit)}`) : null)),
       h('div', { class: 'fb-actions' },
-        darfStart ? h('button', { class: 'btn btn-sm btn-primary', type: 'button', onclick: starten, title: 'Stand-Datum auf heute setzen' }, icon('cal', 16), 'Besprechung starten') : null,
+        bsEl && !bsEl.classList.contains('bs-leiste') ? bsEl : null, // R29-C: Besprechungs-Modus (Leitung)
+        darfStart && !(bs && bs.darf_leiten) ? h('button', { class: 'btn btn-sm', type: 'button', onclick: starten, title: 'Stand-Datum auf heute setzen' }, icon('cal', 16), 'Stand heute') : null,
         info.teams_link ? teamsKnopf(info.teams_link, 'Fertigungsbesprechung in Teams') : null,
         h('label', { class: 'fb-chk' }, h('input', { type: 'checkbox', checked: nurOffen, onchange: e => { nurOffen = e.target.checked; setQuery({ ...r.query, nur_offen: nurOffen ? '1' : '' }); init(); } }), 'nur Projekte mit offenen Punkten'),
         h('label', { class: 'fb-chk' }, h('input', { type: 'checkbox', checked: erledigte, onchange: e => { erledigte = e.target.checked; renderTop(); zeige(); } }), 'erledigte zeigen'),
@@ -181,17 +170,7 @@ export function mount(el, r) {
   async function starten() {
     try { await post('/fertigung/sitzung', { change_id: uuid() }); toast('Besprechung gestartet – Stand heute.', 'ok'); await init(); } catch (e) { toastErr(e); }
   }
-  function renderProg() {
-    const p = reihe[idx];
-    const pct = reihe.length ? Math.round((idx + 1) / reihe.length * 100) : 0;
-    const sel = h('select', { 'aria-label': 'Projekt wählen', onchange: e => nav(+e.target.value - idx) },
-      reihe.map((x, i) => h('option', { value: i, selected: i === idx }, x.ist_allgemein ? 'Allgemein' : `${x.nummer} ${x.kunde_kurz || ''}`)));
-    clear(prog).append(
-      h('button', { class: 'btn btn-sm', type: 'button', disabled: idx <= 0, onclick: () => nav(-1), title: 'Zurück (Bild ↑)' }, icon('chevL', 16), 'Zurück'),
-      h('div', { class: 'fb-prog-mid' }, h('div', { class: 'fb-prog-txt' }, p ? `Projekt ${idx + 1} von ${reihe.length}` : 'Keine Projekte', sel),
-        h('div', { class: 'fb-bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': reihe.length, 'aria-valuenow': idx + 1 }, h('span', { style: { width: pct + '%' } }))),
-      h('button', { class: 'btn btn-sm', type: 'button', disabled: idx >= reihe.length - 1, onclick: () => nav(1), title: 'Weiter (Bild ↓)' }, 'Weiter', icon('chevR', 16)));
-  }
+  function renderProg() { gal.setze(reihe.map(projektKachel), reihe[idx] ? [reihe[idx].id] : []); } // R29-C (122)
   function nav(d) {
     const n = Math.max(0, Math.min(reihe.length - 1, idx + d)); if (n === idx) return;
     idx = n; zeige(); window.scrollTo(0, 0);
@@ -200,6 +179,7 @@ export function mount(el, r) {
     renderProg();
     const p = reihe[idx]; if (!p) { clear(body).append(h('p', { class: 'muted' }, 'Keine Projekte.')); return; }
     setQuery({ ...r.query, p: p.id, nur_offen: nurOffen ? '1' : '' });
+    sendePraesentation(p.id, { erledigte }); // R29-C: Präsentationsfenster folgt
     try { blatt = await get(`/fertigung/projekt/${p.id}` + qs({ erledigte: erledigte ? 1 : '' })); renderBlatt(); }
     catch (e) { clear(body).append(errorBox(e, zeige)); }
   }
@@ -207,10 +187,15 @@ export function mount(el, r) {
 
   const onKey = e => {
     if (e.key === 'PageDown' || e.key === 'PageUp') { e.preventDefault(); nav(e.key === 'PageDown' ? 1 : -1); }
+    const t = e.target, tag = t && t.tagName ? t.tagName.toLowerCase() : ''; // R29-C (122): ←/→ wechseln das Projekt (nicht in Eingabefeldern)
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.altKey && !e.ctrlKey && !e.metaKey && !['input', 'textarea', 'select'].includes(tag) && !(t && t.isContentEditable) && !(t && t.closest && t.closest('.pg-track, dialog'))) { e.preventDefault(); nav(e.key === 'ArrowRight' ? 1 : -1); }
   };
   document.addEventListener('keydown', onKey);
   init();
-  return { title: 'Fertigungsbesprechung', destroy: () => document.removeEventListener('keydown', onKey), update: r2 => r2.path === r.path };
+  return {
+    title: 'Fertigungsbesprechung', destroy: () => document.removeEventListener('keydown', onKey), update: r2 => r2.path === r.path,
+    refresh: async () => { if (!info) return; try { bs = await get('/fertigung/besprechung'); if (!top.contains(document.activeElement)) renderTop(); } catch { } }, // R29-C: Sitzungsleiste aktuell halten
+  };
 }
 
 /** Ein Projektblatt wie im Excel-Protokoll. opts.edit → Inline-Bearbeitung. */
@@ -235,15 +220,15 @@ function blattEl(d, opts = {}) {
       allg ? null : [h('dt', null, 'Fertigungsort:'), h('dd', null, opts.edit ? fertigungsortFeld(d, opts.reload) : (p.fertigungsort || '–'))], // R27-103
       h('dt', null, 'Stand:'), h('dd', null, fmtDate(stand))),
     opts.edit && d.antraege_offen ? h('p', { class: 'fa-hinweis no-print' }, icon('hand', 14), `${d.antraege_offen} offene${d.antraege_offen === 1 ? 'r Antrag' : ' Anträge'} zu diesem Projekt`) : null,
-    !allg ? h('div', { class: 'fb-termine' }, h('strong', null, 'Termine:'),
-      (d.termine || []).length ? h('ul', null, d.termine.map(t => h('li', { class: t.notiz ? 'notiz' : '' }, t.anzeige))) : h('span', { class: 'muted' }, ' –')) : null);
+    !allg ? termineBereich(d, opts) : null); // R29-C (123): Doppelklick bearbeitet
 
   const tbody = h('tbody');
   const rot = (it, k) => it.rot && it.rot[k] ? ' fb-rot' : '';
+  const inSitzung = new Set((d.sitzung_opl_ids || []).map(Number)); // R29-C: in der laufenden Besprechung geändert
   const save = async (it, td, fn) => { try { await fn(); td.classList.add('fb-rot'); } catch (e) { toastErr(e); opts.reload && opts.reload(); } };
   const row = (it, i) => {
     if (!edit) {
-      return h('tr', { class: it.erledigt ? 'done' : '' }, h('td', { class: 'fb-c-nr' + rot(it, 'titel') }, i + 1),
+      return h('tr', { class: (it.erledigt ? 'done' : '') + (inSitzung.has(it.id) ? ' fb-sitzung' : '') }, h('td', { class: 'fb-c-nr' + rot(it, 'titel') }, i + 1),
         h('td', { class: 'fb-c-th' + rot(it, 'titel') }, it.titel, it.beschreibung ? h('div', { class: 'fb-desc' }, it.beschreibung) : null,
           antrag ? h('button', { class: 'fb-vorschlag no-print', type: 'button', title: 'Änderung an diesem Punkt beantragen', onclick: () => antragDialog({ projekt_id: p.id, item: it }, opts.reload) }, 'Änderung vorschlagen') : null),
         h('td', { class: rot(it, 'zustaendig') }, it.zustaendig_text || it.verantwortlich_name || ''),
@@ -267,7 +252,7 @@ function blattEl(d, opts = {}) {
     });
     const lbl = h('span', { class: 'fb-ja' }, it.erledigt ? 'ja' : '');
     tdT.append(inT); tdZ.append(inZ); tdK.append(inK); tdE.append(h('label', { class: 'fb-ok' }, lbl, cb));
-    const trEl = h('tr', { class: it.erledigt ? 'done' : '', dataset: { id: it.id } },
+    const trEl = h('tr', { class: (it.erledigt ? 'done' : '') + (inSitzung.has(it.id) ? ' fb-sitzung' : ''), dataset: { id: it.id } },
       h('td', { class: 'fb-c-nr' + rot(it, 'titel') }, h('a', { href: '#/opl/' + it.id, title: 'In OPL öffnen' }, i + 1)), tdT, tdZ, tdK, tdE);
     return trEl;
   };

@@ -38,7 +38,7 @@ def projekte_liste(ctx):
             w.append(f"id IN ({','.join(str(int(i)) for i in meine) or 'NULL'})")
     res = []
     _rx = __import__("rechte")
-    zeige_stunden = ctx.user.get("rolle") == "controlling" or _rx.darf(ctx.user, "budget_stunden", "lesen", ctx.db)
+    zeige_stunden = ctx.user.get("rolle") in ("controlling", "leiter") or _rx.darf(ctx.user, "budget_stunden", "lesen", ctx.db)  # R29-F
     for p in ctx.db.q(f"SELECT * FROM projekte WHERE {' AND '.join(w)} ORDER BY nummer DESC", a):
         p["pms"] = _pms(ctx.db, p["id"])
         p.update(_zaehler(ctx.db, p["id"]))
@@ -96,7 +96,12 @@ def projekt_neu(ctx):
         pid = projekt_anlegen(ctx, c, b.get("nummer"), b["bezeichnung"].strip(), b.get("kunde"), b.get("ort"), pm_ids)
         qip_n = __import__("qip").option_anwenden(ctx, c, pid, b.get("qip_vorlage_id"))  # R4-P: Standard-QIP
         return {"projekt": dict(c.execute("SELECT * FROM projekte WHERE id=?", (pid,)).fetchone()), "qip_schritte": qip_n}
-    return ctx.db.write(ctx.user, "projekt_neu", fn, b.get("change_id"), b)
+    res = ctx.db.write(ctx.user, "projekt_neu", fn, b.get("change_id"), b)
+    try:  # R29-A/125: Dokumentations-/Verkaufsordner gleich über die Nummer suchen und am Projekt speichern
+        res = {**res, "ablage_ordner": __import__("ablage").automatisch_zuordnen(ctx.db, ctx.user, res["projekt"])}
+    except Exception:  # Netzlaufwerk nicht erreichbar o. ä. – Zuordnung erfolgt beim Öffnen des Reiters „Dokumente“
+        pass
+    return res
 
 
 @route("GET", "/api/projekte/naechste-nummer")

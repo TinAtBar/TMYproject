@@ -83,3 +83,18 @@
   .bu-k-zeile { grid-template-columns: 80px 1fr 56px; }
 }
 @media print { .bu-rest, .bu-bericht, .bu-banner button, .bu-row .icon-btn { display: none; } }
+
+/* R29-E: Reststunden-Analyse – Abgleich und Tabelle je RSA-Abteilung */
+.bu-rsa-abgleich { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; padding: 8px 12px; border-radius: var(--radius);
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.bu-rsa-abgleich.is-hinweis { background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn-line); }
+.bu-rsa-warn { display: inline-flex; gap: 6px; align-items: center; color: var(--warn-text); font-weight: 650; }
+.bu-rsa-alt { display: inline-flex; gap: 4px; align-items: center; background: var(--warn-bg); color: var(--warn-text); box-shadow: inset 0 0 0 1px var(--warn-line); }
+.bu-rsa-tab { width: 100%; border-collapse: collapse; }
+.bu-rsa-tab th, .bu-rsa-tab td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.bu-rsa-tab td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bu-rest { overflow-x: auto; }
+/* R29-E: Cockpit-Kachel Fortschritt – Zeile „Fertigungsstand RA“ */
+.ck-rsa { display: flex; gap: 4px; align-items: center; }
+.ck-rsa.is-warn { color: var(--warn-text); font-weight: 650; }
+.bu-rsa-tab th:nth-child(n+3) { text-align: right; }

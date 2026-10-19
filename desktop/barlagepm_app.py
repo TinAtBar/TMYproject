@@ -316,6 +316,11 @@ def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
     core.setup_logging("barlagepm")
     log.info("%s %s startet", core.APP_NAME, core.VERSION)
+    if core.ist_protokoll_aufruf(argv):  # R29-A (131a): Link barlagepm://ordner?pfad=… → nur Explorer, kein Fenster
+        cfg = core.config_laden(argv[1:])
+        ok, text = core.protokoll_oeffnen(argv[0], cfg.get("data"))
+        log.info("Explorer-Link: %s – %s", "geöffnet" if ok else "abgewiesen", text)
+        return 0 if ok else 3
     inst = core.Einzelinstanz()
     if not inst.erwerben():
         inst.andere_benachrichtigen()

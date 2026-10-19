@@ -559,6 +559,7 @@ def extrahieren(data, max_seiten=30, max_zeit=4.0):
                 roh = b"\n".join(x for x in (pdf.stream(r) for r in refs) if x)
                 _inhalt(pdf, roh, s.get("Resources"), aus)
                 aus.nl()
+                aus.add("\f\n")  # R29-B (130): Seitenwechsel – Erkennung gewichtet Seite 1 (Kopf) stärker
         except _Abbruch:
             pass
         text = "".join(aus.teile)

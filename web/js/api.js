@@ -1,4 +1,5 @@
 // API-Client: JSON, deutsche Fehler, 401 → Login
+import { pruefeVersion } from './update-check.js'; // R29-F (111): Auto-Neuladen nach Update
 export class ApiError extends Error {
   constructor(status, data) { super((data && data.error) || `Fehler ${status}`); this.status = status; this.data = data || {}; }
 }
@@ -24,6 +25,7 @@ export async function api(method, path, body, opts = {}) {
     if (offline && !opts.noOffline) { offline.online(false); return method === 'GET' ? offline.get(path) : offline.write(method, path, body); }
     throw new ApiError(0, { error: 'Keine Verbindung zum Server' });
   }
+  try { pruefeVersion(res.headers.get('X-BarlagePM-Version')); } catch { /* R29-F (111) */ }
   let data = null;
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('json')) { try { data = await res.json(); } catch { data = null; } }

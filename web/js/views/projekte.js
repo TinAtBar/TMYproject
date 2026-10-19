@@ -48,7 +48,7 @@ export function mount(el, r) {
       { key: 'pm', label: 'Projektleiter', txt: p => (p.pms || []).map(x => x.name).join(', '), width: 180, prio: 2 },
       { key: 'offen', label: 'Offen', type: 'num', val: p => p.offen ?? 0, width: 90, prio: 2, cls: 'num' },
       { key: 'ueberfaellig', label: 'Überfällig', type: 'num', val: p => p.ueberfaellig ?? 0, width: 110, prio: 2, cls: 'num', cell: p => p.ueberfaellig ? h('span', { class: 'chip chip-danger' }, p.ueberfaellig) : '0' },
-      { key: 'fortschritt', label: 'Fortschritt', type: 'num', val: p => pct(p), width: 150, prio: 3, cell: p => [h('div', { class: 'prog-lbl' }, h('span', null, pct(p) + ' %')), h('div', { class: 'progress' }, h('span', { style: { width: pct(p) + '%' } }))] },
+      { key: 'fortschritt', label: 'Fortschritt', type: 'num', val: p => pct(p), width: 150, prio: 3, cell: p => pct(p) > 0 ? [h('div', { class: 'prog-lbl' }, h('span', null, pct(p) + ' %')), h('div', { class: 'progress' }, h('span', { style: { width: pct(p) + '%' } }))] : h('span', { class: 'muted small' }, 'noch offen') }, // R29-H (119)
       { key: 'status', label: 'Status', txt: p => p.status || 'aktiv', width: 130, prio: 3, cell: p => h('span', { class: 'chip chip-outline' }, p.status || 'aktiv') },
       ...zusatzSpalten('projekt'), // R26-H: Zusatzfelder als wählbare Spalten
     ],
@@ -62,7 +62,7 @@ export function mount(el, r) {
   const st = select([['aktiv', 'Aktive'], ['abgeschlossen', 'Abgeschlossene'], ['', 'Alle']], f.status, { 'aria-label': 'Status' });
   st.addEventListener('change', () => { f.status = st.value; sync(); load(); });
   const pmIds = () => String(f.pm || '').split(',').filter(Boolean); // R5-L: Projektleiter mehrfach
-  const pm = multiSelect({ label: 'Projektleiter', plural: 'Projektleiter', options: () => store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'admin').map(u => ({ v: u.id, l: u.name })), value: pmIds, onChange: v => { f.pm = v.join(','); sync(); render(); } }); // R28-E2E: Controlling/Admin nicht als PM
+  const pm = multiSelect({ label: 'Projektleiter', plural: 'Projektleiter', options: () => store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'leiter' && u.rolle !== 'admin').map(u => ({ v: u.id, l: u.name })), value: pmIds, onChange: v => { f.pm = v.join(','); sync(); render(); } }); // R28-E2E: Controlling/Admin nicht als PM
   const meineBtn = h('button', { type: 'button', class: 'toggle', 'aria-pressed': String(!!f.meine), title: store.user.rolle === 'pm' ? 'Nur Projekte, in denen ich Projektleiter bin' : 'Nur Projekte mit Punkten für mich', onclick: () => { f.meine = f.meine ? '' : '1'; meineBtn.setAttribute('aria-pressed', String(!!f.meine)); sync(); load(); } }, icon('user', 16), 'Nur meine');
   const seg = segmented([['kacheln', 'Kacheln', 'grid'], ['liste', 'Liste', 'rows']], mode, v => { mode = v; ls.set('projekte.mode', v); render(); }, 'Ansicht');
   const colsHost = h('span', { class: 'tab-cols-host' });
@@ -110,7 +110,7 @@ export function mount(el, r) {
     const nummer = h('input', { placeholder: 'leer = nächste freie', pattern: '\\d{4}-\\d{3}-00', inputmode: 'numeric' });
     get('/projekte/naechste-nummer').then(r2 => { if (r2 && r2.nummer && !nummer.value) nummer.value = r2.nummer; }).catch(() => { });
     const bez = h('input', { required: true }); const kunde = h('input'); const ort = h('input');
-    const pms = h('div', { class: 'chips' }, store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'admin').map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', value: u.id, checked: u.id === store.user.id }), u.name))); // R28-E2E: Controlling/Admin nicht als PM
+    const pms = h('div', { class: 'chips' }, store.sd.users.filter(u => u.rolle !== 'mitarbeiter' && u.rolle !== 'controlling' && u.rolle !== 'leiter' && u.rolle !== 'admin').map(u => h('label', { class: 'toggle' }, h('input', { type: 'checkbox', value: u.id, checked: u.id === store.user.id }), u.name))); // R28-E2E: Controlling/Admin nicht als PM
     const qipOpt = qipOption(); // R4-P: Standard-QIP
     const zusatz = zusatzEditor('projekt', {}); // R26-H
     dialog({

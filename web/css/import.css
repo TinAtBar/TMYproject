@@ -1,0 +1,29 @@
+/* R29-B Punkt 128: Import / Eingangskorb. Kacheln nutzen ablage.css (abl-grid/abl-kachel/pastell-*). */
+.imp-seite { display: flex; flex-direction: column; gap: 14px; }
+.imp-leiste { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; max-width: 640px; }
+.imp-leiste .field { flex: 1 1 320px; margin: 0; }
+.imp-kachel { min-height: 96px; }
+.imp-k-ordner { opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-k-hint { display: inline-flex; align-items: center; gap: 4px; opacity: .8; }
+.imp-allg { margin-top: 2px; }
+.imp-liste { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 12px 14px; }
+.imp-h2 { font-size: 1.05rem; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.imp-anzahl { font-size: .8rem; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px;
+  background: var(--select-bg); color: var(--select-text); }
+.imp-sammel { margin-bottom: 8px; }
+.imp-zeile { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line); }
+.imp-zeile:first-of-type { border-top: 0; }
+.imp-z-info { min-width: 0; flex: 1 1 320px; display: flex; flex-direction: column; gap: 3px; }
+.imp-name { font-weight: 600; word-break: break-word; display: inline-flex; align-items: center; gap: 4px; }
+.imp-z-akt { display: flex; gap: 6px; flex-wrap: wrap; }
+.imp-erk { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.imp-vorschlag { padding: 3px 8px; border-left: 3px solid var(--select-line); background: var(--select-bg); color: var(--select-text);
+  border-radius: 4px; align-self: flex-start; }
+.imp-dlg-dateien { margin: 0; padding-left: 0; list-style: none; max-height: 120px; overflow: auto; }
+.imp-dlg-info { min-height: 1.2em; word-break: break-all; }
+.imp-warn, .imp-fehler { display: flex; align-items: center; gap: 4px; margin: 0 0 6px; }
+.imp-modus { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+/* Zähler in der Navigation (neutral, keine Ampelfarbe) */
+.nav a .imp-nav-n { margin-left: auto; font-size: .72rem; min-width: 20px; text-align: center; padding: 0 6px; border-radius: 999px;
+  background: var(--select); color: var(--on-select); line-height: 18px; }

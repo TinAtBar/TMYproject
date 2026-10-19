@@ -63,7 +63,7 @@ const P = {
   home: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   folder: 'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z',
   list: 'M8 6h13M8 12h13M8 18h13M4 6h.01M4 12h.01M4 18h.01',
-  cal: 'M4 5h16v16H4zM4 9h16M8 3v4M16 3v4',
+  cal: 'M4 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14H4zM4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2', // R29-G: mit Tagesmarken
   doc: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',
   gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   plus: 'M12 5v14M5 12h14',
@@ -89,7 +89,7 @@ const P = {
   drag: 'M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14',
   filter: 'M3 5h18l-7 9v6l-4-2v-4z',
-  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
+  bell: 'M6 17v-6a6 6 0 0 1 12 0v6l2 2H4zM10 21h4', // R29-G
   lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4',
   wifi: 'M2 9a15 15 0 0 1 20 0M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M12 20h.01',
   edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
@@ -124,7 +124,18 @@ const P = {
   users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3',
   diamond: 'M12 3l9 9-9 9-9-9z',
   more: 'M5 12h.01M12 12h.01M19 12h.01', dot: 'M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  // R29-G (121): schärfere Motive im 24er-Raster (ganzzahlige Stützpunkte, gleiche Strichstärke 2)
+  fertigung: 'M3 21h18M5 21v-5h14v5M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 3v2',
+  angebot: 'M6 3h9l4 4v14H6zM14 3v5h5M15 13a3 3 0 1 0 0 4M9 14h4M9 16h4',
+  verteilen: 'M3 12h6M9 12l5-6h4M9 12h9M9 12l5 6h4M16 4l2 2-2 2M16 10l2 2-2 2M16 16l2 2-2 2',
+  antrag: 'M9 3h6v3H9zM9 5H6v16h12V5h-3M9 14l2 2 4-4',
+  excel: 'M5 3h10l4 4v14H5zM14 3v5h5M8 11h8v7H8zM8 14h8M12 11v7',
+  import: 'M12 3v10M8 9l4 4 4-4M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5',
+  video: 'M3 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM15 10l6-3v10l-6-3',
+  boxes: 'M12 3l8 4v10l-8 4-8-4V7zM4 7l8 4 8-4M12 11v10',
+  history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
 };
+export const iconNamen = () => Object.keys(P); // R29-G: Symbol-Übersichtsblatt
 export function icon(name, size = 20) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', size); s.setAttribute('height', size);

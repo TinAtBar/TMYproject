@@ -46,6 +46,8 @@ import dashboard  # noqa: E402,F401  # R26-G: Dashboard-Sammelabruf (Kacheln, He
 import export, dokument_erkennung  # noqa: E402,F401  # R27-107/108: Exporte vereinheitlichen, PDF-Erkennung
 import freigaben, mitarbeiter  # noqa: E402,F401  # R28-M/G11: nur eigene Aufgaben, Hochladen mit Freigabe
 import tickets  # noqa: E402,F401  # R28-G10: Problem melden / Idee (Tickets)
+import eingang  # noqa: E402,F401  # R29-B (128): Import/Eingangskorb
+import vorschlaege  # noqa: E402,F401  # R29-F (109): Punkt vorschlagen
 import seed as seed_mod  # noqa: E402
 import pairing, sync  # noqa: E402,F401  mobile: Geräte-Kopplung, Offline-Abgleich
 import tls as tls_mod  # noqa: E402  mobile:
@@ -55,6 +57,7 @@ try:  # desktop: Admin-Endpunkte (Änderungspakete, Sicherungen)
 except ImportError:  # desktop:
     pass
 import datenpaket  # noqa: E402,F401  R3-D: Datenübernahme (POST /api/admin/datenpaket/*)
+import fb_import  # noqa: E402,F401  R29-D: Abgleich Fertigungsbesprechungs-Excel (POST /api/admin/fb_import/*)
 import masken  # noqa: E402  R26-H: Masken, Zusatzfelder, Firmenstandard-Ansichten
 masken.einhaengen()  # R26-H: nach allen API-Modulen
 
@@ -110,6 +113,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def _json(self, status, obj, extra=None):
         h = {"Cache-Control": "no-store"}
+        try:  # R29-F (111): Programmversion – Web-App lädt nach einem Update einmal neu (Zwischenspeicher leeren)
+            h["X-BarlagePM-Version"] = __import__("tickets").app_version()
+        except Exception:  # noqa: BLE001
+            pass
         h.update(extra or {})
         self._send(status, dumps(obj).encode("utf-8"), "application/json; charset=utf-8", h)
 
@@ -209,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(403, {"error": "Bitte HTTPS verwenden (Port %s)" % self.redirect_https})  # mobile: API nur über HTTPS
         try:
             length = int(self.headers.get("Content-Length") or 0)
-            gross = ablage.ist_upload_pfad(path)  # R26-B: Dokumentenablage bis 200 MB
+            gross = ablage.ist_upload_pfad(path) or eingang.ist_upload_pfad(path)  # R26-B: Dokumentenablage bis 200 MB; R29-B: Import
             if length > (ablage.MAX_BODY if gross else MAX_BODY):
                 self.rfile.read(length) if length < 200 * 1024 * 1024 else None
                 raise ApiError(413, "Datei zu groß (max. %d MB)" % (200 if gross else 25))

@@ -19,6 +19,7 @@ Listen-Einträge dürfen statt id einen "key" tragen (neu), parent_key verweist 
 Nur Standardbibliothek; arbeitet auf einer sqlite3-Verbindung (Row-Factory egal).
 """
 import json
+import os
 import shutil
 import sqlite3
 
@@ -34,7 +35,7 @@ LISTEN = {
 LISTEN_NAMEN = {"status_opl": "Status", "prioritaeten": "Priorität", "kategorien": "Kategorie",
                 "meilenstein_typen": "Meilenstein", "budget_kategorien": "Budgetkategorie",
                 "status_angebot": "Angebotsstatus"}
-ROLLEN = ("admin", "pm", "mitarbeiter", "controlling")  # R26: + controlling
+ROLLEN = ("admin", "pm", "mitarbeiter", "controlling", "leiter")  # R26: + controlling, R29-F: + leiter
 # R26-W: Listen, bei denen ein verwendeter Eintrag ohne Ersatz gelöscht werden darf – die Verweise werden gelöst
 # (Projekt-Meilensteine behalten Name/Datum, typ_id wird NULL).
 LOESEN_STATT_ERSETZEN = {"meilenstein_typen"}
@@ -616,7 +617,12 @@ def historie_speichern(data_dir, paket, sicherung, ergebnis, via):
 
 def historie_liste(data_dir):
     out = []
-    for p in sorted(historie_dir(data_dir).glob("*.json"), reverse=True):
+    def _key(p):  # Prüfer 2.9: gleiche Sekunde → Reihenfolge nach Anlagezeit statt nach zufälliger Paket-ID
+        try:
+            return (p.name[:15], p.stat().st_mtime_ns)
+        except OSError:
+            return (p.name[:15], 0)
+    for p in sorted(historie_dir(data_dir).glob("*.json"), key=_key, reverse=True):
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
             d["_datei"] = p.name
@@ -630,7 +636,9 @@ def historie_markieren(data_dir, datei, **felder):
     p = historie_dir(data_dir) / datei
     d = json.loads(p.read_text(encoding="utf-8"))
     d.update(felder)
+    st = p.stat()
     p.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+    os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))  # Prüfer 2.9: Reihenfolge der Historie bleibt erhalten
 
 
 def letztes_rueckgaengig_moeglich(data_dir):

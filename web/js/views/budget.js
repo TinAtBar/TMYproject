@@ -42,7 +42,7 @@ function renderBudget(el, ctx) {
   const box = h('div', { class: 'bu' }, loading());
   el.append(box);
   const load = async () => {
-    try { d = await get(`/projekte/${ctx.id}/budget`); render(); } catch (e) { clear(box).append(errorBox(e, load)); }
+    try { d = await get(`/projekte/${ctx.id}/budget`); d.rsa = await get(`/projekte/${ctx.id}/reststunden`).catch(() => null); render(); } catch (e) { clear(box).append(errorBox(e, load)); }
   };
 
   function kachel() {
@@ -68,21 +68,37 @@ function renderBudget(el, ctx) {
       h('button', { class: 'btn btn-sm', onclick: abrufen }, 'Aktualisieren'));
   }
 
+  // R29-E: Reststunden-Analyse – Stand (Datum + KW), Abgleich Fertigungsstand ↔ eigener Fortschritt, Werte je RSA-Abteilung
   function rest() {
     const r = d.reststunden; if (!r) return null;
-    const l = r.letzter_abruf;
+    const a = d.rsa;
     const inp = h('input', { type: 'file', accept: '.xlsx,.xlsm', hidden: true, onchange: () => inp.files[0] && hochladen(inp.files[0]) });
-    return h('section', { class: 'bu-rest' },
-      h('h3', null, 'Reststunden-Analyse'),
-      h('div', { class: 'bu-rest-info small' },
-        h('span', null, 'Stand: ', h('b', null, r.stand_kw || 'noch kein Abruf')),
-        l ? h('span', { class: 'muted' }, `Letzte Datei: ${l.datei} (${fmtDate(l.datei_datum)})`) : null,
-        r.einstellungen && r.einstellungen.verzeichnis ? h('span', { class: 'muted' }, `Verzeichnis: ${r.einstellungen.verzeichnis} · ${r.einstellungen.muster}`)
-          : h('span', { class: 'muted' }, 'Kein Verzeichnis eingestellt (Admin-Konsole)'),
-        !r.parser_bereit ? h('span', { class: 'chip chip-outline' }, r.parser_meldung || 'Einlesen wartet auf Beispieldatei') : null),
-      h('div', { class: 'row' },
-        h('button', { class: 'btn btn-sm', onclick: abrufen }, icon('download', 16), 'Jetzt abrufen'),
-        h('button', { class: 'btn btn-sm', onclick: () => inp.click() }, icon('upload', 16), 'Datei hochladen'), inp));
+    const stand = r.stand_datum ? `${fmtDate(r.stand_datum)} (${r.stand_kw})` : 'noch nicht eingelesen';
+    const kopf = h('div', { class: 'bu-rest-info small' },
+      h('span', null, 'Stand: ', h('b', null, stand)),
+      r.veraltet && r.stand_datum ? h('span', { class: 'chip bu-rsa-alt' }, icon('clock', 14), 'veraltet') : null,
+      r.letzter_abruf && r.letzter_abruf.ergebnis === 'fehler' ? h('span', { class: 'chip bu-rsa-alt' }, icon('alert', 14), 'letzter Abruf fehlgeschlagen') : null);
+    const teile = [h('h3', null, 'Reststunden-Analyse'), kopf];
+    if (a && a.vorhanden) {
+      const abw = a.abweichung_pp;
+      teile.push(h('div', { class: 'bu-rsa-abgleich' + (a.hinweis ? ' is-hinweis' : '') },
+        h('span', null, 'Fertigungsstand laut Reststunden-Analyse: ', h('b', null, pct(a.fertigungsstand))),
+        h('span', null, 'Eigener Fortschritt: ', h('b', null, pct(a.fortschritt))),
+        a.hinweis ? h('span', { class: 'bu-rsa-warn', role: 'status' }, icon('alert', 14),
+          `Abweichung ${fmtNum(Math.abs(abw), 0)} Prozentpunkte (Schwelle ${fmtNum(a.schwelle_pp, 0)}) – bitte prüfen`) : null,
+        h('span', { class: 'small muted' }, 'Nur zum Abgleich – fließt nicht in den Fortschritt ein.')));
+      const zeilen = (a.abteilungen || []).filter(x => x.ist || x.vorgabe || x.hochrechnung);
+      if (zeilen.length) teile.push(h('table', { class: 'bu-rsa-tab small' },
+        h('thead', null, h('tr', null, ...['Abteilung (RA)', 'Budgetkategorie', 'Vorgabe', 'Ist', 'Hochrechnung', 'Rest', 'Fertigungsstand'].map(t => h('th', null, t)))),
+        h('tbody', null, ...zeilen.map(x => h('tr', null, h('td', null, x.abteilung), h('td', null, x.kategorie || '– (nicht übernommen)'),
+          ...['vorgabe', 'ist', 'hochrechnung', 'rest'].map(k => h('td', { class: 'num' }, std(x[k]))), h('td', { class: 'num' }, pct(x.fertigungsstand)))))));
+    } else if (r.stand_datum) {
+      teile.push(h('p', { class: 'small muted' }, 'Dieses Projekt ist in der Reststunden-Analyse nicht enthalten (Abgleich über die Auftragsnummer).'));
+    }
+    teile.push(h('div', { class: 'row' },
+      h('button', { class: 'btn btn-sm', onclick: abrufen }, icon('download', 16), 'Jetzt einlesen'),
+      h('button', { class: 'btn btn-sm', onclick: () => inp.click() }, icon('upload', 16), 'Datei hochladen'), inp));
+    return h('section', { class: 'bu-rest' }, ...teile);
   }
 
   async function abrufen() {
@@ -102,9 +118,10 @@ function renderBudget(el, ctx) {
       field('Ist-Stunden (h)', inp, `Soll: ${std(up ? up.soll : abt.soll)} · leer = Eintrag entfernen`), field('Stand', datum)),
     actions: [{ label: 'Abbrechen', cls: 'btn-ghost' }, { label: 'Speichern', cls: 'btn-primary', fn: async () => {
       try {
+        const rsa = d.rsa; // R29-E
         d = await put(`/projekte/${ctx.id}/stunden-ist`, { stand_datum: datum.value || undefined,
           eintraege: [{ abteilung: abt.name, unterpunkt: up && up.kategorie_id !== abt.kategorie_id ? up.name : null, stunden: inp.value.trim() }] });
-        d.reststunden = d.reststunden || (await get(`/projekte/${ctx.id}/budget`)).reststunden; render(); toast('Ist-Stunden gespeichert');
+        d.reststunden = d.reststunden || (await get(`/projekte/${ctx.id}/budget`)).reststunden; d.rsa = rsa; render(); toast('Ist-Stunden gespeichert');
       } catch (e) { toastErr(e); return false; }
     } }] });
     return dlg;

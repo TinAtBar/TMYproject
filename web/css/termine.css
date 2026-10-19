@@ -1,0 +1,61 @@
+/* R29-H (Punkte 112/119/129): Reiter „Termine“, Projekt-Terminkalender, leere Zustände – nur vorhandene Tokens */
+
+/* Einheitliche Bedienleiste: alle Gruppen gleich hoch, mittig ausgerichtet */
+.tk-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.tk-leiste > label { margin: 0; }
+.tk-leiste select, .tk-leiste .seg, .tk-leiste .btn, .tk-leiste .seg-wrap { height: 36px; min-height: 36px; box-sizing: border-box; }
+.tk-leiste .seg-wrap { display: inline-flex; align-items: center; }
+.tk-leiste .seg { display: inline-flex; align-items: stretch; }
+.tk-leiste .seg .seg-btn { display: inline-flex; align-items: center; }
+.tk-leiste .btn { display: inline-flex; align-items: center; gap: 6px; }
+.tk-leiste select[disabled] { opacity: .6; }
+
+/* Leere Zustände mit Aktion */
+.tk-leer, .fs-leer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-radius: var(--radius, 8px);
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-2); }
+.tk-leer > .ico, .fs-leer > .ico { flex: none; color: var(--text-3); }
+.tk-leer > div:not(.tk-leer-knoepfe), .fs-leer > div { flex: 1 1 260px; }
+.tk-leer p, .fs-leer p { margin: 0; }
+.tk-leer p + p, .fs-leer p + p { margin-top: 2px; }
+.tk-leer-knoepfe { gap: 8px; flex-wrap: wrap; }
+.chip.tk-fehlt { margin-left: 6px; }
+
+/* Meilensteine ohne Datum */
+.tk-ohne { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius, 8px); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.tk-ohne-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text); }
+.tk-ohne-liste { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 6px 16px; }
+.tk-ohne-liste li { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.tk-ohne-name { flex: 1 1 auto; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.tk-raute { flex: none; width: 9px; height: 9px; transform: rotate(45deg); box-shadow: inset 0 0 0 2px var(--sem-marke, var(--text-3)); }
+.tk-ohne-liste .ms-date { width: 150px; }
+
+/* Projekt-Kalender */
+.tk-steuer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.tk-nav { display: inline-flex; align-items: center; gap: 4px; }
+.tk-titel { margin: 0; font-size: 1.05rem; min-width: 170px; }
+.tk-luecke { flex: 1; }
+.tk-cal .day { cursor: default; user-select: none; }
+.tk-cal.month .day { min-height: 104px; }
+.tk-cal.week .day { min-height: 240px; }
+.tk-ev { background: color-mix(in srgb, var(--evc) 14%, var(--surface)); color: var(--text); box-shadow: inset 3px 0 0 var(--evc); }
+.tk-ev .ico { flex: none; color: var(--evc); }
+.tk-ev.overdue .ico { color: var(--sem-danger); }
+.tk-hinweis { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; }
+.tk-legende .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* 119: Kennzahlen ohne Werte – kein leerer Balken, Ersatztext */
+.fb-leer .fb-track, .pk-leer .pk-track { visibility: hidden; }
+.fb-leer .fb-wert, .pk-leer .pk-bw { white-space: nowrap; font-style: italic; }
+.dg-leer { fill: var(--text-3); font-size: 12px; }
+.dg-ring-ohne .dg-ring-unter { fill: var(--text-3); }
+
+/* 129: Verlaufsdiagramm linksbündig in voller Kartenbreite */
+.fs-fig { width: 100%; }
+.fs-fig .fs-svg { display: block; width: 100%; height: auto; max-height: none; }
+
+@media (max-width: 760px) {
+  .tk-cal.month .day { min-height: 64px; }
+  .tk-cal .ev .t { display: none; }
+  .tk-ohne-liste { grid-template-columns: 1fr; }
+}
+@media print { .tk-leer-knoepfe, .tk-nav { display: none; } }

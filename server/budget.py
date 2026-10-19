@@ -198,7 +198,7 @@ def kennzahlen(conn, projekt_id, mit_stunden=True):
 
 # ------------------------------------------------------------------ Endpunkte
 def _darf_kurz(ctx):
-    if ctx.user["rolle"] not in ("admin", "pm", "controlling"):
+    if ctx.user["rolle"] not in ("admin", "pm", "controlling", "leiter"):  # R29-F
         raise ApiError(403, "Keine Berechtigung: nur Admin, Projektleiter oder Controlling")
 
 

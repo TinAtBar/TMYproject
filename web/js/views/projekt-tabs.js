@@ -1,6 +1,7 @@
 // Registrierung zusätzlicher Reiter auf der Projektseite (Besitz: Agent B).
 // registerProjektTab({ key, label, count?: (data) => number|null, render: (el, ctx) => void, order?, sichtbar?: (data) => bool })
 // ctx: { data, projekt, canEdit, reload, id }
+// R29-G (127): optional icon: 'name' (Symbol aus util.js) – sonst Vorgabe aus reiter.js REITER_ICON
 import { darf } from '../rechte.js'; // R26-E: Reiter mit { bereich } nur bei Recht
 const reg = new Map();
 

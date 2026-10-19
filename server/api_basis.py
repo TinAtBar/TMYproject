@@ -99,7 +99,8 @@ def rev(ctx):
 @route("GET", "/api/server", auth=False)
 def server(ctx):
     e = ctx.app.election
-    return {"host": e.host, "ip": e.ip, "port": e.port, "since": e.since, "rolle": "server"}
+    return {"host": e.host, "ip": e.ip, "port": e.port, "since": e.since, "rolle": "server",
+            "version": __import__("tickets").app_version()}  # R29-F (111)
 
 
 @route("GET", "/api/stammdaten")

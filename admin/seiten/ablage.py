@@ -4,6 +4,9 @@
 - Dokumenttypen          firma_einstellungen „ablage.typen“ [{key, name, ordner, farbe, pos, aktiv}]
 - Globale eigene Ablagen Tabelle ablage_eigene (projekt_id NULL) – Änderungspaket-Op „ablage_global“
 - Pfade prüfen           ablage.pfade_pruefen(conn) (Server-Modul, direkt auf der DB)
+- R29-A Wurzeln          ablage.wurzel_doku / ablage.wurzel_verkauf / ablage.laufwerk_alias / ablage.musterordner(_verkauf)
+                         ablage.revision_kennzeichen / ablage.standard_modus / ablage.doku_benutzer
+                         Dokumenttypen mit Bereich (doku/verkauf) und verschachteltem Unterordner, „Firmenstruktur übernehmen“
 Reine Logik (ohne tkinter) oben, Oberfläche in baue().
 """
 import re
@@ -23,6 +26,50 @@ def _srv():
 
 def standard_typen():
     return [dict(t) for t in _srv().TYPEN_DEFAULT]
+
+
+BEREICH_TEXT = {"doku": "Dokumentation", "verkauf": "Verkauf"}  # R29-A
+
+
+def firmenstruktur_uebernehmen(zeilen):
+    """R29-A: Knopf „Firmenstruktur übernehmen“ – neue Struktur + vorhandene eigene Typen (andere Kennung)."""
+    return _srv().firmenstruktur(zeilen)
+
+
+def wurzel_felder():
+    """R29-A: Felder für den Reiter „Wurzeln & Versionen“ (generisches Formular, Op firma_setzen)."""
+    srv = _srv()
+    return [
+        {"key": srv.K_WURZEL["doku"], "label": "Wurzel Dokumentation", "typ": "text", "default": srv.WURZEL_DEFAULT["doku"],
+         "abschnitt": "Projektordner finden",
+         "hilfe": "Platzhalter {jahr} = erste 4 Ziffern der Projektnummer. Der Projektordner wird über die Nummer am "
+                  "Anfang gefunden („JJJJ NNN 00_…“), auch im Unterordner „Archiv“."},
+        {"key": srv.K_WURZEL["verkauf"], "label": "Wurzel Verkauf", "typ": "text", "default": srv.WURZEL_DEFAULT["verkauf"],
+         "hilfe": "Verkaufsordner (1.x) sehen nur der Projektleiter des Projekts und der Admin."},
+        {"key": srv.K_ALIAS, "label": "Laufwerksbuchstaben", "typ": "liste", "default": srv.ALIAS_DEFAULT,
+         "hilfe": "Beide Schreibweisen gelten als gleich, z. B. J: = \\\\file01\\Dokumentation",
+         "spalten": [{"key": "laufwerk", "label": "Laufwerk (z. B. J:)", "typ": "text", "pflicht": True},
+                     {"key": "unc", "label": "Netzwerkpfad", "typ": "text", "pflicht": True}]},
+        {"key": srv.K_MUSTERORDNER["doku"], "label": "Musterordner Dokumentation", "typ": "text",
+         "default": srv.MUSTERORDNER_DEFAULT["doku"], "abschnitt": "Musterordner",
+         "hilfe": "Ordnername im Elternordner der Jahresordner. Neues Projekt: Struktur wird nur ergänzt, nie überschrieben."},
+        {"key": srv.K_MUSTERORDNER["verkauf"], "label": "Musterordner Verkauf", "typ": "text",
+         "default": srv.MUSTERORDNER_DEFAULT["verkauf"], "hilfe": "Fehlt der Ordner, werden nur die Typ-Ordner angelegt."},
+        {"key": srv.K_MODUS, "label": "Bei gleichem Dateinamen", "typ": "text", "default": srv.MODUS_DEFAULT,
+         "optionen": ["version", "neu"], "abschnitt": "Versionen",
+         "hilfe": "version = alte Fassung nach 00_alt (Name_R01.pdf), neue Datei behält den Namen; neu = „Name (2).pdf“."},
+        {"key": srv.K_KENNZ, "label": "Kennzeichen in 00_alt", "typ": "text", "default": srv.KENNZ_DEFAULT,
+         "optionen": ["R", "V"], "hilfe": "R → Name_R01.pdf, V → Name_V01.pdf"},
+    ]
+
+
+def doku_benutzer_lesen(k):
+    """Benutzer für das Häkchen „darf Dokumentation direkt ablegen“ (Admin nie als Person wählbar)."""
+    try:
+        return k.k.lesen.q("SELECT id, login, name, rolle FROM users WHERE aktiv=1 AND rolle NOT IN ('admin','controlling') "
+                           "ORDER BY name")
+    except Exception:  # noqa: BLE001
+        return []
 
 
 def key_aus_name(name, vorhandene=()):
@@ -50,8 +97,10 @@ def typen_pruefen(liste):
         keys.add(key)
         farbe = t.get("farbe") if t.get("farbe") in PASTELL else PASTELL[i % len(PASTELL)]
         ordner = str(t.get("ordner") or name).strip()
-        out.append({"key": key, "name": name[:80], "ordner": _srv().sicherer_name(ordner, "-"), "farbe": farbe,
-                    "pos": len(out), "aktiv": bool(t.get("aktiv", True))})
+        ordner = _srv().sicherer_relpfad(ordner, "-") or _srv().sicherer_name(name, "-")  # R29-A: „2.1_PM/2.1.3_…“
+        bereich = t.get("bereich") if t.get("bereich") in ("doku", "verkauf") else "doku"
+        out.append({"key": key, "name": name[:80], "ordner": ordner, "farbe": farbe,
+                    "pos": len(out), "aktiv": bool(t.get("aktiv", True)), "bereich": bereich})
     return out, fehler
 
 
@@ -107,15 +156,54 @@ def pfade_pruefen_db(k):
 
 # ---------------------------------------------------------------- Oberfläche
 def baue(k, rahmen):
-    k._mehrere(rahmen, [(_tab_ordner, k), (_tab_typen, k), (_tab_global, k), (_tab_pruefen, k)])
+    k._mehrere(rahmen, [(_tab_wurzeln, k), (_tab_typen, k), (_tab_doku, k), (_tab_global, k), (_tab_ordner, k),
+                        (_tab_pruefen, k)])  # R29-A: Wurzeln + Doku-Mitarbeiter
+
+
+def _tab_wurzeln(k):  # R29-A
+    from tkinter import ttk
+    from seiten import formular
+    f = k._tab("Wurzeln & Versionen", "Wo liegen die Projektordner (Dokumentation und Verkauf)? Die App überschreibt und "
+                                      "löscht nie etwas; neue Version = alte Fassung nach 00_alt.")
+    felder = [formular.feld_normalisieren(x) for x in wurzel_felder()]
+    defaults = {x["key"]: x["default"] for x in felder}
+    formular.baue(f, felder, k.firma_werte(felder),
+                  lambda key, wert: k.firma_aendern(key, wert, defaults.get(key))).pack(fill="x")
+    ttk.Label(f, text=HINWEIS_DIENST, style="Leise.TLabel", wraplength=900, justify="left").pack(anchor="w", pady=(12, 0))
+
+
+def _tab_doku(k):  # R29-A: Häkchen je Benutzer
+    import tkinter as tk
+    from tkinter import ttk
+    from seiten import hilfen
+    srv = _srv()
+    f = k._tab("Dokumentation", "Wer darf Dateien direkt in den Dokumentationsordner (2.x) legen – ohne Freigabe durch den "
+                                "Projektleiter? Übrige Mitarbeiter laden weiter mit Freigabe hoch. Verkauf (1.x) bleibt PM/Admin.")
+    kt = hilfen.karte(f)
+    kt.pack(fill="x")
+    gesp = k.firma_wert(srv.K_DOKU_BENUTZER, []) or []
+    vars_ = {}
+    benutzer = doku_benutzer_lesen(k)
+    if not benutzer:
+        ttk.Label(kt, text="Keine Benutzer gefunden.", style="KLeise.TLabel").pack(anchor="w")
+
+    def melden():
+        ids = sorted(uid for uid, v in vars_.items() if v.get())
+        k.firma_aendern(srv.K_DOKU_BENUTZER, ids or None, None)
+    for u in benutzer:
+        v = tk.BooleanVar(value=u["id"] in gesp)
+        vars_[u["id"]] = v
+        ttk.Checkbutton(kt, text=f"{u['name']} ({u['login']}, {u['rolle']}) – darf Dokumentation direkt ablegen",
+                        variable=v, command=melden, style="Karte.TCheckbutton").pack(anchor="w", pady=2)
 
 
 def _tab_ordner(k):
     import tkinter as tk
     from tkinter import ttk
     from seiten import hilfen
-    f = k._tab("Projektordner", "Wo liegen die Projektordner? Platzhalter: {nummer}, {bezeichnung}, {kunde}, {jahr} "
-                                "(erste 4 Zeichen der Nummer). Unzulässige Zeichen in den Werten werden durch „-“ ersetzt.")
+    f = k._tab("Altes Muster", "Nur noch Rückfall (bis Version 2.8): fester Pfad mit Platzhaltern {nummer}, {bezeichnung}, "
+                               "{kunde}, {jahr}. Gilt nur, wenn ausgefüllt und über die Wurzeln nichts gefunden wird. "
+                               "Leer lassen für die neue Ordnersuche.")
     kt = hilfen.karte(f)
     kt.pack(fill="x")
     srv = _srv()
@@ -146,10 +234,11 @@ class _TypenEditor:
         self.k = k
         gesp = k.firma_wert(K_TYPEN, None)
         self.zeilen = [dict(t) for t in (gesp if isinstance(gesp, list) and gesp else standard_typen())]
-        self.tv = hilfen.tabelle(f, [("name", "Name", 220), ("ordner", "Unterordner", 220), ("farbe", "Farbe", 110),
-                                     ("aktiv", "Aktiv", 60), ("key", "Kennung", 140)], 9)
+        self.tv = hilfen.tabelle(f, [("name", "Name", 200), ("bereich", "Bereich", 110), ("ordner", "Unterordner", 320),
+                                     ("farbe", "Farbe", 100), ("aktiv", "Aktiv", 60), ("key", "Kennung", 130)], 12)
         hilfen.knoepfe(f, ("Neu …", self.neu), ("Bearbeiten …", self.bearb), ("▲", lambda: self.schieben(-1)),
                        ("▼", lambda: self.schieben(1)), ("Aktiv / Inaktiv", self.aktiv),
+                       ("Firmenstruktur übernehmen", self.firmenstruktur),  # R29-A
                        ("Auf Standard zurücksetzen", self.standard))
         self.tv.bind("<Double-1>", lambda e: self.bearb())
         self.fuellen()
@@ -158,7 +247,8 @@ class _TypenEditor:
         self.tv.delete(*self.tv.get_children())
         for i, t in enumerate(self.zeilen):
             farbe = t.get("farbe") or ""
-            self.tv.insert("", "end", iid=str(i), values=(t.get("name"), t.get("ordner") or t.get("name"),
+            self.tv.insert("", "end", iid=str(i), values=(t.get("name"), BEREICH_TEXT.get(t.get("bereich") or "doku", "Dokumentation"),
+                                                          t.get("ordner") or t.get("name"),
                                                           "● " + farbe if farbe else "", "ja" if t.get("aktiv", True) else "nein",
                                                           t.get("key") or "(neu)"), tags=(farbe,))
             if farbe in PASTELL_HEX:
@@ -206,6 +296,11 @@ class _TypenEditor:
             self.zeilen[i]["aktiv"] = not self.zeilen[i].get("aktiv", True)
             self.melden()
 
+    def firmenstruktur(self):
+        """R29-A: Voreinstellung der Firmenstruktur übernehmen; eigene Typen (andere Kennung) bleiben erhalten."""
+        self.zeilen = firmenstruktur_uebernehmen(self.zeilen)
+        self.melden()
+
     def standard(self):
         self.zeilen = standard_typen()
         self.k.firma_aendern(K_TYPEN, None, None)
@@ -234,7 +329,12 @@ class TypDialog:
         e.focus_set()
         ttk.Label(fr, text="Unterordner", style="Karte.TLabel").grid(row=1, column=0, sticky="w", pady=4, padx=(0, 10))
         ttk.Entry(fr, textvariable=self.ordner, width=36).grid(row=1, column=1, sticky="we")
-        ttk.Label(fr, text="(leer = wie Name)", style="KLeise.TLabel").grid(row=2, column=1, sticky="w")
+        ttk.Label(fr, text="(leer = wie Name; Unterordner mit „/“ trennen, z. B. 2.1_PM/2.1.3_Protokolle_PM)",
+                  style="KLeise.TLabel").grid(row=2, column=1, sticky="w")
+        self.bereich = tk.StringVar(value=BEREICH_TEXT.get(t.get("bereich") or "doku", BEREICH_TEXT["doku"]))  # R29-A
+        ttk.Label(fr, text="Bereich", style="Karte.TLabel").grid(row=7, column=0, sticky="w", pady=4, padx=(0, 10))
+        ttk.Combobox(fr, textvariable=self.bereich, values=list(BEREICH_TEXT.values()), state="readonly",
+                     width=20).grid(row=7, column=1, sticky="w")
         ttk.Label(fr, text="Farbe", style="Karte.TLabel").grid(row=3, column=0, sticky="w", pady=4, padx=(0, 10))
         punkte = ttk.Frame(fr, style="Karte.TFrame")
         punkte.grid(row=3, column=1, sticky="w")
@@ -250,7 +350,7 @@ class TypDialog:
         ttk.Checkbutton(fr, text="aktiv (wird im Projekt angezeigt)", variable=self.akt,
                         style="Karte.TCheckbutton").grid(row=5, column=1, sticky="w", pady=(6, 0))
         kn = ttk.Frame(fr, style="Karte.TFrame")
-        kn.grid(row=6, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        kn.grid(row=8, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(kn, text="Abbrechen", command=self.w.destroy).pack(side="right")
         ttk.Button(kn, text="OK", command=self.ok).pack(side="right", padx=(0, 6))
         self.w.bind("<Return>", lambda ev: self.ok())
@@ -271,13 +371,15 @@ class TypDialog:
         if not self.name.get().strip():
             return
         self.ergebnis = {"name": self.name.get().strip(), "ordner": self.ordner.get().strip() or self.name.get().strip(),
-                         "farbe": self.farbe.get(), "aktiv": bool(self.akt.get())}
+                         "farbe": self.farbe.get(), "aktiv": bool(self.akt.get()),
+                         "bereich": "verkauf" if self.bereich.get() == BEREICH_TEXT["verkauf"] else "doku"}  # R29-A
         self.w.destroy()
 
 
 def _tab_typen(k):
-    f = k._tab("Dokumenttypen", "Kacheln auf der Seite „Dokumente“ im Projekt. Jeder Typ ist ein Unterordner des "
-                                "Projektordners. Die Kennung bleibt nach dem Anlegen fest (Verweise in Links).")
+    f = k._tab("Dokumenttypen", "Kacheln auf der Seite „Dokumente“ im Projekt. Jeder Typ ist ein (auch verschachtelter) "
+                                "Unterordner des Dokumentations- bzw. Verkaufsordners. Die Kennung bleibt nach dem Anlegen fest. "
+                                "„Firmenstruktur übernehmen“ setzt die Musterstruktur 2.x/1.x; eigene Typen bleiben erhalten.")
     k._abl_typen = _TypenEditor(k, f)
 
 
@@ -388,4 +490,4 @@ def registrieren():
     import seiten
     alt = seiten.holen("dokumente")
     seiten.registrieren("dokumente", "Dokumentenablage", alt.symbol if alt else "📁", "Module", baue,
-                        "Projektordner-Muster, Dokumenttypen, globale Ablagen, Pfadprüfung")
+                        "Wurzeln Dokumentation/Verkauf, Dokumenttypen, Musterordner, Versionen, globale Ablagen, Pfadprüfung")

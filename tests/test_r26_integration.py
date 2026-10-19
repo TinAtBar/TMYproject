@@ -211,7 +211,7 @@ class AblageTest(DbBasis):
                                                 {"name": ""}])
         self.assertEqual(fehler, ["Zeile 3: Name fehlt"])
         self.assertEqual([t["key"] for t in liste], ["spezifikationen", "zeichnungen_alt"])
-        self.assertEqual(liste[1]["ordner"], "Zeichn-alt")
+        self.assertEqual(liste[1]["ordner"], "Zeichn/alt")  # R29-A: verschachtelte Unterordner erlaubt
         self.assertIn(liste[1]["farbe"], s_ablage.PASTELL)
         self.assertEqual([t["pos"] for t in liste], [0, 1])
         self.assertTrue(s_ablage.typen_pruefen([{"key": "a", "name": "A"}, {"key": "a", "name": "B"}])[1])

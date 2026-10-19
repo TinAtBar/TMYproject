@@ -14,13 +14,17 @@ import re
 from router import route
 from util import ApiError
 
-ROLLEN = ("admin", "pm", "mitarbeiter", "controlling")
-ROLLEN_ANZEIGE = {"admin": "Administrator", "pm": "Projektleiter", "mitarbeiter": "Mitarbeiter", "controlling": "Controlling"}
-ROLLEN_KURZ = {"admin": "A", "pm": "PM", "mitarbeiter": "M", "controlling": "C"}
+ROLLEN = ("admin", "pm", "mitarbeiter", "controlling", "leiter")  # R29-F: + leiter (Abteilungs-/Geschäftsleitung)
+ROLLEN_ANZEIGE = {"admin": "Administrator", "pm": "Projektleiter", "mitarbeiter": "Mitarbeiter", "controlling": "Controlling",
+                  "leiter": "Leiter"}
+ROLLEN_KURZ = {"admin": "A", "pm": "PM", "mitarbeiter": "M", "controlling": "C", "leiter": "L"}
+# R29-F: Rollen, die nur Prozent/Ampel sehen (keine Stundenzahlen) – aber Stundenbalken in % bekommen
+NUR_PROZENT_ROLLEN = ("controlling", "leiter")
 
 BEREICHE = ("dashboard", "projekte_details", "opl", "fertigung", "kalender", "angebote", "kalkulation",
             "budget_stunden", "dokumente", "termine", "einstellungen_firma", "berichte",
-            "opl_alle")  # R28-M: opl_alle = alle Punkte sehen (aus → nur eigene Aufgaben)
+            "opl_alle",  # R28-M: opl_alle = alle Punkte sehen (aus → nur eigene Aufgaben)
+            "import")  # R29-B (128): Import/Eingangskorb
 BEREICH_ANZEIGE = {
     "dashboard": "Dashboard / Projektübersicht", "projekte_details": "Projektdetails (Projektseite, Reiter)",
     "opl": "Offene-Punkte-Liste", "fertigung": "Fertigungsbesprechung", "kalender": "Kalender",
@@ -28,6 +32,7 @@ BEREICH_ANZEIGE = {
     "dokumente": "Dokumente (QIP, Kick-Off, Dateien am Projekt)", "termine": "Termine / Meilensteine",
     "einstellungen_firma": "Firmeneinstellungen / Vorlagen", "berichte": "Berichte / Gesamtübersicht / Archiv",
     "opl_alle": "Alle offenen Punkte (aus = nur eigene Aufgaben)",  # R28-M
+    "import": "Import / Eingangskorb (Mitarbeiter: Ablage nur mit Freigabe)",  # R29-B
 }
 STUFEN = ("aus", "lesen", "bearbeiten")
 _RANG = {s: i for i, s in enumerate(STUFEN)}
@@ -38,8 +43,12 @@ DEFAULT = {
     # R26-H: Firmeneinstellungen pflegt nur noch der Admin (Admin-Konsole) – PM/Mitarbeiter nur lesen.
     "pm": {**{b: _B for b in BEREICHE}, "einstellungen_firma": _L},
     # R28-M: Mitarbeiter sieht nur eigene Aufgaben (opl_alle aus) – Dashboard „Meine Aufgaben“, Kalender nur eigene Fristen.
-    "mitarbeiter": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "kalender": _L},
+    "mitarbeiter": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "kalender": _L,
+                    "import": _B},  # R29-B: Import → Ablage über Freigabe (G11)
     "controlling": {**{b: _A for b in BEREICHE}, "dashboard": _L, "opl": _B, "fertigung": _B, "kalender": _L, "opl_alle": _B},  # R28-M
+    # R29-F: Leiter liest alle Projekte, leitet Besprechungen, pflegt OPL; keine Stunden/Angebote/Kalkulation/Firma
+    "leiter": {**{b: _A for b in BEREICHE}, "dashboard": _L, "projekte_details": _L, "opl": _B, "fertigung": _B,
+               "kalender": _L, "termine": _L, "dokumente": _L, "berichte": _L, "opl_alle": _B},
 }
 FIRMA_KEY = "rechte_matrix"
 # R28-M: Mitarbeiter-Rechte bis Version 2.7 (alles sehen) – zum Lockern per Admin-Konsole bzw. für ältere Tests.
@@ -61,11 +70,18 @@ def mitarbeiter_wie_bisher(data_dir):
 
 # ------------------------------------------------------------------ Migration
 def migration(c):
-    """users.rolle CHECK um 'controlling' erweitern (Schema-Text anpassen, idempotent)."""
+    """users.rolle CHECK um 'controlling' (R26) und 'leiter' (R29-F) erweitern (Schema-Text anpassen, idempotent)."""
     r = c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").fetchone()
-    if not r or not r[0] or "'controlling'" in r[0] or "('admin','pm','mitarbeiter')" not in r[0]:
+    if not r or not r[0] or "'leiter'" in r[0]:
         return
-    neu = r[0].replace("('admin','pm','mitarbeiter')", "('admin','pm','mitarbeiter','controlling')")
+    ziel = "('admin','pm','mitarbeiter','controlling','leiter')"
+    neu = None
+    for alt in ("('admin','pm','mitarbeiter','controlling')", "('admin','pm','mitarbeiter')"):
+        if alt in r[0]:
+            neu = r[0].replace(alt, ziel)
+            break
+    if neu is None:
+        return
     ver = c.execute("PRAGMA schema_version").fetchone()[0]
     in_tx = c.in_transaction if hasattr(c, "in_transaction") else False
     if in_tx:
@@ -159,6 +175,7 @@ FREI = [
     r"/api/zusatzwerte/[^/]+/[^/]+",   # nur unbekannte Masken (→ 404); opl/projekt/angebot siehe ROUTEN
     r"/api/anmeldung/info",            # R28-G1: Anmeldeseite (ohne Anmeldung): Domänen-Modus
     r"/api/freigaben(/.*)?",          # R28-G11: Hochladen mit Freigabe (Prüfung im Endpunkt)
+    r"/api/vorschlaege(/.*)?",         # R29-F (109): Punkt vorschlagen – Prüfung im Endpunkt (Melder/PM/Leiter/Admin)
     r"/api/tickets(/.*)?",             # R28-G10: Meldungen – alle Rollen melden; Prüfung im Endpunkt (Melder/Admin)
     r"/api/export/kopf",               # R27-108: Export-Kopf/Dateiname (nur Nummer/Bezeichnung, wie in der OPL sichtbar)
 ]
@@ -179,8 +196,11 @@ ROUTEN = [
     (r"GET", r"/api/(fortschritt|budget/kurz)", "dashboard", "lesen"),  # R26-W: Kacheln (nur Prozent/Ampel)
     (r".*", r"/api/(projekte/" + _ID + r"/termine(/.*)?|termine/.*|meilensteine(/.*)?|projekte/" + _ID + r"/meilensteine(/.*)?)",
      "termine", None),
+    (r"GET", r"/api/projekte/" + _ID + r"/kalender", "termine", "lesen"),  # R29-H (129): Projekt-Terminkalender
     (r".*", r"/api/(projekte/" + _ID + r"/(dokumente|ablagen)(/.*)?|ablagen/.*|ablage/.*)", "dokumente", None),  # R26-W: Ablage
     (r".*", r"/api/export/ablegen", "dokumente", None),  # R27-108: Export im Projektordner ablegen
+    (r".*", r"/api/eingang(/.*)?", "import", None),  # R29-B (128): Import/Eingangskorb (Feinprüfung im Endpunkt)
+    (r"GET", r"/api/projekte/" + _ID + r"/reststunden", "dashboard", "lesen"),  # R29-E: Abgleich (Prozent; Stunden nur PM/Admin, Prüfung im Endpunkt)
     (r".*", r"/api/(projekte/" + _ID + r"/(budget|stunden-ist)|reststunden/.*)", "budget_stunden", None),  # R26-W
     (r"GET", r"/api/bericht\.xlsx", "berichte", "lesen"),  # R26-W
     (r".*", r"/api/(projekte/" + _ID + r"/(qip|kickoff)(/.*)?|qip/(opl|schritte/.*)|kickoff/parsen.*)", "dokumente", None),

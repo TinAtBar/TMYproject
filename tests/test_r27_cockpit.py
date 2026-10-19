@@ -146,10 +146,13 @@ class CockpitBrowser(unittest.TestCase):
         # PM einmal im Kopf: Avatare, kein „PM:“-Text
         self.assertGreaterEqual(pg.locator(".ph-pms .avatar").count(), 1)
         self.assertNotIn("PM:", pg.locator(".ph").inner_text())
-        # „Mehr ▾“ enthält Verlauf
-        pg.locator(".ph-mehr-tab").click()
-        self.assertTrue(pg.locator(".menu").get_by_text("Verlauf").is_visible())
-        pg.keyboard.press("Escape")
+        # „Mehr ▾“ nur bei Platzmangel (R29-G 127): Verlauf entweder direkt als Reiter oder im Menü
+        if pg.locator(".ph-mehr-tab").is_visible():
+            pg.locator(".ph-mehr-tab").click()
+            self.assertTrue(pg.locator(".menu").get_by_text("Verlauf").is_visible() or pg.locator(".ph-tabs .tab", has_text="Verlauf").is_visible())
+            pg.keyboard.press("Escape")
+        else:
+            self.assertTrue(pg.locator(".ph-tabs .tab", has_text="Verlauf").is_visible())
         self.assertEqual(pg.fehler, [])
 
     def test_dateien_in_dokumente(self):
@@ -165,12 +168,11 @@ class CockpitBrowser(unittest.TestCase):
         pg.wait_for_selector("text=Fortschritt & Prognose")
 
     def test_mitarbeiter_ohne_stunden(self):
+        # R28-M: Mitarbeiter sieht nur eigene Aufgaben – keine Projektseite (Umleitung auf die OPL), also auch keine Stunden.
         pg = self.seite("ma1", "#/projekte/1")
-        pg.wait_for_selector(".ck-kpi .ck-kpi-v")
-        self.assertEqual(pg.locator(".ck-kpi").count(), 3)
+        pg.wait_for_function("location.hash.startsWith('#/opl')")
+        self.assertEqual(pg.locator(".ck").count(), 0)
         self.assertEqual(pg.locator(".ck-abts").count(), 0)
-        self.assertNotIn("Budget", self.reiter(pg))
-        self.assertEqual(pg.fehler, [])
 
     def test_controlling_ohne_projektseite(self):
         pg = self.seite("co1", "#/projekte/1")

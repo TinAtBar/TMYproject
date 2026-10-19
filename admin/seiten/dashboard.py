@@ -5,7 +5,7 @@ Liste der Kacheln je Rolle (sichtbar / Reihenfolge / Größe K|M|G). Gespeichert
 Kacheln, die eine Rolle laut Rechte-Matrix nicht sehen darf, erscheinen im Web trotzdem nicht.
 Benutzer können ihr Start-Dashboard selbst anpassen; „Zurücksetzen“ führt auf dieses Layout zurück.
 """
-ROLLEN = ("pm", "mitarbeiter", "controlling", "admin")
+ROLLEN = ("pm", "mitarbeiter", "controlling", "leiter", "admin")  # R29-F
 
 
 def _d():
